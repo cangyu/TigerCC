@@ -3,7 +3,7 @@ package compiler.Syntactic;
 public enum Tag
 {
 	ID, NUM, REAL, STR, CH,
-	VOID, CHAR, INT, 
+	VOID, CHAR, INT, FLOAT, DOUBLE,
 	STRUCT, UNION, 
 	IF, ELSE, 
 	WHILE, FOR, 

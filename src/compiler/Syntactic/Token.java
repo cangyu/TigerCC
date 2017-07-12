@@ -45,10 +45,14 @@ public class Token
 			return "/=";
 		case DOT:
 			return ".";
+		case DOUBLE:
+			return "double";
 		case ELSE:
 			return "else";
 		case EQ:
 			return "==";
+		case FLOAT:
+			return "float";
 		case FOR:
 			return "for";
 		case GE:
