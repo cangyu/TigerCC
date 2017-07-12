@@ -14,125 +14,125 @@ public class Token
 		switch (tag)
 		{
 		case ADD_ASSIGN:
-			return "+=";
+			return "+=".intern();
 		case AND:
-			return "&&";
+			return "&&".intern();
 		case AND_ASSIGN:
-			return "&=";
+			return "&=".intern();
 		case ASSIGN:
-			return "=";
+			return "=".intern();
 		case BIT_AND:
-			return "&";
+			return "&".intern();
 		case BIT_NOT:
-			return "~";
+			return "~".intern();
 		case BIT_OR:
-			return "|";
+			return "|".intern();
 		case BIT_XOR:
-			return "^";
+			return "^".intern();
 		case BREAK:
-			return "break";
+			return "break".intern();
 		case CHAR:
-			return "char";
+			return "char".intern();
 		case COMMA:
-			return ",";
+			return ",".intern();
 		case CONTINUE:
-			return "continue";
+			return "continue".intern();
 		case DEC:
-			return "--";
+			return "--".intern();
 		case DIVIDE:
-			return "/";
+			return "/".intern();
 		case DIV_ASSIGN:
-			return "/=";
+			return "/=".intern();
 		case DOT:
-			return ".";
+			return ".".intern();
 		case DOUBLE:
-			return "double";
+			return "double".intern();
 		case ELSE:
-			return "else";
+			return "else".intern();
 		case EQ:
-			return "==";
+			return "==".intern();
 		case FLOAT:
-			return "float";
+			return "float".intern();
 		case FOR:
-			return "for";
+			return "for".intern();
 		case GE:
-			return ">=";
+			return ">=".intern();
 		case GT:
-			return ">";
+			return ">".intern();
 		case IF:
-			return "if";
+			return "if".intern();
 		case INC:
-			return "++";
+			return "++".intern();
 		case INT:
-			return "int";
+			return "int".intern();
 		case LBRACE:
-			return "{";
+			return "{".intern();
 		case LE:
-			return "<=";
+			return "<=".intern();
 		case LMPAREN:
-			return "[";
+			return "[".intern();
 		case LPAREN:
-			return "(";
+			return "(".intern();
 		case LT:
-			return "<";
+			return "<".intern();
 		case MINUS:
-			return "-";
+			return "-".intern();
 		case MODULE:
-			return "%";
+			return "%".intern();
 		case MOD_ASSIGN:
-			return "%=";
+			return "%=".intern();
 		case MUL_ASSIGN:
-			return "*=";
+			return "*=".intern();
 		case NE:
-			return "!=";
+			return "!=".intern();
 		case NOT:
-			return "!";
+			return "!".intern();
 		case OR:
-			return "||";
+			return "||".intern();
 		case OR_ASSIGN:
-			return "|=";
+			return "|=".intern();
 		case PLUS:
-			return "+";
+			return "+".intern();
 		case PTR:
-			return "->";
+			return "->".intern();
 		case RBRACE:
-			return "}";
+			return "}".intern();
 		case RETURN:
-			return "return";
+			return "return".intern();
 		case RMPAREN:
-			return "]";
+			return "]".intern();
 		case RPAREN:
-			return ")";
+			return ")".intern();
 		case SEMI:
-			return ";";
+			return ".intern();".intern();
 		case SHL:
-			return "<<";
+			return "<<".intern();
 		case SHL_ASSIGN:
-			return "<<=";
+			return "<<=".intern();
 		case SHR:
-			return ">>";
+			return ">>".intern();
 		case SHR_ASSIGN:
-			return ">>=";
+			return ">>=".intern();
 		case SIZEOF:
-			return "sizeof";
+			return "sizeof".intern();
 		case STRUCT:
-			return "struct";
+			return "struct".intern();
 		case SUB_ASSIGN:
-			return "-=";
+			return "-=".intern();
 		case TIMES:
-			return "*";
+			return "*".intern();
 		case TYPEDEF:
-			return "typedef";
+			return "typedef".intern();
 		case UNION:
-			return "union";
+			return "union".intern();
 		case VOID:
-			return "void";
+			return "void".intern();
 		case WHILE:
-			return "while";
+			return "while".intern();
 		case XOR_ASSIGN:
-			return "^=";
+			return "^=".intern();
 		default:
-			return "";
+			return "".intern();
 		}
 	}
 }
