@@ -1,4 +1,4 @@
-package Main;
+package compiler.Main;
 
 import java.io.*;
 import compiler.Syntactic.Lexer;
@@ -21,5 +21,7 @@ public class Main
 
 			System.out.print(c);
 		}
+		
+		inp.close();
 	}
 }
