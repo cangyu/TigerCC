@@ -18,7 +18,9 @@ public class Lexer {
 	if (peek == '\n') {
 	    column = 0;
 	    ++line;
-	} else
+	} else if (peek == -1)
+	    inp.close();
+	else
 	    ++column;
     }
 
