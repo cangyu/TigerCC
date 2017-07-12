@@ -4,6 +4,6 @@ public class NOP extends NormalOp
 {
 	public NOP()
 	{
-		super(null, null, null);
+		super(Opcode.nop, null, null);
 	}
 }
