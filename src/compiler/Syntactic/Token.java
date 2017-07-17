@@ -49,6 +49,8 @@ public class Token
 			return "double".intern();
 		case ELSE:
 			return "else".intern();
+		case EOF:
+		    	return "eof".intern();
 		case EQ:
 			return "==".intern();
 		case FLOAT:

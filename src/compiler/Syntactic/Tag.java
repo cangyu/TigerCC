@@ -2,6 +2,7 @@ package compiler.Syntactic;
 
 public enum Tag
 {
+    	EOF,
 	ID, NUM, REAL, STR, CH,
 	VOID, CHAR, INT, FLOAT, DOUBLE,
 	STRUCT, UNION, 

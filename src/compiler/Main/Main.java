@@ -7,21 +7,9 @@ public class Main
 {
 	public static void main(String[] args) throws Exception
 	{
-		String fn = args[0];
-		InputStream inp = new FileInputStream(fn);
-		char c = ' ';
-
-		for (;;)
-		{
-			int tmp = inp.read();
-			if (tmp == -1)
-				break;
-			else
-				c = (char) tmp;
-
-			System.out.print(c);
-		}
-		
-		inp.close();
+	    System.out.println(Character.digit('A', 16));
+	    System.out.println(Character.digit('a', 16));
+	    System.out.println(Character.digit('9', 8));
+	    System.out.println(Character.digit('0', 10));
 	}
 }

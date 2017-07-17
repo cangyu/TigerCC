@@ -2,9 +2,9 @@ package compiler.Syntactic;
 
 public class Real extends Token
 {
-	public final float value;
+	public final double value;
 	
-	public Real(float x)
+	public Real(double x)
 	{
 		super(Tag.REAL);
 		value = x;
@@ -12,6 +12,6 @@ public class Real extends Token
 	
 	public String toString()
 	{
-		return Float.toString(value);
+		return Double.toString(value);
 	}
 }
