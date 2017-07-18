@@ -2,7 +2,6 @@ package compiler.Syntactic;
 
 import java.io.*;
 import java.util.*;
-import java.lang.Math.*;
 
 public class Lexer
 {
@@ -32,8 +31,8 @@ public class Lexer
 		for (;;)
 		{
 			read_char();
-			if (peek == ' ' || peek == '\t' || peek == '\f' || peek == '\r' || peek == '\n')
-				continue;
+			if (peek != ' ' && peek != '\t' && peek != '\f' && peek != '\r' && peek != '\n')
+				break;
 		}
 	}
 
@@ -108,60 +107,12 @@ public class Lexer
 	private String get_word() throws IOException
 	{
 		StringBuffer b = new StringBuffer();
-		do
+		while (peek == '_' || Character.isLetterOrDigit(peek))
 		{
-			b.append(peek);
+			b.append((char) peek);
 			read_char();
-		} while (peek == '_' || Character.isLetterOrDigit(peek));
+		}
 		return b.toString();
-	}
-
-	private Token handle_hex_int() throws IOException
-	{
-		read_char();
-		if (!isHexCh(peek))
-			throw new IOException(String.format("(%d, %d): Invalid hex integer suffix.", line, column));
-
-		int val = 0;
-		while (isHexCh(peek))
-		{
-			val *= 16;
-			val += Character.digit(peek, 16);
-			read_char();
-		}
-
-		return new Int(val);
-	}
-
-	private Token handle_dec_fraction() throws IOException
-	{
-		return null;
-	}
-
-	private Token handle_oct_int() throws IOException
-	{
-		int val = 0;
-		while (isOctCh(peek))
-		{
-			val *= 8;
-			val += Character.digit(peek, 8);
-			read_char();
-		}
-
-		return new Int(val);
-	}
-
-	private Token handle_dec_int() throws IOException
-	{
-		int val = 0;
-		while (Character.isDigit(peek))
-		{
-			val *= 10;
-			val += Character.digit(peek, 10);
-			read_char();
-		}
-
-		return new Int(val);
 	}
 
 	private Token handle_num() throws IOException
@@ -169,73 +120,44 @@ public class Lexer
 		if (peek == '0')
 		{
 			read_char();
-			if (peek == 'x' || peek == 'X')
-				return handle_hex_int();
-			else if (peek == '.')
-				return handle_dec_fraction();
-			else if (Character.isDigit(peek))
-			{
-				if (isOctCh(peek))
-					return handle_oct_int();
-				else
-					throw new IOException(String.format("(%d, %d): Invalid octal suffix.", line, column));
-			}
-			else
-				return new Int(0);
-		}
-		else
-		{
-			Int v1 = (Int) handle_dec_int();
-
-			if (peek == '.')
+			if (peek == 'x' || peek == 'X') // Hex integer
 			{
 				read_char();
-				Real v2 = (Real) handle_dec_fraction();
-				if (peek == 'e' || peek == 'E')
+				if (!isHexCh(peek))
+					throw new IOException(String.format("(%d, %d): Invalid hex integer suffix.", line, column));
+
+				int val = 0;
+				while (isHexCh(peek))
 				{
+					val *= 16;
+					val += Character.digit(peek, 16);
 					read_char();
-					Int v3 = (Int) handle_dec_int();
-					double factor = 10;
-					int times = v3.value;
-					if (times < 0)
-					{
-						times = -times;
-						factor = 0.1;
-					}
-
-					double val = v1.value + v2.value;
-					for (int i = 0; i < times; i++)
-						val *= factor;
-
-					return new Real(val);
 				}
-				else
-					return new Real(v1.value + v2.value);
-
+				return new Int(val);
 			}
-			else if (peek == 'e' || peek == 'E')
+			else // Octal integer
 			{
-				read_char();
-				Int v2 = (Int) handle_dec_int();
-				if (v2.value >= 0)
+				int val = 0;
+				while (isOctCh(peek))
 				{
-					int val = v1.value;
-					int times = v2.value;
-					for (int i = 0; i < times; i++)
-						val *= 10;
-					return new Int(val);
+					val *= 8;
+					val += Character.digit(peek, 8);
+					read_char();
 				}
-				else
-				{
-					double val = v1.value;
-					int times = -v2.value;
-					for (int i = 0; i < times; i++)
-						val *= 0.1;
-					return new Real(val);
-				}
+				return new Int(val);
 			}
-			else
-				return v1;
+		}
+		else // Decimal integer
+		{
+			int val = Character.digit(peek, 10);
+			read_char();
+			while (Character.isDigit(peek))
+			{
+				val *= 10;
+				val += Character.digit(peek, 10);
+				read_char();
+			}
+			return new Int(val);
 		}
 	}
 
@@ -424,7 +346,7 @@ public class Lexer
 			read_char();
 		}
 
-		return null;
+		return new Str(tmp);
 	}
 
 	public Lexer(InputStream x)

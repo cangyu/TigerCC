@@ -3,6 +3,7 @@ package compiler.Syntactic;
 public class Str extends Token
 {
 	public final String lexeme;
+	private static final String prefix = "String Literal: ".intern();
 	
 	public Str(String x)
 	{
@@ -12,6 +13,6 @@ public class Str extends Token
 	
 	public String toString()
 	{
-		return lexeme;
+		return prefix + lexeme;
 	}
 }
