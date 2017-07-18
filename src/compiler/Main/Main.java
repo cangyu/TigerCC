@@ -19,5 +19,7 @@ public class Main
 			if (tk.tag == Tag.EOF)
 				break;
 		}
+		
+		inp.close();
 	}
 }

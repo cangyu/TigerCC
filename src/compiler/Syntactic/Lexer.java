@@ -7,23 +7,74 @@ public class Lexer
 {
 	private int line, column;
 	private InputStream inp;
-	private int peek, prev;
+	private int peek, prev, next;
+	private boolean inBlkComment;
+
+	private void panic(String msg) throws IOException
+	{
+		throw new IOException(String.format("(%d, %d): " + msg, line, column));
+	}
+
+	private void push_back(int ch) throws IOException
+	{
+		if (next == -1)
+			next = ch;
+		else
+			throw new IOException(String.format("(%d, %d): Buffer \'next\' has been filled.", line, column));
+	}
+
+	private void read_char() throws IOException
+	{
+		// Previous
+		prev = peek;
+
+		// Buffered character
+		if (next == -1)
+			peek = inp.read();
+		else
+		{
+			peek = next;
+			next = -1;
+		}
+
+		// Handle line terminator or EOF
+		if (peek == '\r')
+			set_counter_to_newline();
+		else if (peek == '\n')
+		{
+			if (prev != '\r')
+				set_counter_to_newline();
+		}
+		else if (peek != -1)
+			++column;
+		else
+			return;
+	}
 
 	public Token next_token() throws IOException
 	{
 		skip_white();
+
+		Token ret = null;
 		if (peek == -1)
-			return new Token(Tag.EOF);
+		{
+			if (inBlkComment)
+				panic("Block comment symbol doesn't match on EOF!");
+			else
+				ret = new Token(Tag.EOF);
+		}
 		else if (peek == '_' || Character.isLetter(peek))
-			return handle_word();
-		else if (Character.isDigit(peek)) // numbers
-			return handle_num();
-		else if (peek == '\'') // char literal
-			return handle_char();
-		else if (peek == '\"') // string literal
-			return handle_str();
+			ret = handle_word();
+		else if (Character.isDigit(peek))
+			ret = handle_num();
+		else if (peek == '\'')
+			ret = handle_char();
+		else if (peek == '\"')
+			ret = handle_str();
 		else
-			return handle_misc();
+			ret = handle_misc();
+
+		return ret;
 	}
 
 	private void skip_white() throws IOException
@@ -36,25 +87,6 @@ public class Lexer
 		}
 	}
 
-	private void read_char() throws IOException
-	{
-		prev = peek;
-		peek = inp.read();
-
-		// Handle line terminator or EOF
-		if (peek == -1)
-			inp.close();
-		else if (peek == '\r')
-			set_counter_to_newline();
-		else if (peek == '\n')
-		{
-			if (prev != '\r')
-				set_counter_to_newline();
-		}
-		else
-			++column;
-	}
-
 	private void set_counter_to_newline()
 	{
 		++line;
@@ -65,53 +97,60 @@ public class Lexer
 	{
 		// keywords or identifiers
 		String s = get_word();
+
+		Token ret = null;
 		switch (s)
 		{
 		case "if":
-			return new Token(Tag.IF);
+			ret = new Token(Tag.IF);
 		case "else":
-			return new Token(Tag.ELSE);
+			ret = new Token(Tag.ELSE);
 		case "while":
-			return new Token(Tag.WHILE);
+			ret = new Token(Tag.WHILE);
 		case "for":
-			return new Token(Tag.FOR);
+			ret = new Token(Tag.FOR);
 		case "continue":
-			return new Token(Tag.CONTINUE);
+			ret = new Token(Tag.CONTINUE);
 		case "break":
-			return new Token(Tag.BREAK);
+			ret = new Token(Tag.BREAK);
 		case "return":
-			return new Token(Tag.RETURN);
+			ret = new Token(Tag.RETURN);
 		case "sizeof":
-			return new Token(Tag.SIZEOF);
+			ret = new Token(Tag.SIZEOF);
 		case "typedef":
-			return new Token(Tag.TYPEDEF);
+			ret = new Token(Tag.TYPEDEF);
 		case "void":
-			return new Token(Tag.VOID);
+			ret = new Token(Tag.VOID);
 		case "int":
-			return new Token(Tag.INT);
+			ret = new Token(Tag.INT);
 		case "double":
-			return new Token(Tag.DOUBLE);
+			ret = new Token(Tag.DOUBLE);
 		case "float":
-			return new Token(Tag.FLOAT);
+			ret = new Token(Tag.FLOAT);
 		case "char":
-			return new Token(Tag.CHAR);
+			ret = new Token(Tag.CHAR);
 		case "struct":
-			return new Token(Tag.STRUCT);
+			ret = new Token(Tag.STRUCT);
 		case "union":
-			return new Token(Tag.UNION);
+			ret = new Token(Tag.UNION);
 		default:
-			return new Identifier(s);
+			ret = new Identifier(s);
 		}
+
+		return ret;
 	}
 
 	private String get_word() throws IOException
 	{
 		StringBuffer b = new StringBuffer();
+
 		while (peek == '_' || Character.isLetterOrDigit(peek))
 		{
 			b.append((char) peek);
 			read_char();
 		}
+
+		push_back(peek);
 		return b.toString();
 	}
 
@@ -120,11 +159,12 @@ public class Lexer
 		if (peek == '0')
 		{
 			read_char();
-			if (peek == 'x' || peek == 'X') // Hex integer
+			if (peek == 'x' || peek == 'X')
 			{
+				// Hex integer
 				read_char();
 				if (!isHexCh(peek))
-					throw new IOException(String.format("(%d, %d): Invalid hex integer suffix.", line, column));
+					panic("Invalid hex integer suffix.");
 
 				int val = 0;
 				while (isHexCh(peek))
@@ -133,10 +173,13 @@ public class Lexer
 					val += Character.digit(peek, 16);
 					read_char();
 				}
+
+				push_back(peek);
 				return new Int(val);
 			}
-			else // Octal integer
+			else
 			{
+				// Octal integer
 				int val = 0;
 				while (isOctCh(peek))
 				{
@@ -144,11 +187,17 @@ public class Lexer
 					val += Character.digit(peek, 8);
 					read_char();
 				}
+
+				if (Character.isDigit(peek) && !isOctCh(peek))
+					panic("Invalid octal constant.");
+
+				push_back(peek);
 				return new Int(val);
 			}
 		}
-		else // Decimal integer
+		else
 		{
+			// Decimal integer
 			int val = Character.digit(peek, 10);
 			read_char();
 			while (Character.isDigit(peek))
@@ -157,18 +206,57 @@ public class Lexer
 				val += Character.digit(peek, 10);
 				read_char();
 			}
+
+			push_back(peek);
 			return new Int(val);
 		}
 	}
 
 	private boolean isHexCh(int ch)
 	{
-		return (ch >= 48 && ch < 58) || (ch >= 65 && ch < 71) || (ch >= 97 && ch < 103);
+		return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
 	}
 
 	private boolean isOctCh(int ch)
 	{
-		return (ch >= 48 && ch < 56);
+		return (ch >= '0' && ch <= '7');
+	}
+
+	private Token handle_char() throws IOException
+	{
+		read_char();
+
+		int tmp = 0;
+		if (peek == -1)
+			panic("String symbol doesn't match on EOF.");
+		else if (peek == '\'')
+			panic("Empty character constant.");
+		else
+		{
+			tmp = peek;
+			read_char();
+			if (peek != '\'')
+				panic("Missing character terminating symbol.");
+		}
+
+		return new Char((char) tmp);
+	}
+
+	private Token handle_str() throws IOException
+	{
+		read_char();
+
+		StringBuffer b = new StringBuffer();
+		while (peek != -1 && peek != '\"')
+		{
+			b.append((char) peek);
+			read_char();
+		}
+
+		if (peek == -1)
+			panic("String symbol doesn't match on EOF.");
+
+		return new Str(b.toString());
 	}
 
 	private Token handle_misc() throws IOException
@@ -325,36 +413,12 @@ public class Lexer
 		}
 	}
 
-	private Token handle_char() throws IOException
-	{
-		read_char();
-		char tmp = (char) peek;
-		read_char();
-		if (peek != '\'')
-			throw new IOException("missing terminating ' character");
-
-		return new Char(tmp);
-	}
-
-	private Token handle_str() throws IOException
-	{
-		read_char();
-		String tmp = "";
-		while (peek != '\"')
-		{
-			tmp += peek;
-			read_char();
-		}
-
-		return new Str(tmp);
-	}
-
 	public Lexer(InputStream x)
 	{
 		inp = x;
 		line = 1;
 		column = 0;
-		peek = -1;
-		prev = -1;
+		peek = prev = next = -1;
+		inBlkComment = false;
 	}
 }
