@@ -1,0 +1,18 @@
+package compiler.AST;
+
+public class ArgumentList extends ASTNode
+{
+	public Expr head;
+	public ArgumentList next;
+
+	public ArgumentList(Expr _e, ArgumentList _n)
+	{
+		head = _e;
+		next = _n;
+	}
+
+	public void accept(ASTNodeVisitor v) throws Exception
+	{
+		v.visit(this);
+	}
+}
