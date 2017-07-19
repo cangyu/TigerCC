@@ -8,19 +8,63 @@ public class Lexer
 	private int line, column;
 	private InputStream inp;
 	private int peek, prev, next;
-	private boolean inBlkComment;
+	public static final Hashtable<String, Token> kwtbl = new Hashtable<String, Token>(16);
 
-	private void panic(String msg) throws IOException
+	public Lexer(InputStream x)
 	{
-		throw new IOException(String.format("(%d, %d): " + msg, line, column));
+		inp = x;
+		line = 1;
+		column = 0;
+		peek = prev = next = -1;
+
+		kwtbl.clear();
+		kwtbl.put("if", new Token(Tag.IF));
+		kwtbl.put("else", new Token(Tag.ELSE));
+		kwtbl.put("while", new Token(Tag.WHILE));
+		kwtbl.put("for", new Token(Tag.FOR));
+		kwtbl.put("continue", new Token(Tag.CONTINUE));
+		kwtbl.put("break", new Token(Tag.BREAK));
+		kwtbl.put("return", new Token(Tag.RETURN));
+		kwtbl.put("sizeof", new Token(Tag.SIZEOF));
+		kwtbl.put("typedef", new Token(Tag.TYPEDEF));
+		kwtbl.put("void", new Token(Tag.VOID));
+		kwtbl.put("int", new Token(Tag.INT));
+		kwtbl.put("double", new Token(Tag.DOUBLE));
+		kwtbl.put("float", new Token(Tag.FLOAT));
+		kwtbl.put("char", new Token(Tag.CHAR));
+		kwtbl.put("struct", new Token(Tag.STRUCT));
+		kwtbl.put("union", new Token(Tag.UNION));
 	}
 
-	private void push_back(int ch) throws IOException
+	public Token next_token() throws IOException
 	{
-		if (next == -1)
-			next = ch;
+		skip_white();
+
+		Token ret = null;
+		if (peek == -1)
+			ret = new Token(Tag.EOF);
+		else if (peek == '_' || Character.isLetter(peek))
+			ret = handle_word();
+		else if (Character.isDigit(peek))
+			ret = handle_num();
+		else if (peek == '\'')
+			ret = handle_char();
+		else if (peek == '\"')
+			ret = handle_str();
 		else
-			throw new IOException(String.format("(%d, %d): Buffer \'next\' has been filled.", line, column));
+			ret = handle_misc();
+
+		return ret;
+	}
+
+	private void skip_white() throws IOException
+	{
+		for (;;)
+		{
+			read_char();
+			if (peek != ' ' && peek != '\t' && peek != '\f' && peek != '\r' && peek != '\n')
+				break;
+		}
 	}
 
 	private void read_char() throws IOException
@@ -51,42 +95,6 @@ public class Lexer
 			return;
 	}
 
-	public Token next_token() throws IOException
-	{
-		skip_white();
-
-		Token ret = null;
-		if (peek == -1)
-		{
-			if (inBlkComment)
-				panic("Block comment symbol doesn't match on EOF!");
-			else
-				ret = new Token(Tag.EOF);
-		}
-		else if (peek == '_' || Character.isLetter(peek))
-			ret = handle_word();
-		else if (Character.isDigit(peek))
-			ret = handle_num();
-		else if (peek == '\'')
-			ret = handle_char();
-		else if (peek == '\"')
-			ret = handle_str();
-		else
-			ret = handle_misc();
-
-		return ret;
-	}
-
-	private void skip_white() throws IOException
-	{
-		for (;;)
-		{
-			read_char();
-			if (peek != ' ' && peek != '\t' && peek != '\f' && peek != '\r' && peek != '\n')
-				break;
-		}
-	}
-
 	private void set_counter_to_newline()
 	{
 		++line;
@@ -99,43 +107,10 @@ public class Lexer
 		String s = get_word();
 
 		Token ret = null;
-		switch (s)
-		{
-		case "if":
-			ret = new Token(Tag.IF);
-		case "else":
-			ret = new Token(Tag.ELSE);
-		case "while":
-			ret = new Token(Tag.WHILE);
-		case "for":
-			ret = new Token(Tag.FOR);
-		case "continue":
-			ret = new Token(Tag.CONTINUE);
-		case "break":
-			ret = new Token(Tag.BREAK);
-		case "return":
-			ret = new Token(Tag.RETURN);
-		case "sizeof":
-			ret = new Token(Tag.SIZEOF);
-		case "typedef":
-			ret = new Token(Tag.TYPEDEF);
-		case "void":
-			ret = new Token(Tag.VOID);
-		case "int":
-			ret = new Token(Tag.INT);
-		case "double":
-			ret = new Token(Tag.DOUBLE);
-		case "float":
-			ret = new Token(Tag.FLOAT);
-		case "char":
-			ret = new Token(Tag.CHAR);
-		case "struct":
-			ret = new Token(Tag.STRUCT);
-		case "union":
-			ret = new Token(Tag.UNION);
-		default:
+		if (kwtbl.containsKey(s))
+			ret = kwtbl.get(s);
+		else
 			ret = new Identifier(s);
-		}
 
 		return ret;
 	}
@@ -154,6 +129,14 @@ public class Lexer
 		return b.toString();
 	}
 
+	private void push_back(int ch) throws IOException
+	{
+		if (next == -1)
+			next = ch;
+		else
+			throw new IOException(String.format("(%d, %d): Buffer \'next\' has been filled.", line, column));
+	}
+
 	private Token handle_num() throws IOException
 	{
 		if (peek == '0')
@@ -161,7 +144,6 @@ public class Lexer
 			read_char();
 			if (peek == 'x' || peek == 'X')
 			{
-				// Hex integer
 				read_char();
 				if (!isHexCh(peek))
 					panic("Invalid hex integer suffix.");
@@ -175,29 +157,50 @@ public class Lexer
 				}
 
 				push_back(peek);
-				return new Int(val);
+				return new Int(val); // Hex integer
 			}
 			else
 			{
-				// Octal integer
-				int val = 0;
-				while (isOctCh(peek))
+				if (Character.isDigit(peek))
 				{
-					val *= 8;
-					val += Character.digit(peek, 8);
-					read_char();
+					int val = 0;
+					while (isOctCh(peek))
+					{
+						val *= 8;
+						val += Character.digit(peek, 8);
+						read_char();
+					}
+
+					if (Character.isDigit(peek) && !isOctCh(peek))
+						panic("Invalid octal constant.");
+
+					push_back(peek);
+					return new Int(val);// Octal integer
 				}
+				else if (peek == '.')
+				{
+					double x = 0, d = 10;
+					for (;;)
+					{
+						read_char();
+						if (!Character.isDigit(peek))
+							break;
 
-				if (Character.isDigit(peek) && !isOctCh(peek))
-					panic("Invalid octal constant.");
-
-				push_back(peek);
-				return new Int(val);
+						x += Character.digit(peek, 10) / d;
+						d *= 10;
+					}
+					push_back(peek);
+					return new Real(x); // Decimal fraction
+				}
+				else
+				{
+					push_back(peek);
+					return new Int(0); // Constant 0
+				}
 			}
 		}
 		else
 		{
-			// Decimal integer
 			int val = Character.digit(peek, 10);
 			read_char();
 			while (Character.isDigit(peek))
@@ -207,8 +210,26 @@ public class Lexer
 				read_char();
 			}
 
-			push_back(peek);
-			return new Int(val);
+			if (peek == '.')
+			{
+				double x = val, d = 10;
+				for (;;)
+				{
+					read_char();
+					if (!Character.isDigit(peek))
+						break;
+
+					x += Character.digit(peek, 10) / d;
+					d *= 10;
+				}
+				push_back(peek);
+				return new Real(x); // Decimal float
+			}
+			else
+			{
+				push_back(peek);
+				return new Int(val); // Decimal integer
+			}
 		}
 	}
 
@@ -262,163 +283,260 @@ public class Lexer
 	private Token handle_misc() throws IOException
 	{
 		// operators, comments, annotations
+		Token ret = null;
+
 		switch (peek)
 		{
 		case '<':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.LE);
+				ret = new Token(Tag.LE);
 			else if (peek == '<')
 			{
 				read_char();
 				if (peek == '=')
-					return new Token(Tag.SHL_ASSIGN);
+					ret = new Token(Tag.SHL_ASSIGN);
 				else
-					return new Token(Tag.SHL);
+				{
+					push_back(peek);
+					ret = new Token(Tag.SHL);
+				}
 			}
 			else
-				return new Token(Tag.LT);
+			{
+				push_back(peek);
+				ret = new Token(Tag.LT);
+			}
+			break;
 		}
 		case '>':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.GE);
+				ret = new Token(Tag.GE);
 			else if (peek == '>')
 			{
 				read_char();
 				if (peek == '=')
-					return new Token(Tag.SHR_ASSIGN);
+					ret = new Token(Tag.SHR_ASSIGN);
 				else
-					return new Token(Tag.SHR);
+				{
+					push_back(peek);
+					ret = new Token(Tag.SHR);
+				}
 			}
 			else
-				return new Token(Tag.GT);
+			{
+				push_back(peek);
+				ret = new Token(Tag.GT);
+			}
+			break;
 		}
 		case '-':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.SUB_ASSIGN);
+				ret = new Token(Tag.SUB_ASSIGN);
 			else if (peek == '-')
-				return new Token(Tag.DEC);
+				ret = new Token(Tag.DEC);
 			else if (peek == '>')
-				return new Token(Tag.PTR);
+				ret = new Token(Tag.PTR);
 			else
-				return new Token(Tag.MINUS);
+			{
+				push_back(peek);
+				ret = new Token(Tag.MINUS);
+			}
+			break;
 		}
 		case '&':
 		{
 			read_char();
 			if (peek == '&')
-				return new Token(Tag.AND);
+				ret = new Token(Tag.AND);
 			else if (peek == '=')
-				return new Token(Tag.AND_ASSIGN);
+				ret = new Token(Tag.AND_ASSIGN);
 			else
-				return new Token(Tag.BIT_AND);
+			{
+				push_back(peek);
+				ret = new Token(Tag.BIT_AND);
+			}
+			break;
 		}
 		case '+':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.ADD_ASSIGN);
+				ret = new Token(Tag.ADD_ASSIGN);
 			else if (peek == '+')
-				return new Token(Tag.INC);
+				ret = new Token(Tag.INC);
 			else
-				return new Token(Tag.PLUS);
+			{
+				push_back(peek);
+				ret = new Token(Tag.PLUS);
+			}
+			break;
 		}
 		case '|':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.OR_ASSIGN);
+				ret = new Token(Tag.OR_ASSIGN);
 			else if (peek == '|')
-				return new Token(Tag.OR);
+				ret = new Token(Tag.OR);
 			else
-				return new Token(Tag.BIT_OR);
+			{
+				push_back(peek);
+				ret = new Token(Tag.BIT_OR);
+			}
+			break;
 		}
 		case '=':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.EQ);
+				ret = new Token(Tag.EQ);
 			else
-				return new Token(Tag.ASSIGN);
+			{
+				push_back(peek);
+				ret = new Token(Tag.ASSIGN);
+			}
+			break;
 		}
 
 		case '^':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.XOR_ASSIGN);
+				ret = new Token(Tag.XOR_ASSIGN);
 			else
-				return new Token(Tag.BIT_XOR);
+			{
+				push_back(peek);
+				ret = new Token(Tag.BIT_XOR);
+			}
+			break;
 		}
 
 		case '/':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.DIV_ASSIGN);
+				ret = new Token(Tag.DIV_ASSIGN);
+			else if (peek == '/')
+			{
+				for (;;)
+				{
+					if (column == 0 || peek == -1)
+						break;
+
+					read_char();
+				}
+				ret = new Token(Tag.LINECOMMENT);
+			}
+			else if (peek == '*')
+			{
+				int flag = 0;
+				for (;;)
+				{
+					if (flag == 2 || peek == -1)
+						break;
+
+					read_char();
+					if (flag == 0 && peek == '*')
+						flag = 1;
+					else if (flag == 1 && peek == '/')
+						flag = 2;
+					else
+						flag = 0;
+				}
+
+				if (peek == -1 && flag != 2)
+					panic("Block comment symbol doesn't match on EOF.");
+
+				ret = new Token(Tag.BLKCOMMENT);
+			}
 			else
-				return new Token(Tag.DIVIDE);
+			{
+				push_back(peek);
+				ret = new Token(Tag.DIVIDE);
+			}
+			break;
 		}
 		case '!':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.NE);
+				ret = new Token(Tag.NE);
 			else
-				return new Token(Tag.NOT);
+			{
+				push_back(peek);
+				ret = new Token(Tag.NOT);
+			}
+			break;
 		}
 		case '*':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.MUL_ASSIGN);
+				ret = new Token(Tag.MUL_ASSIGN);
 			else
-				return new Token(Tag.TIMES);
+			{
+				push_back(peek);
+				ret = new Token(Tag.TIMES);
+			}
+			break;
 		}
 		case '%':
 		{
 			read_char();
 			if (peek == '=')
-				return new Token(Tag.MOD_ASSIGN);
+				ret = new Token(Tag.MOD_ASSIGN);
 			else
-				return new Token(Tag.MODULE);
+			{
+				push_back(peek);
+				ret = new Token(Tag.MODULE);
+			}
+			break;
 		}
 		case '~':
-			return new Token(Tag.BIT_NOT);
+			ret = new Token(Tag.BIT_NOT);
+			break;
 		case ',':
-			return new Token(Tag.COMMA);
+			ret = new Token(Tag.COMMA);
+			break;
 		case ';':
-			return new Token(Tag.SEMI);
+			ret = new Token(Tag.SEMI);
+			break;
 		case '.':
-			return new Token(Tag.DOT);
+			ret = new Token(Tag.DOT);
+			break;
 		case '{':
-			return new Token(Tag.LBRACE);
+			ret = new Token(Tag.LBRACE);
+			break;
 		case '}':
-			return new Token(Tag.RBRACE);
+			ret = new Token(Tag.RBRACE);
+			break;
 		case '[':
-			return new Token(Tag.LMPAREN);
+			ret = new Token(Tag.LMPAREN);
+			break;
 		case ']':
-			return new Token(Tag.RMPAREN);
+			ret = new Token(Tag.RMPAREN);
+			break;
 		case '(':
-			return new Token(Tag.LPAREN);
+			ret = new Token(Tag.LPAREN);
+			break;
 		case ')':
-			return new Token(Tag.RPAREN);
+			ret = new Token(Tag.RPAREN);
+			break;
 		default:
-			return null;
+			panic("Invalid operator symbol.");
 		}
+
+		return ret;
 	}
 
-	public Lexer(InputStream x)
+	private void panic(String msg) throws IOException
 	{
-		inp = x;
-		line = 1;
-		column = 0;
-		peek = prev = next = -1;
-		inBlkComment = false;
+		throw new IOException(String.format("(Line %d, Column %d): " + msg, line, column));
 	}
 }

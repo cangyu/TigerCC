@@ -134,7 +134,7 @@ public class Token
 		case SEMI:
 			return "SEMI".intern();
 		default:
-			return "".intern();
+			return "".intern(); // comments are omitted
 		}
 	}
 }
