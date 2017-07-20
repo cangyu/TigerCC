@@ -1,4 +1,4 @@
-package compiler.Syntactic;
+package compiler.Lexer;
 
 public class Identifier extends Token
 {

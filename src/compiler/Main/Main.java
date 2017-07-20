@@ -1,7 +1,8 @@
 package compiler.Main;
 
 import java.io.*;
-import compiler.Syntactic.*;
+
+import compiler.Lexer.*;
 
 public class Main
 {
