@@ -5,9 +5,9 @@ public class Char extends Token
 	public final Character ch;
 	private static final String prefix = "Char Literal: ".intern();
 
-	public Char(Character x)
+	public Char(Character x, int l, int c)
 	{
-		super(Tag.CH);
+		super(Tag.CH, l, c);
 		ch = x;
 	}
 

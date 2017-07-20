@@ -3,10 +3,13 @@ package compiler.Syntactic;
 public class Token
 {
 	public final Tag tag;
+	public int line, column;
 
-	public Token(Tag x)
+	public Token(Tag x, int l, int c)
 	{
 		tag = x;
+		line = l;
+		column = c;
 	}
 
 	public String toString()
@@ -133,8 +136,11 @@ public class Token
 			return "COMMA".intern();
 		case SEMI:
 			return "SEMI".intern();
+		case LINECOMMENT:
+		case BLKCOMMENT:
+			return "COMMENT".intern();
 		default:
-			return "".intern(); // comments are omitted
+			return "".intern();
 		}
 	}
 }

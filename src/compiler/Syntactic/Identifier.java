@@ -5,9 +5,9 @@ public class Identifier extends Token
 	public final String name;
 	private static final String prefix = "Identifier: ".intern();
 
-	public Identifier(String x)
+	public Identifier(String x, int l, int c)
 	{
-		super(Tag.ID);
+		super(Tag.ID, l, c);
 		name = x.intern();
 	}
 
