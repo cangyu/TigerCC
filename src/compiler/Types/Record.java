@@ -29,6 +29,6 @@ public abstract class Record extends Type
 	public void add_record(Type t, String n)
 	{
 		fields.add(new RecordField(t, n));
-		size += t.size;
+		width += t.width;
 	}
 }

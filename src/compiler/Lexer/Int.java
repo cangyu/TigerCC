@@ -3,7 +3,6 @@ package compiler.Lexer;
 public class Int extends Token
 {
 	public final int value;
-	private static final String prefix = "Integer: ".intern();
 
 	public Int(int x, int l, int c)
 	{
@@ -15,4 +14,6 @@ public class Int extends Token
 	{
 		return prefix + String.valueOf(value);
 	}
+
+	private static final String prefix = "Integer: ".intern();
 }

@@ -3,7 +3,6 @@ package compiler.Lexer;
 public class Char extends Token
 {
 	public final Character ch;
-	private static final String prefix = "Char Literal: ".intern();
 
 	public Char(Character x, int l, int c)
 	{
@@ -15,4 +14,6 @@ public class Char extends Token
 	{
 		return prefix + ch.toString();
 	}
+
+	private static final String prefix = "Char Literal: ".intern();
 }

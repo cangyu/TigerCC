@@ -3,7 +3,6 @@ package compiler.Lexer;
 public class Real extends Token
 {
 	public final double value;
-	private static final String prefix = "Real: ".intern();
 
 	public Real(double x, int l, int c)
 	{
@@ -15,4 +14,6 @@ public class Real extends Token
 	{
 		return prefix + Double.toString(value);
 	}
+
+	private static final String prefix = "Real: ".intern();
 }

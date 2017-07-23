@@ -3,7 +3,6 @@ package compiler.Lexer;
 public class Str extends Token
 {
 	public final String lexeme;
-	private static final String prefix = "String Literal: ".intern();
 
 	public Str(String x, int l, int c)
 	{
@@ -15,4 +14,6 @@ public class Str extends Token
 	{
 		return prefix + lexeme;
 	}
+
+	private static final String prefix = "String Literal: ".intern();
 }

@@ -11,7 +11,7 @@ public final class Array extends Type
 
 	public Array(int num, Type t)
 	{
-		super(num * t.size);
+		super(num * t.width);
 		elem_num = num;
 		elem_type = t;
 		comp = new LinkedList<Type>();
