@@ -1,6 +1,6 @@
 package compiler.AST;
 
-import compiler.semantic.Type;
+import compiler.Types.*;
 
 public abstract class Expr extends ASTNode
 {
@@ -10,4 +10,3 @@ public abstract class Expr extends ASTNode
 	public Type type;
 	public boolean isLvalue;
 }
-

@@ -1,18 +1,23 @@
 package compiler.AST;
 
+import java.util.*;
+
 public class Program extends ASTNode
 {
-    public ProgramComp head;
-    public Program next;
+	public LinkedList<ProgramComp> comp;
 
-    public Program(ProgramComp _pc, Program _p)
-    {
-    	head = _pc;
-        next = _p;
-    }
+	public Program()
+	{
+		comp = new LinkedList<ProgramComp>();
+	}
 
-    public void accept(ASTNodeVisitor v) throws Exception
-    {
-        v.visit(this);
-    }
+	public void add_elem(ProgramComp x)
+	{
+		comp.add(x);
+	}
+
+	public void accept(ASTNodeVisitor v) throws Exception
+	{
+		v.visit(this);
+	}
 }
