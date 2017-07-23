@@ -1,23 +1,47 @@
 package compiler.AST;
 
+import java.util.*;
+
 public class TypeSpecifier extends ASTNode
 {
-	public static enum Type{VOID, CHAR, INT, STRUCT, UNION};
-	
-	public Type type;
-	public String tag;
-	public NonInitDeclarationList comp;
-	public compiler.Types.Type detail;
+	public final static int ts_void = 0;
+	public final static int ts_int = 1;
+	public final static int ts_char = 2;
+	public final static int ts_float = 3;
+	public final static int ts_struct = 4;
+	public final static int ts_union = 5;
 
-	public TypeSpecifier(Type _t, String _tag, NonInitDeclarationList _c)
+	public final static TypeSpecifier TS_VOID = new TypeSpecifier(ts_void);
+	public final static TypeSpecifier TS_INT = new TypeSpecifier(ts_int);
+	public final static TypeSpecifier TS_CHAR = new TypeSpecifier(ts_char);
+	public final static TypeSpecifier TS_FLOAT = new TypeSpecifier(ts_float);
+
+	public int ts_type;
+	public String name;
+	public LinkedList<RecordEntry> entry;
+
+	public TypeSpecifier(int t)
 	{
-		type = _t;
-		tag = _tag;
-		comp = _c;
+		ts_type = t;
+		if (t == ts_struct || t == ts_union)
+			entry = new LinkedList<RecordEntry>();
 	}
-	
-    public void accept(ASTNodeVisitor v) throws Exception
-    {
-        v.visit(this);
-    }
+
+	public TypeSpecifier(int t, String n)
+	{
+		ts_type = t;
+		name = n;
+		if (t == ts_struct || t == ts_union)
+			entry = new LinkedList<RecordEntry>();
+	}
+
+	public void add_entry(RecordEntry x)
+	{
+		entry.add(x);
+	}
+
+	public void accept(ASTNodeVisitor v) throws Exception
+	{
+		v.visit(this);
+	}
 }

@@ -6,4 +6,9 @@ public final class Struct extends Record
 	{
 		super(name);
 	}
+	
+	public Struct()
+	{
+		super();
+	}
 }

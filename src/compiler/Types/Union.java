@@ -6,4 +6,9 @@ public final class Union extends Record
 	{
 		super(name);
 	}
+
+	public Union()
+	{
+		super();
+	}
 }

@@ -1,18 +1,23 @@
 package compiler.AST;
 
+import java.util.*;
+
 public class InitDeclaratorList extends ASTNode
-{    
-	public InitDeclarator head;
-	public InitDeclaratorList next;
-	
-	public InitDeclaratorList(InitDeclarator _idecl, InitDeclaratorList _n)
+{
+	public LinkedList<InitDeclarator> comp;
+
+	public InitDeclaratorList()
 	{
-	    head = _idecl;
-	    next = _n;
+		comp = new LinkedList<InitDeclarator>();
 	}
-	
-    public void accept(ASTNodeVisitor v) throws Exception
-    {
-        v.visit(this);
-    }
+
+	public void add_elem(InitDeclarator x)
+	{
+		comp.add(x);
+	}
+
+	public void accept(ASTNodeVisitor v) throws Exception
+	{
+		v.visit(this);
+	}
 }

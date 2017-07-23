@@ -31,15 +31,13 @@ public class Env
 		return null;
 	}
 
-	public static void beginScope()
+	public static void beginScope(Env e)
 	{
-		top = new Env(top);
+		e = new Env(e);
 	}
 
-	public static void endScope()
+	public static void endScope(Env e)
 	{
-		top = top.prev;
+		e = e.prev;
 	}
-
-	public static Env top;
 }

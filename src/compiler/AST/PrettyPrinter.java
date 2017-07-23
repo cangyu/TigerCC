@@ -632,7 +632,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 		x.code_rep = new String[1];
 		str_init(x.code_rep, 1);
 
-		switch (x.type)
+		switch (x.type_detail)
 		{
 		case VOID:
 			x.code_rep = new String[1];
@@ -652,14 +652,14 @@ public class PrettyPrinter implements ASTNodeVisitor
 
 		if (x.comp == null)
 		{
-			x.code_rep[0] += (x.type == TypeSpecifier.Type.STRUCT ? "struct" : "union");
+			x.code_rep[0] += (x.type_detail == TypeSpecifier.Type.STRUCT ? "struct" : "union");
 			x.code_rep[0] += (" " + x.tag);
 		}
 		else
 		{
 			plain_visit(x.comp);
 
-			x.code_rep[0] = (x.type == TypeSpecifier.Type.STRUCT ? "struct" : "union");
+			x.code_rep[0] = (x.type_detail == TypeSpecifier.Type.STRUCT ? "struct" : "union");
 			if (x.tag != null)
 				x.code_rep[0] += (" " + x.tag);
 
@@ -824,7 +824,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 	@Override
 	public void visit(TypeSpecifier x) throws Exception
 	{
-		switch (x.type)
+		switch (x.type_detail)
 		{
 		case VOID:
 			x.code_rep = new String[1];
@@ -849,7 +849,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 		{
 			x.code_rep = new String[1];
 			str_init(x.code_rep, 1);
-			x.code_rep[0] += (x.type == TypeSpecifier.Type.STRUCT ? "struct" : "union");
+			x.code_rep[0] += (x.type_detail == TypeSpecifier.Type.STRUCT ? "struct" : "union");
 			x.code_rep[0] += (" " + x.tag);
 		}
 		else
@@ -860,7 +860,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 			x.code_rep = new String[lc];
 			str_init(x.code_rep, lc);
 
-			x.code_rep[0] = (x.type == TypeSpecifier.Type.STRUCT ? "struct" : "union");
+			x.code_rep[0] = (x.type_detail == TypeSpecifier.Type.STRUCT ? "struct" : "union");
 			if (x.tag != null)
 				x.code_rep[0] += (" " + x.tag);
 

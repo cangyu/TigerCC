@@ -1222,7 +1222,7 @@ public class ASTPrinter implements ASTNodeVisitor
 
 		// add contents
 		ts.ast_rep[1] += leading + "Type: ";
-		switch (ts.type)
+		switch (ts.type_detail)
 		{
 		case VOID:
 			ts.ast_rep[1] += "void";
