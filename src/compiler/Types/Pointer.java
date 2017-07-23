@@ -1,4 +1,4 @@
-package compiler.Symbols;
+package compiler.Types;
 
 public class Pointer extends Type
 {
