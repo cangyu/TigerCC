@@ -1,19 +1,56 @@
 package compiler.AST;
 
+import compiler.Lexer.*;
+
 public class PrimaryExpr extends Expr
 {
-	public static enum ElemType
-	{
-		ID, STRING, CHAR, INT, PAREN
-	};
+	public static final int identifier = 0;
+	public static final int constant = 1;
+	public static final int string = 2;
+	public static final int paren = 3;
 
-	public ElemType elem_type;
+	public int type;
 	public Object elem;
 
-	public PrimaryExpr(ElemType _t, Object _e)
+	public PrimaryExpr(Object e) throws Exception
 	{
-		elem_type = _t;
-		elem = _e;
+		if (e instanceof Identifier)
+		{
+			type = identifier;
+			Identifier t = (Identifier) e;
+			elem = t.name;
+		}
+		else if (e instanceof Char)
+		{
+			type = constant;
+			Char t = (Char) e;
+			elem = t.value;
+		}
+		else if (e instanceof Int)
+		{
+			type = constant;
+			Int t = (Int) e;
+			elem = t.value;
+		}
+		else if (e instanceof Real)
+		{
+			type = constant;
+			Real t = (Real) e;
+			elem = t.value;
+		}
+		else if (e instanceof Str)
+		{
+			type = string;
+			Str t = (Str) e;
+			elem = t.lexeme;
+		}
+		else if (e instanceof Expr)
+		{
+			type = paren;
+			elem = e;
+		}
+		else
+			throw new Exception("Invalid input object.");
 	}
 
 	public void accept(ASTNodeVisitor v) throws Exception

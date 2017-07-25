@@ -2,6 +2,8 @@ package compiler.Parser;
 
 import java.io.*;
 import compiler.Lexer.*;
+import compiler.Lexer.Char;
+import compiler.Lexer.Int;
 import compiler.Symbols.*;
 import compiler.AST.*;
 import compiler.Types.*;
@@ -31,6 +33,11 @@ public class Parser
 		}
 		else
 			return false;
+	}
+
+	private boolean cur_is(Tag t)
+	{
+		return look.tag == t;
 	}
 
 	private void move() throws IOException
@@ -199,6 +206,135 @@ public class Parser
 	private Declarator declarator() throws Exception
 	{
 		Declarator ret = null;
+		PlainDeclarator pdlr = plain_declarator();
+		if (pdlr == null)
+			panic("Unable to match a plain declarator.");
+
+		ret = new Declarator(pdlr);
+		while (match(Tag.LMPAREN))
+		{
+			Expr e = const_expr();
+			if (e == null)
+				panic("Unable to match a const expression.");
+			ret.add_expr(e);
+
+			if (!match(Tag.RMPAREN))
+				panic("Missing \']\'");
+		}
+
+		return ret;
+	}
+
+	private PlainDeclarator plain_declarator() throws Exception
+	{
+		PlainDeclarator ret = null;
+
+		return ret;
+	}
+
+	private Expr expr() throws Exception
+	{
+		Expr ret = null;
+
+		return ret;
+	}
+
+	private Expr const_expr() throws Exception
+	{
+		Expr ret = null;
+
+		return ret;
+	}
+
+	private PostfixExpr postfix_expr() throws Exception
+	{
+		PostfixExpr ret = null;
+
+		PrimaryExpr pe = primary_expr();
+		if (pe == null)
+			panic("Unable to match a primary expr when parsing a postfix expr.");
+
+		for (;;)
+		{
+			if (match(Tag.LMPAREN))
+			{
+
+			}
+			else if (match(Tag.LPAREN))
+			{
+
+			}
+			else if (match(Tag.DOT))
+			{
+
+			}
+			else if (match(Tag.PTR))
+			{
+
+			}
+			else if (match(Tag.INC))
+			{
+
+			}
+			else if (match(Tag.DEC))
+			{
+
+			}
+			else
+			{
+				panic("Unable to match a postfix.");
+				break;
+			}
+		}
+
+		return ret;
+	}
+
+	private AssignmentExpr assignment_expr() throws Exception
+	{
+		AssignmentExpr ret = null;
+
+		return ret;
+	}
+
+	private PrimaryExpr primary_expr() throws Exception
+	{
+		PrimaryExpr ret = null;
+		if (cur_is(Tag.ID) || cur_is(Tag.CH) || cur_is(Tag.NUM) || cur_is(Tag.REAL) || cur_is(Tag.STR))
+		{
+			ret = new PrimaryExpr(look);
+			move();
+		}
+		else
+		{
+			if (match(Tag.LPAREN))
+			{
+				Expr e = expr();
+				if (e == null)
+					panic("Failed to match an expr when parsing a primary expr.");
+				else
+					ret = new PrimaryExpr(e);
+
+				if (!match(Tag.RPAREN))
+					panic("Missing \')\' when parsing a primary expr.");
+			}
+			else
+				panic("Missing \'(\' when parsing a primary expr.");
+		}
+
+		return ret;
+	}
+
+	private Constant constant() throws Exception
+	{
+		Constant ret = null;
+		if (cur_is(Tag.CH) || cur_is(Tag.NUM) || cur_is(Tag.REAL))
+		{
+			ret = new Constant(look);
+			move();
+		}
+		else
+			panic("Unable to match a constant.");
 
 		return ret;
 	}

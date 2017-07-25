@@ -46,4 +46,5 @@ public interface ASTNodeVisitor
     /* Program */
     public abstract void visit(Program x) throws Exception;
 	public abstract void visit(RecordEntry recordEntry);
+	public abstract void visit(Constant constant);
 }
