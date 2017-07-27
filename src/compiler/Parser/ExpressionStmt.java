@@ -4,15 +4,15 @@ import compiler.AST.ASTNodeVisitor;
 
 public class ExpressionStmt extends Stmt
 {
-	public Expression e;
-	
-	public ExpressionStmt(Expression _e)
+	public Expression elem;
+
+	public ExpressionStmt(Expression x)
 	{
-		e = _e;
+		elem = x;
 	}
-	
-    public void accept(ASTNodeVisitor v) throws Exception
-    {
-        v.visit(this);
-    }
+
+	public void accept(ASTNodeVisitor v) throws Exception
+	{
+		v.visit(this);
+	}
 }

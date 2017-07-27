@@ -428,16 +428,16 @@ public class PrettyPrinter implements ASTNodeVisitor
 	@Override
 	public void visit(Declaration x) throws Exception
 	{
-		x.type_specifier.accept(this);
+		x.ts.accept(this);
 		if (x.init_declarator_list != null)
 			x.init_declarator_list.accept(this);
 
-		int lc = x.type_specifier.code_rep.length, cl = 0;
+		int lc = x.ts.code_rep.length, cl = 0;
 
 		x.code_rep = new String[lc];
 		str_init(x.code_rep, lc);
 
-		for (String str : x.type_specifier.code_rep)
+		for (String str : x.ts.code_rep)
 			x.code_rep[cl++] += str;
 
 		--cl;
@@ -654,12 +654,12 @@ public class PrettyPrinter implements ASTNodeVisitor
 		x.code_rep = new String[1];
 		str_init(x.code_rep, 1);
 
-		plain_visit(x.type_specifier);
-		x.declarator.accept(this);
+		plain_visit(x.ts);
+		x.dlr.accept(this);
 
-		x.code_rep[0] += x.type_specifier.code_rep[0];
+		x.code_rep[0] += x.ts.code_rep[0];
 		x.code_rep[0] += " ";
-		x.code_rep[0] += x.declarator.code_rep[0];
+		x.code_rep[0] += x.dlr.code_rep[0];
 	}
 
 	private void plain_visit(TypeSpecifier x) throws Exception
@@ -753,7 +753,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 
 		x.star_list.accept(this);
 		x.code_rep[0] += x.star_list.code_rep[0];
-		x.code_rep[0] += x.identifier;
+		x.code_rep[0] += x.name;
 	}
 
 	@Override
@@ -761,36 +761,36 @@ public class PrettyPrinter implements ASTNodeVisitor
 	{
 		int lc = 0;
 
-		x.type_specifier.accept(this);
-		lc += x.type_specifier.code_rep.length;
+		x.ts.accept(this);
+		lc += x.ts.code_rep.length;
 
-		x.func_name.accept(this);
+		x.pd.accept(this);
 
-		if (x.params != null)
-			x.params.accept(this);
+		if (x.pm != null)
+			x.pm.accept(this);
 
-		x.comp_stmt.accept(this);
-		lc += x.comp_stmt.code_rep.length;
+		x.cst.accept(this);
+		lc += x.cst.code_rep.length;
 
 		x.code_rep = new String[lc];
 		str_init(x.code_rep, lc);
 
 		int cl = 0;
-		for (String str : x.type_specifier.code_rep)
+		for (String str : x.ts.code_rep)
 			x.code_rep[cl++] += str;
 
 		--cl;
-		x.code_rep[cl] += (" " + x.func_name.code_rep[0]);
-		if (x.params == null)
+		x.code_rep[cl] += (" " + x.pd.code_rep[0]);
+		if (x.pm == null)
 			x.code_rep[cl++] += "()";
 		else
 		{
 			x.code_rep[cl] += "(";
-			x.code_rep[cl] += x.params.code_rep[0];
+			x.code_rep[cl] += x.pm.code_rep[0];
 			x.code_rep[cl++] += ")";
 		}
 
-		for (String str : x.comp_stmt.code_rep)
+		for (String str : x.cst.code_rep)
 			x.code_rep[cl++] += str;
 	}
 

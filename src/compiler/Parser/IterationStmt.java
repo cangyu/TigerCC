@@ -4,33 +4,33 @@ import compiler.AST.ASTNodeVisitor;
 
 public class IterationStmt extends Stmt
 {
-    public static enum Type
-    {
-        WHILE, FOR
-    };
+	public static final int WHILE = 0;
+	public static final int FOR = 0;
 
-    public Type iteration_type;
-    public Expr init, judge, next;
-    public Stmt stmt;
+	public int type;
+	public Expr init, judge, next;
+	public Stmt stmt;
 
-    public IterationStmt(Expr _cond, Stmt _s)
-    {
-        iteration_type = Type.WHILE;
-        judge = _cond;
-        stmt = _s;
-    }
+	public IterationStmt(Expr cond, Stmt st)
+	{
+		type = WHILE;
+		init = null;
+		judge = cond;
+		next = null;
+		stmt = st;
+	}
 
-    public IterationStmt(Expr _t1, Expr _t2, Expr _t3, Stmt _s)
-    {
-        iteration_type = Type.FOR;
-        init = _t1;
-        judge = _t2;
-        next = _t3;
-        stmt = _s;
-    }
+	public IterationStmt(Expr t1, Expr t2, Expr t3, Stmt st)
+	{
+		type = FOR;
+		init = t1;
+		judge = t2;
+		next = t3;
+		stmt = st;
+	}
 
-    public void accept(ASTNodeVisitor v) throws Exception
-    {
-        v.visit(this);
-    }
+	public void accept(ASTNodeVisitor v) throws Exception
+	{
+		v.visit(this);
+	}
 }

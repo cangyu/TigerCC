@@ -4,22 +4,21 @@ import compiler.AST.ASTNodeVisitor;
 
 public class JumpStmt extends Stmt
 {
-    public static enum Type
-    {
-        CONTINUE, BREAK, RETURN
-    };
+	public static final int CTNU = 0;
+	public static final int BRK = 1;
+	public static final int RET = 1;
 
-    public Type type;
-    public Expr expr;
+	public int type;
+	public Expr expr;
 
-    public JumpStmt(Type _jt, Expr _e)
-    {
-        type = _jt;
-        expr = _e;
-    }
+	public JumpStmt(int jt, Expr e)
+	{
+		type = jt;
+		expr = e;
+	}
 
-    public void accept(ASTNodeVisitor v) throws Exception
-    {
-        v.visit(this);
-    }
+	public void accept(ASTNodeVisitor v) throws Exception
+	{
+		v.visit(this);
+	}
 }

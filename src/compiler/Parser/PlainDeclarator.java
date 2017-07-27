@@ -5,17 +5,17 @@ import compiler.AST.ASTNodeVisitor;
 
 public class PlainDeclarator extends ASTNode
 {
-	public StarList star_list;
-	public String identifier;
-	
-	public PlainDeclarator(StarList _s, String _id)
+	public int star_num;
+	public String name;
+
+	public PlainDeclarator(int sn, String id)
 	{
-	    star_list = _s;
-	    identifier = _id;
+		star_num = sn;
+		name = id;
 	}
-	
-    public void accept(ASTNodeVisitor v) throws Exception
-    {
-        v.visit(this);
-    }
+
+	public void accept(ASTNodeVisitor v) throws Exception
+	{
+		v.visit(this);
+	}
 }

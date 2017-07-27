@@ -1,24 +1,35 @@
 package compiler.Parser;
 
 import compiler.AST.ASTNodeVisitor;
+import java.util.*;
 
 public class FuncDef extends ProgramComp
 {
-	public TypeSpecifier type_specifier;
-	public PlainDeclarator func_name;
-	public ParameterList params;
-	public CompoundStmt comp_stmt;
-	
-	public FuncDef(TypeSpecifier _ts, PlainDeclarator _fn, ParameterList _p, CompoundStmt _cs)
+	public TypeSpecifier ts;
+	public PlainDeclarator pd;
+	public LinkedList<PlainDeclaration> pm;
+	public CompoundStmt cst;
+
+	public FuncDef(TypeSpecifier _ts, PlainDeclarator _fn)
 	{
-		type_specifier = _ts;
-		func_name = _fn;
-		params = _p;
-		comp_stmt = _cs;
+		ts = _ts;
+		pd = _fn;
+		pm = new LinkedList<PlainDeclaration>();
+		cst = null;
 	}
-	
+
+	public void add_param(PlainDeclaration x)
+	{
+		pm.add(x);
+	}
+
+	public void add_body(CompoundStmt x)
+	{
+		cst = x;
+	}
+
 	public void accept(ASTNodeVisitor v) throws Exception
 	{
-	    v.visit(this);
+		v.visit(this);
 	}
 }

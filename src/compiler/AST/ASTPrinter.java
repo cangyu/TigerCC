@@ -701,8 +701,8 @@ public class ASTPrinter implements ASTNodeVisitor
 		// construct components and count lines
 		int lc = 1;
 
-		decl.type_specifier.accept(this);
-		lc += decl.type_specifier.ast_rep.length;
+		decl.ts.accept(this);
+		lc += decl.ts.ast_rep.length;
 
 		if (decl.init_declarator_list != null)
 		{
@@ -718,7 +718,7 @@ public class ASTPrinter implements ASTNodeVisitor
 
 		// add contents
 		int cl = 1;
-		for (String str : decl.type_specifier.ast_rep)
+		for (String str : decl.ts.ast_rep)
 			decl.ast_rep[cl++] += str;
 
 		if (decl.init_declarator_list != null)
@@ -1049,11 +1049,11 @@ public class ASTPrinter implements ASTNodeVisitor
 	{
 		// construct components and count lines
 		int lc = 1;
-		x.type_specifier.accept(this);
-		lc += x.type_specifier.ast_rep.length;
+		x.ts.accept(this);
+		lc += x.ts.ast_rep.length;
 
-		x.declarator.accept(this);
-		lc += x.declarator.ast_rep.length;
+		x.dlr.accept(this);
+		lc += x.dlr.ast_rep.length;
 
 		// initialize format
 		x.ast_rep = new String[lc];
@@ -1063,10 +1063,10 @@ public class ASTPrinter implements ASTNodeVisitor
 
 		// add contents
 		int cl = 1;
-		for (String str : x.type_specifier.ast_rep)
+		for (String str : x.ts.ast_rep)
 			x.ast_rep[cl++] += str;
 
-		for (String str : x.declarator.ast_rep)
+		for (String str : x.dlr.ast_rep)
 			x.ast_rep[cl++] += str;
 	}
 
@@ -1092,29 +1092,29 @@ public class ASTPrinter implements ASTNodeVisitor
 			for (String str : x.star_list.ast_rep)
 				x.ast_rep[cl++] += str;
 
-		x.ast_rep[cl++] += leading + "Identifier: " + x.identifier;
+		x.ast_rep[cl++] += leading + "Identifier: " + x.name;
 	}
 
 	/* Func */
 	public void visit(FuncDef func) throws Exception
 	{
 		// construct sub-nodes
-		func.type_specifier.accept(this);
+		func.ts.accept(this);
 
-		func.func_name.accept(this);
+		func.pd.accept(this);
 
-		if (func.params != null)
-			func.params.accept(this);
+		if (func.pm != null)
+			func.pm.accept(this);
 
-		func.comp_stmt.accept(this);
+		func.cst.accept(this);
 
 		// count length and initialize format
 		int lc = 1;
-		lc += func.type_specifier.ast_rep.length;
-		lc += func.func_name.ast_rep.length;
-		if (func.params != null)
-			lc += func.params.ast_rep.length;
-		lc += func.comp_stmt.ast_rep.length;
+		lc += func.ts.ast_rep.length;
+		lc += func.pd.ast_rep.length;
+		if (func.pm != null)
+			lc += func.pm.ast_rep.length;
+		lc += func.cst.ast_rep.length;
 
 		func.ast_rep = new String[lc];
 		func.ast_rep[0] = leading + "FuncDef";
@@ -1124,17 +1124,17 @@ public class ASTPrinter implements ASTNodeVisitor
 
 		// add nodes' content
 		int cl = 1;
-		for (String str : func.type_specifier.ast_rep)
+		for (String str : func.ts.ast_rep)
 			func.ast_rep[cl++] += str;
 
-		for (String str : func.func_name.ast_rep)
+		for (String str : func.pd.ast_rep)
 			func.ast_rep[cl++] += str;
 
-		if (func.params != null)
-			for (String str : func.params.ast_rep)
+		if (func.pm != null)
+			for (String str : func.pm.ast_rep)
 				func.ast_rep[cl++] += str;
 
-		for (String str : func.comp_stmt.ast_rep)
+		for (String str : func.cst.ast_rep)
 			func.ast_rep[cl++] += str;
 	}
 

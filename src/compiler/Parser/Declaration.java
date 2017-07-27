@@ -1,20 +1,26 @@
 package compiler.Parser;
 
 import compiler.AST.ASTNodeVisitor;
+import java.util.LinkedList;
 
 public class Declaration extends ProgramComp
 {
-	public TypeSpecifier type_specifier;
-	public InitDeclarators init_declarator_list;
-	
-	public Declaration(TypeSpecifier _ts, InitDeclarators _ids)
+	public TypeSpecifier ts;
+	public LinkedList<InitDeclarator> init;
+
+	public Declaration(TypeSpecifier _ts)
 	{
-		type_specifier = _ts;
-		init_declarator_list = _ids;
+		ts = _ts;
+		init = new LinkedList<InitDeclarator>();
 	}
-	
+
+	public void add_init(InitDeclarator x)
+	{
+		init.add(x);
+	}
+
 	public void accept(ASTNodeVisitor v) throws Exception
-    {
-        v.visit(this);
-    }
+	{
+		v.visit(this);
+	}
 }
