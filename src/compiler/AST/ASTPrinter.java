@@ -2,7 +2,7 @@ package compiler.AST;
 
 import java.util.Iterator;
 
-import compiler.Parser.ArgumentList;
+import compiler.Parser.Arguments;
 import compiler.Parser.AssignmentExpr;
 import compiler.Parser.BinaryExpr;
 import compiler.Parser.CastExpr;
@@ -16,7 +16,7 @@ import compiler.Parser.Expression;
 import compiler.Parser.ExpressionStmt;
 import compiler.Parser.FuncDef;
 import compiler.Parser.InitDeclarator;
-import compiler.Parser.InitDeclaratorList;
+import compiler.Parser.InitDeclarators;
 import compiler.Parser.Initializer;
 import compiler.Parser.InitializerList;
 import compiler.Parser.IterationStmt;
@@ -29,6 +29,7 @@ import compiler.Parser.PlainDeclarator;
 import compiler.Parser.PostfixExpr;
 import compiler.Parser.PrimaryExpr;
 import compiler.Parser.Program;
+import compiler.Parser.RecordEntry;
 import compiler.Parser.SelectionStmt;
 import compiler.Parser.StarList;
 import compiler.Parser.StmtList;
@@ -331,7 +332,7 @@ public class ASTPrinter implements ASTNodeVisitor
 			}
 			else if (pe.op == PostfixExpr.Operator.PAREN)
 			{
-				ArgumentList al = (ArgumentList) pe.param;
+				Arguments al = (Arguments) pe.param;
 				al.accept(this);
 				lc += al.ast_rep.length;
 			}
@@ -389,7 +390,7 @@ public class ASTPrinter implements ASTNodeVisitor
 			}
 			else if (pe.op == PostfixExpr.Operator.PAREN)
 			{
-				ArgumentList al = (ArgumentList) pe.param;
+				Arguments al = (Arguments) pe.param;
 				for (String str : al.ast_rep)
 					pe.ast_rep[cl++] += str;
 			}
@@ -874,10 +875,10 @@ public class ASTPrinter implements ASTNodeVisitor
 				id.ast_rep[cl++] += str;
 	}
 
-	public void visit(InitDeclaratorList ids) throws Exception
+	public void visit(InitDeclarators ids) throws Exception
 	{
 		// construct components
-		InitDeclaratorList _dl = ids;
+		InitDeclarators _dl = ids;
 		while (_dl != null)
 		{
 			_dl.head.accept(this);
@@ -1137,10 +1138,10 @@ public class ASTPrinter implements ASTNodeVisitor
 			func.ast_rep[cl++] += str;
 	}
 
-	public void visit(ArgumentList x) throws Exception
+	public void visit(Arguments x) throws Exception
 	{
 		// construct components
-		ArgumentList y = x;
+		Arguments y = x;
 		while (y != null)
 		{
 			y.head.accept(this);
@@ -1319,5 +1320,12 @@ public class ASTPrinter implements ASTNodeVisitor
 
 			cp = cp.next;
 		}
+	}
+
+	@Override
+	public void visit(RecordEntry recordEntry)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 }

@@ -1,53 +1,45 @@
 package compiler.Parser;
 
 import compiler.AST.ASTNodeVisitor;
+import java.util.*;
 
 public class PostfixExpr extends Expr
 {
-	public static enum Operator
+	class Postfix
 	{
-		MPAREN, PAREN, DOT, PTR, INC, DEC
-	};
+		public int type;
+		public Object content;
+		
+		public Postfix(int t, Object c)
+		{
+			type = t;
+			content = c;
+		}
+	}
+	
+	public static final int mparen = 0;
+	public static final int paren = 1;
+	public static final int dot = 2;
+	public static final int ptr = 3;
+	public static final int inc = 4;
+	public static final int dec = 5;
 
-	public Expr expr;
-	public Operator op;
-	public Object param;
+	public PrimaryExpr expr;
+	public LinkedList<Postfix> elem;
 
-	public PostfixExpr(Expr _pexpr, Operator _t, Object _param)
+	public PostfixExpr(PrimaryExpr pe)
 	{
-		expr = _pexpr;
-		param = _param;
-		op = _t;
+		expr = pe;
+		elem = new LinkedList<Postfix>();
+	}
+	
+	public void add_elem(int t, Object c)
+	{
+		elem.add(new Postfix(t, c));
 	}
 
 	public void accept(ASTNodeVisitor v) throws Exception
 	{
 		v.visit(this);
-	}
-
-	public static String getOperator(Operator op)
-	{
-		switch (op)
-		{
-		case MPAREN:
-			return "[]";
-		case PAREN:
-			return "()";
-		case DOT:
-			return ".";
-		case PTR:
-			return "->";
-		case INC:
-			return "++";
-		case DEC:
-			return "--";
-		default:
-			return "";
-		}
-	}
-
-	public String getOperator()
-	{
-		return getOperator(op);
 	}
 }

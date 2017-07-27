@@ -2,7 +2,7 @@ package compiler.AST;
 
 import java.util.*;
 
-import compiler.Parser.ArgumentList;
+import compiler.Parser.Arguments;
 import compiler.Parser.AssignmentExpr;
 import compiler.Parser.BinaryExpr;
 import compiler.Parser.CastExpr;
@@ -16,7 +16,7 @@ import compiler.Parser.Expression;
 import compiler.Parser.ExpressionStmt;
 import compiler.Parser.FuncDef;
 import compiler.Parser.InitDeclarator;
-import compiler.Parser.InitDeclaratorList;
+import compiler.Parser.InitDeclarators;
 import compiler.Parser.Initializer;
 import compiler.Parser.InitializerList;
 import compiler.Parser.IterationStmt;
@@ -29,6 +29,7 @@ import compiler.Parser.PlainDeclarator;
 import compiler.Parser.PostfixExpr;
 import compiler.Parser.PrimaryExpr;
 import compiler.Parser.Program;
+import compiler.Parser.RecordEntry;
 import compiler.Parser.SelectionStmt;
 import compiler.Parser.StarList;
 import compiler.Parser.StmtList;
@@ -172,7 +173,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 			x.code_rep[0] += "]";
 			break;
 		case PAREN:
-			ArgumentList args = (ArgumentList) x.param;
+			Arguments args = (Arguments) x.param;
 			args.accept(this);
 			x.code_rep[0] += "(";
 			x.code_rep[0] += args.code_rep[0];
@@ -531,12 +532,12 @@ public class PrettyPrinter implements ASTNodeVisitor
 	}
 
 	@Override
-	public void visit(InitDeclaratorList x) throws Exception
+	public void visit(InitDeclarators x) throws Exception
 	{
 		x.code_rep = new String[1];
 		str_init(x.code_rep, 1);
 
-		InitDeclaratorList y = x;
+		InitDeclarators y = x;
 		while (y != null)
 		{
 			y.head.accept(this);
@@ -794,12 +795,12 @@ public class PrettyPrinter implements ASTNodeVisitor
 	}
 
 	@Override
-	public void visit(ArgumentList x) throws Exception
+	public void visit(Arguments x) throws Exception
 	{
 		x.code_rep = new String[1];
 		str_init(x.code_rep, 1);
 
-		ArgumentList y = x;
+		Arguments y = x;
 		while (y != null)
 		{
 			y.head.accept(this);
@@ -931,5 +932,12 @@ public class PrettyPrinter implements ASTNodeVisitor
 			cl++;
 			y = y.next;
 		}
+	}
+
+	@Override
+	public void visit(RecordEntry recordEntry)
+	{
+		// TODO Auto-generated method stub
+
 	}
 }

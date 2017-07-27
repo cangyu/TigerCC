@@ -89,7 +89,7 @@ public class Parser
 			ret = new Declaration(t, null);
 		else
 		{
-			InitDeclaratorList ids = init_declarator_list();
+			InitDeclarators ids = init_declarators();
 			ret = new Declaration(t, ids);
 		}
 
@@ -99,6 +99,13 @@ public class Parser
 	private FuncDef function_definition() throws Exception
 	{
 		return null;
+	}
+
+	private InitDeclarators init_declarators() throws Exception
+	{
+		InitDeclarators ret = null;
+
+		return ret;
 	}
 
 	private InitDeclarator init_declarator() throws Exception
@@ -325,14 +332,106 @@ public class Parser
 
 	private TypeName type_name() throws Exception
 	{
-		TypeName ret = null;
+		TypeSpecifier x = type_specifier();
+		if (x == null)
+			panic("Unable to match a type-specifier when parsing type-name");
 
-		return ret;
+		int cnt = 0;
+		while (match(Tag.TIMES))
+			++cnt;
+
+		return new TypeName(x, cnt);
 	}
 
 	private UnaryExpr unary_expr() throws Exception
 	{
 		UnaryExpr ret = null;
+		if (match(Tag.BIT_AND))
+		{
+			CastExpr x = cast_expr();
+			if (x == null)
+				panic("Unable to match a cast expr when parsing unary expr.");
+
+			ret = new UnaryExpr(UnaryExpr.address, x);
+		}
+		else if (match(Tag.TIMES))
+		{
+			CastExpr x = cast_expr();
+			if (x == null)
+				panic("Unable to match a cast expr when parsing unary expr.");
+
+			ret = new UnaryExpr(UnaryExpr.dereference, x);
+		}
+		else if (match(Tag.PLUS))
+		{
+			CastExpr x = cast_expr();
+			if (x == null)
+				panic("Unable to match a cast expr when parsing unary expr.");
+
+			ret = new UnaryExpr(UnaryExpr.positive, x);
+		}
+		else if (match(Tag.MINUS))
+		{
+			CastExpr x = cast_expr();
+			if (x == null)
+				panic("Unable to match a cast expr when parsing unary expr.");
+
+			ret = new UnaryExpr(UnaryExpr.negative, x);
+		}
+		else if (match(Tag.BIT_NOT))
+		{
+			CastExpr x = cast_expr();
+			if (x == null)
+				panic("Unable to match a cast expr when parsing unary expr.");
+
+			ret = new UnaryExpr(UnaryExpr.bit_not, x);
+		}
+		else if (match(Tag.NOT))
+		{
+			CastExpr x = cast_expr();
+			if (x == null)
+				panic("Unable to match a cast expr when parsing unary expr.");
+
+			ret = new UnaryExpr(UnaryExpr.not, x);
+		}
+		else if (match(Tag.INC))
+		{
+			UnaryExpr x = unary_expr();
+			if (x == null)
+				panic("Unable to match an unary expr when parsing unary expr");
+
+			ret = new UnaryExpr(UnaryExpr.inc, x);
+		}
+		else if (match(Tag.DEC))
+		{
+			UnaryExpr x = unary_expr();
+			if (x == null)
+				panic("Unable to match an unary expr when parsing unary expr");
+
+			ret = new UnaryExpr(UnaryExpr.dec, x);
+		}
+		else if (match(Tag.SIZEOF)) // TODO: sizeof unary_expr
+		{
+			if (!match(Tag.LPAREN))
+				panic("Missing \'(\' when parsing unary expr.");
+
+			TypeName x = type_name();
+			if (x == null)
+				panic("Unable to match a type-name when parsing unary expr.");
+
+			if (!match(Tag.RPAREN))
+				panic("Missing \')\' when parsing unary expr.");
+
+			ret = new UnaryExpr(UnaryExpr.sizeof, x);
+		}
+		else
+		{
+			PostfixExpr x = postfix_expr();
+			if (x == null)
+				panic("Unable to match a postfix expr when parsing unary expr.");
+
+			ret = new UnaryExpr(UnaryExpr.postfix, x);
+		}
 
 		return ret;
 	}
@@ -343,39 +442,86 @@ public class Parser
 
 		PrimaryExpr pe = primary_expr();
 		if (pe == null)
-			panic("Unable to match a primary expr when parsing a postfix expr.");
+			panic("Unable to match a primary expr when parsing postfix expr.");
 
+		ret = new PostfixExpr(pe);
 		for (;;)
 		{
 			if (match(Tag.LMPAREN))
 			{
+				Expr e = expr();
+				if (e == null)
+					panic("Unable to match an expression when parsing postfix in postfix expr.");
 
+				if (!match(Tag.RMPAREN))
+					panic("Missing \']\'.");
+
+				ret.add_elem(PostfixExpr.mparen, e);
 			}
 			else if (match(Tag.LPAREN))
 			{
+				if (cur_is(Tag.RPAREN))
+				{
+					ret.add_elem(PostfixExpr.paren, null);
+					move();
+				}
+				else
+				{
+					Arguments arg = arguments();
+					if (!match(Tag.RPAREN))
+						panic("Missing \')\'.");
 
+					ret.add_elem(PostfixExpr.paren, arg);
+				}
 			}
 			else if (match(Tag.DOT))
 			{
+				if (!cur_is(Tag.ID))
+					panic("Unable to match a identifier when parsing postfix.");
 
+				String name = ((Identifier) look).name;
+				ret.add_elem(PostfixExpr.dot, name);
+				move();
 			}
 			else if (match(Tag.PTR))
 			{
+				if (!cur_is(Tag.ID))
+					panic("Unable to match a identifier when parsing postfix.");
 
+				String name = ((Identifier) look).name;
+				ret.add_elem(PostfixExpr.ptr, name);
+				move();
 			}
 			else if (match(Tag.INC))
-			{
-
-			}
+				ret.add_elem(PostfixExpr.inc, null);
 			else if (match(Tag.DEC))
-			{
-
-			}
+				ret.add_elem(PostfixExpr.dec, null);
 			else
-			{
-				panic("Unable to match a postfix.");
 				break;
-			}
+		}
+
+		return ret;
+	}
+
+	private Arguments arguments() throws Exception
+	{
+		Arguments ret = null;
+
+		AssignmentExpr x = assignment_expr();
+		if (x == null)
+			panic("Unable to match the first asssignment expr when parsing arguments.");
+
+		ret = new Arguments();
+		ret.add_elem(x);
+
+		int cnt = 1;
+		while (match(Tag.COMMA))
+		{
+			x = assignment_expr();
+			if (x == null)
+				panic("Unable to match the " + num2idx(cnt++) + " asssignment expr when parsing arguments.");
+
+			ret.add_elem(x);
 		}
 
 		return ret;
@@ -392,17 +538,29 @@ public class Parser
 		else
 		{
 			if (!match(Tag.LPAREN))
-				panic("Missing \'(\' when parsing a primary expr.");
+				panic("Missing \'(\' when parsing primary expr.");
 
 			Expr e = expr();
 			if (e == null)
-				panic("Failed to match an expr when parsing a primary expr.");
+				panic("Failed to match an expr when parsing primary expr.");
 
 			ret = new PrimaryExpr(e);
 			if (!match(Tag.RPAREN))
-				panic("Missing \')\' when parsing a primary expr.");
+				panic("Missing \')\' when parsing primary expr.");
 		}
 
 		return ret;
+	}
+
+	private String num2idx(int n)
+	{
+		if (n == 1)
+			return "1st".intern();
+		else if (n == 2)
+			return "2nd".intern();
+		else if (n == 3)
+			return "3rd".intern();
+		else
+			return n + "th".intern();
 	}
 }

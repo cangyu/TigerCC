@@ -1,24 +1,27 @@
 package compiler.Parser;
 
 import compiler.AST.ASTNodeVisitor;
-import compiler.Parser.AssignmentExpr.Operator;
 
 public class UnaryExpr extends Expr
 {
-	public static enum Operator
-	{
-		BIT_AND, STAR, POSITIVE, NEGATIVE, BIT_NOT, NOT, SIZEOF, INC, DEC
-	};
+	public static final int postfix = 0;
+	public static final int inc = 1;
+	public static final int dec = 2;
+	public static final int address = 3;
+	public static final int dereference = 4;
+	public static final int positive = 5;
+	public static final int negative = 6;
+	public static final int bit_not = 7;
+	public static final int not = 8;
+	public static final int sizeof = 9;
 
-	public Operator op;
-	public Expr expr;
-	public TypeName type_name;
+	public int type;
+	public Object elem;
 
-	public UnaryExpr(Operator _t, Expr _e, TypeName _tn)
+	public UnaryExpr(int t, Object c)
 	{
-		op = _t;
-		expr = _e;
-		type_name = _tn;
+		type = t;
+		elem = c;
 	}
 
 	public void accept(ASTNodeVisitor v) throws Exception
@@ -26,35 +29,30 @@ public class UnaryExpr extends Expr
 		v.visit(this);
 	}
 
-	public static String getOperator(Operator op)
-	{
-		switch (op)
-		{
-		case BIT_AND:
-			return "&";
-		case STAR:
-			return "*";
-		case POSITIVE:
-			return "+";
-		case NEGATIVE:
-			return "-";
-		case BIT_NOT:
-			return "~";
-		case NOT:
-			return "!";
-		case SIZEOF:
-			return "sizeof";
-		case INC:
-			return "++";
-		case DEC:
-			return "--";
-		default:
-			return "";
-		}
-	}
-
 	public String getOperator()
 	{
-		return getOperator(op);
+		switch (type)
+		{
+		case address:
+			return "&".intern();
+		case dereference:
+			return "*".intern();
+		case positive:
+			return "+".intern();
+		case negative:
+			return "-".intern();
+		case bit_not:
+			return "~".intern();
+		case not:
+			return "!".intern();
+		case sizeof:
+			return "sizeof".intern();
+		case inc:
+			return "++".intern();
+		case dec:
+			return "--".intern();
+		default:
+			return "".intern();
+		}
 	}
 }

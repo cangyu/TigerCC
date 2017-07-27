@@ -8,15 +8,15 @@ import compiler.AST.ASTNodeVisitor;
 public class Declarator extends ASTNode
 {
 	public PlainDeclarator plain_declarator;
-	public LinkedList<Expr> dimension;
+	public LinkedList<ConstantExpr> dimension;
 
 	public Declarator(PlainDeclarator _pd)
 	{
 		plain_declarator = _pd;
-		dimension = new LinkedList<Expr>();
+		dimension = new LinkedList<ConstantExpr>();
 	}
 
-	public void add_expr(Expr e)
+	public void add_expr(ConstantExpr e)
 	{
 		dimension.add(e);
 	}
