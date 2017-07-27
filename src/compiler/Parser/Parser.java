@@ -101,6 +101,20 @@ public class Parser
 		return null;
 	}
 
+	private InitDeclarator init_declarator() throws Exception
+	{
+		InitDeclarator ret = null;
+
+		return ret;
+	}
+
+	private Initializer initializer() throws Exception
+	{
+		Initializer ret = null;
+
+		return ret;
+	}
+
 	private TypeSpecifier type_specifier() throws Exception
 	{
 		TypeSpecifier ret = null;
@@ -196,9 +210,9 @@ public class Parser
 		} while (look.tag != Tag.RBRACE);
 	}
 
-	private InitDeclaratorList init_declarator_list() throws Exception
+	private PlainDeclaration plain_declaration() throws Exception
 	{
-		InitDeclaratorList ret = null;
+		PlainDeclaration ret = null;
 
 		return ret;
 	}
@@ -213,7 +227,7 @@ public class Parser
 		ret = new Declarator(pdlr);
 		while (match(Tag.LMPAREN))
 		{
-			Expr e = const_expr();
+			ConstantExpr e = const_expr();
 			if (e == null)
 				panic("Unable to match a const expression.");
 			ret.add_expr(e);
@@ -232,6 +246,48 @@ public class Parser
 		return ret;
 	}
 
+	private Stmt stmt() throws Exception
+	{
+		Stmt ret = null;
+
+		return ret;
+	}
+
+	private ExpressionStmt expression_stmt() throws Exception
+	{
+		ExpressionStmt ret = null;
+
+		return ret;
+	}
+
+	private CompoundStmt compound_stmt() throws Exception
+	{
+		CompoundStmt ret = null;
+
+		return ret;
+	}
+
+	private SelectionStmt selection_stmt() throws Exception
+	{
+		SelectionStmt ret = null;
+
+		return ret;
+	}
+
+	private IterationStmt iteration_stmt() throws Exception
+	{
+		IterationStmt ret = null;
+
+		return ret;
+	}
+
+	private JumpStmt jump_stmt() throws Exception
+	{
+		JumpStmt ret = null;
+
+		return ret;
+	}
+
 	private Expr expr() throws Exception
 	{
 		Expr ret = null;
@@ -239,9 +295,44 @@ public class Parser
 		return ret;
 	}
 
-	private Expr const_expr() throws Exception
+	private AssignmentExpr assignment_expr() throws Exception
 	{
-		Expr ret = null;
+		AssignmentExpr ret = null;
+
+		return ret;
+	}
+
+	private ConstantExpr const_expr() throws Exception
+	{
+		ConstantExpr ret = null;
+
+		return ret;
+	}
+
+	private BinaryExpr binary_expr() throws Exception
+	{
+		BinaryExpr ret = null;
+
+		return ret;
+	}
+
+	private CastExpr cast_expr() throws Exception
+	{
+		CastExpr ret = null;
+
+		return ret;
+	}
+
+	private TypeName type_name() throws Exception
+	{
+		TypeName ret = null;
+
+		return ret;
+	}
+
+	private UnaryExpr unary_expr() throws Exception
+	{
+		UnaryExpr ret = null;
 
 		return ret;
 	}
@@ -290,13 +381,6 @@ public class Parser
 		return ret;
 	}
 
-	private AssignmentExpr assignment_expr() throws Exception
-	{
-		AssignmentExpr ret = null;
-
-		return ret;
-	}
-
 	private PrimaryExpr primary_expr() throws Exception
 	{
 		PrimaryExpr ret = null;
@@ -307,34 +391,17 @@ public class Parser
 		}
 		else
 		{
-			if (match(Tag.LPAREN))
-			{
-				Expr e = expr();
-				if (e == null)
-					panic("Failed to match an expr when parsing a primary expr.");
-				else
-					ret = new PrimaryExpr(e);
-
-				if (!match(Tag.RPAREN))
-					panic("Missing \')\' when parsing a primary expr.");
-			}
-			else
+			if (!match(Tag.LPAREN))
 				panic("Missing \'(\' when parsing a primary expr.");
-		}
 
-		return ret;
-	}
+			Expr e = expr();
+			if (e == null)
+				panic("Failed to match an expr when parsing a primary expr.");
 
-	private Constant constant() throws Exception
-	{
-		Constant ret = null;
-		if (cur_is(Tag.CH) || cur_is(Tag.NUM) || cur_is(Tag.REAL))
-		{
-			ret = new Constant(look);
-			move();
+			ret = new PrimaryExpr(e);
+			if (!match(Tag.RPAREN))
+				panic("Missing \')\' when parsing a primary expr.");
 		}
-		else
-			panic("Unable to match a constant.");
 
 		return ret;
 	}
