@@ -6,17 +6,17 @@ import java.util.LinkedList;
 public class Declaration extends ProgramComp
 {
 	public TypeSpecifier ts;
-	public LinkedList<InitDeclarator> init;
+	public LinkedList<InitDeclarator> elem;
 
 	public Declaration(TypeSpecifier _ts)
 	{
 		ts = _ts;
-		init = new LinkedList<InitDeclarator>();
+		elem = new LinkedList<InitDeclarator>();
 	}
 
-	public void add_init(InitDeclarator x)
+	public void add_elem(InitDeclarator x)
 	{
-		init.add(x);
+		elem.add(x);
 	}
 
 	public void accept(ASTNodeVisitor v) throws Exception

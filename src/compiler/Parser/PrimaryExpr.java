@@ -45,7 +45,7 @@ public class PrimaryExpr extends Expr
 			Str t = (Str) e;
 			elem = t.lexeme;
 		}
-		else if (e instanceof Expr)
+		else if (e instanceof Expression)
 		{
 			type = paren_expr;
 			elem = e;

@@ -1,9 +1,8 @@
 package compiler.Parser;
 
 import java.io.*;
+import java.util.*;
 import compiler.Lexer.*;
-import compiler.Lexer.Char;
-import compiler.Lexer.Int;
 import compiler.Symbols.*;
 import compiler.AST.*;
 import compiler.Types.*;
@@ -13,68 +12,100 @@ public class Parser
 {
 	private Lexer lex;
 	private Token look;
+	private LinkedList<Token> token_stream_buf, derivation_buf;
 
 	public Parser(Lexer x)
 	{
 		lex = x;
+		token_stream_buf = new LinkedList<Token>();
+		derivation_buf = new LinkedList<Token>();
 	}
 
-	private void panic(String msg) throws Exception
+	private Token next() throws IOException
 	{
-		throw new Exception(String.format("(Line %d, Column %d): %s", look.line, look.column, msg));
+		if (!token_stream_buf.isEmpty())
+			return token_stream_buf.pop();
+
+		for (;;)
+		{
+			Token tmp = lex.next_token();
+			if (tmp.tag != Tag.LINECOMMENT && tmp.tag != Tag.BLKCOMMENT)
+				return tmp;
+		}
 	}
 
-	private boolean match(Tag t) throws Exception
+	private void advance() throws IOException
+	{
+		look = next();
+		derivation_buf.add(look);
+	}
+
+	private void dump_cur_derivation()
+	{
+		while (!derivation_buf.isEmpty())
+		{
+			Token tmp = derivation_buf.removeLast();
+			token_stream_buf.push(tmp);
+		}
+	}
+
+	private void clear_cur_derivation()
+	{
+		derivation_buf.clear();
+	}
+
+	private boolean match(Tag t) throws IOException
 	{
 		if (look.tag == t)
 		{
-			move();
+			advance();
 			return true;
 		}
 		else
 			return false;
 	}
 
-	private boolean cur_is(Tag t)
+	private boolean peek(Tag t)
 	{
 		return look.tag == t;
 	}
 
-	private void move() throws IOException
-	{
-		for (;;)
-		{
-			look = lex.next_token();
-			if (look.tag != Tag.LINECOMMENT && look.tag != Tag.BLKCOMMENT)
-				break;
-		}
-	}
-
 	public Program parse() throws Exception
 	{
-		move();
+		advance();
 		return program();
 	}
 
 	private Program program() throws Exception
 	{
-		Program ret = new Program(); // program: (declaration | function_definition)+
+		Program ret = new Program(); // program: (declaration | function-definition)+
 
 		for (;;)
 		{
-			if (cur_is(Tag.EOF))
+			if (peek(Tag.EOF))
 				break;
 
 			Declaration decl = declaration();
 			if (decl != null)
+			{
 				ret.add_elem(decl);
+				clear_cur_derivation();
+			}
 			else
 			{
+				dump_cur_derivation();
 				FuncDef funcdef = function_definition();
 				if (funcdef != null)
+				{
 					ret.add_elem(funcdef);
+					clear_cur_derivation();
+				}
 				else
-					panic("Unable to match a declaration nor a function definition.");
+				{
+					dump_cur_derivation();
+					panic("Unable to match a declaration nor a function-definition.");
+					return null;
+				}
 			}
 		}
 
@@ -85,22 +116,34 @@ public class Parser
 	{
 		TypeSpecifier t = type_specifier();
 		if (t == null)
+		{
 			panic("Unable to match the type-specifier when parsing declaration.");
+			return null;
+		}
+
+		if (match(Tag.SEMI))
+			return new Declaration(t);
+
+		int cnt = 1;
+		InitDeclarator x = init_declarator();
+		if (x == null)
+		{
+			panic("Unable to match the " + num2idx(cnt) + " init-declarator when parsing declaration.");
+			return null;
+		}
 
 		Declaration ret = new Declaration(t);
-		if (!match(Tag.SEMI))
+		ret.add_elem(x);
+		while (match(Tag.COMMA))
 		{
-			InitDeclarator x = init_declarator();
+			x = init_declarator();
+			++cnt;
 			if (x == null)
-				panic("Unable to match the init-declarator when parsing declaration.");
-			ret.add_init(x);
-			while (match(Tag.COMMA))
 			{
-				x = init_declarator();
-				if (x == null)
-					panic("Unable to match the init-declarator when parsing declaration.");
-				ret.add_init(x);
+				panic("Unable to match the " + num2idx(cnt) + " init-declarator when parsing declaration.");
+				return null;
 			}
+			ret.add_elem(x);
 		}
 
 		return ret;
@@ -110,59 +153,86 @@ public class Parser
 	{
 		TypeSpecifier ts = type_specifier();
 		if (ts == null)
+		{
 			panic("Unable to match the typs-specifier when parsing function-definition.");
+			return null;
+		}
 
 		PlainDeclarator pd = plain_declarator();
 		if (pd == null)
+		{
 			panic("Unable to match the plain-declarator when parsing function-definition.");
+			return null;
+		}
 
 		if (!match(Tag.LPAREN))
+		{
 			panic("Missing \'(\'.");
+			return null;
+		}
 
 		FuncDef ret = new FuncDef(ts, pd);
 
-		if (!cur_is(Tag.RPAREN))
+		if (!peek(Tag.RPAREN))
 		{
-			int cnt = 0;
+			int cnt = 1;
 			PlainDeclaration x = plain_declaration();
 			if (x == null)
-				panic("Unable to match the " + num2idx(cnt++) + " parameter when parsing function-definition.");
+			{
+				panic("Unable to match the " + num2idx(cnt) + " parameter when parsing function-definition.");
+				return null;
+			}
+
 			ret.add_param(x);
 			while (match(Tag.COMMA))
 			{
 				x = plain_declaration();
+				++cnt;
 				if (x == null)
+				{
 					panic("Unable to match the " + num2idx(cnt++) + " parameter when parsing function-definition.");
+					return null;
+				}
+
 				ret.add_param(x);
 			}
 		}
 
 		if (!match(Tag.RPAREN))
+		{
 			panic("Missing \')\'.");
+			return null;
+		}
 
 		CompoundStmt y = compound_stmt();
 		if (y == null)
+		{
 			panic("Unable to match the compound-statement when parsing function-definition.");
+			return null;
+		}
 
 		ret.add_body(y);
-
 		return ret;
 	}
 
 	private InitDeclarator init_declarator() throws Exception
 	{
-		Declarator x = null;
-		Initializer y = null;
-
-		x = declarator();
+		Declarator x = declarator();
 		if (x == null)
+		{
 			panic("Unable to match the declarator when parsing init-declarator.");
+			return null;
+		}
 
+		Initializer y = null;
 		if (match(Tag.ASSIGN))
 		{
 			y = initializer();
 			if (y == null)
+			{
 				panic("Unable to match the initializer when parsing init-declarator.");
+				return null;
+			}
 		}
 
 		return new InitDeclarator(x, y);
@@ -170,162 +240,232 @@ public class Parser
 
 	private Initializer initializer() throws Exception
 	{
-		Initializer ret = null;
 		if (match(Tag.LBRACE))
 		{
-			ret = new Initializer();
+			Initializer ret = new Initializer();
+
+			int cnt = 1;
 			Initializer x = initializer();
 			if (x == null)
-				panic("Unable to match the initilaizer when parsing \'listed\' initilalizer.");
-			ret.add_initializer(x);
+			{
+				panic("Unable to match the " + num2idx(cnt) + " initilaizer when parsing \'listed\' initilalizer.");
+				return null;
+			}
+			else
+				ret.add_initializer(x);
 
 			while (match(Tag.COMMA))
 			{
 				x = initializer();
+				++cnt;
 				if (x == null)
-					panic("Unable to match the initilaizer when parsing \'listed\' initilalizer.");
-				ret.add_initializer(x);
+				{
+					panic("Unable to match the " + num2idx(cnt) + " initilaizer when parsing \'listed\' initilalizer.");
+					return null;
+				}
+				else
+					ret.add_initializer(x);
 			}
 
 			if (!match(Tag.RBRACE))
+			{
 				panic("Missing \'}\'.");
+				return null;
+			}
+			else
+				return ret;
 		}
 		else
 		{
 			AssignmentExpr ae = assignment_expr();
 			if (ae == null)
+			{
 				panic("Unable to match the assignment when parsing initializer.");
-
-			ret = new Initializer(ae);
+				return null;
+			}
+			else
+				return new Initializer(ae);
 		}
-
-		return ret;
 	}
 
 	private TypeSpecifier type_specifier() throws Exception
 	{
 		TypeSpecifier ret = null;
+
 		if (match(Tag.VOID))
-			ret = TypeSpecifier.TS_VOID; // type_specifier: 'void'
+			return TypeSpecifier.TS_VOID;
 		else if (match(Tag.INT))
-			ret = TypeSpecifier.TS_INT; // type_specifier: 'int'
+			return TypeSpecifier.TS_INT;
 		else if (match(Tag.CHAR))
-			ret = TypeSpecifier.TS_CHAR; // type_specifier: 'char'
+			return TypeSpecifier.TS_CHAR;
 		else if (match(Tag.FLOAT))
-			ret = TypeSpecifier.TS_FLOAT; // type_specifier: 'float'
+			return TypeSpecifier.TS_FLOAT;
 		else if (match(Tag.STRUCT))
 		{
-			if (look.tag == Tag.ID)
+			if (peek(Tag.ID))
 			{
 				String name = ((Identifier) look).name;
 				ret = new TypeSpecifier(TypeSpecifier.ts_struct, name); // type_specifeir: struct identifier
-				move();
+				advance();
 
 				if (match(Tag.LBRACE)) // type_specifier: struct identifier { (type_specifier declarator+ ;)+ }
 				{
 					handle_record_entry(ret);
-					match(Tag.RBRACE);
+					if (!match(Tag.RBRACE))
+					{
+						panic("Missing \'}\'.");
+						return null;
+					}
 				}
 			}
 			else if (match(Tag.LBRACE)) // type_specifier: struct { (type_specifier declarator+ ;)+ }
 			{
 				ret = new TypeSpecifier(TypeSpecifier.ts_struct);
 				handle_record_entry(ret);
-				match(Tag.RBRACE);
+				if (!match(Tag.RBRACE))
+				{
+					panic("Missing \'}\'.");
+					return null;
+				}
 			}
 			else
+			{
 				panic("Invalid struct declaration.");
+				return null;
+			}
 		}
 		else if (match(Tag.UNION))
 		{
-			if (look.tag == Tag.ID)
+			if (peek(Tag.ID))
 			{
 				String name = ((Identifier) look).name;
 				ret = new TypeSpecifier(TypeSpecifier.ts_union, name); // type_specifeir: union identifier
-				move();
+				advance();
 
 				if (match(Tag.LBRACE)) // type_specifier: union identifier { (type_specifier declarator+ ;)+ }
 				{
 					handle_record_entry(ret);
-					match(Tag.RBRACE);
+					if (!match(Tag.RBRACE))
+					{
+						panic("Missing \'}\'.");
+						return null;
+					}
 				}
 			}
 			else if (match(Tag.LBRACE)) // type_specifier: union { (type_specifier declarator+ ;)+ }
 			{
 				ret = new TypeSpecifier(TypeSpecifier.ts_union);
 				handle_record_entry(ret);
-				match(Tag.RBRACE);
+				if (!match(Tag.RBRACE))
+				{
+					panic("Missing \'}\'.");
+					return null;
+				}
 			}
 			else
+			{
 				panic("Invalid union declaration.");
+				return null;
+			}
 		}
 		else
+		{
 			panic("Unable to match a type.");
+			return null;
+		}
 
 		return ret;
 	}
 
 	private void handle_record_entry(TypeSpecifier x) throws Exception
 	{
-		if (x.ts_type != TypeSpecifier.ts_struct || x.ts_type != TypeSpecifier.ts_union)
-			panic("Internal error.");
-
 		do
 		{
+			// type-specifier
 			TypeSpecifier ct = type_specifier();
 			if (ct == null)
+			{
 				panic("Failed to match a type specifier in record.");
-
+				x = null;
+				return;
+			}
 			RecordEntry re = new RecordEntry(ct);
 
-			for (;;)
+			// declarators
+			Declarator dlr = null;
+			int cnt = 0;
+			do
 			{
-				Declarator dlr = declarator();
+				dlr = declarator();
+				++cnt;
 				if (dlr == null)
-					panic("Failed to match a declarator in record.");
+				{
+					panic("Failed to match the " + num2idx(cnt) + " declarator in record.");
+					x = null;
+					return;
+				}
 				else
 					re.add_elem(dlr);
 
-				if (match(Tag.COMMA))
-					break;
-			}
-			x.add_entry(re);
+			} while (match(Tag.COMMA));
 
 			if (!match(Tag.SEMI))
-				panic("Missing \';\' at the end of record entry declaration.");
+			{
+				panic("Missing \';\' at the end of record entry.");
+				x = null;
+				return;
+			}
+			else
+				x.add_entry(re);
 
-		} while (look.tag != Tag.RBRACE);
+		} while (!peek(Tag.RBRACE));
 	}
 
 	private PlainDeclaration plain_declaration() throws Exception
 	{
 		TypeSpecifier x = type_specifier();
 		if (x == null)
+		{
 			panic("Unable to match the type-specifier when parsing plain-declaration.");
+			return null;
+		}
+
 		Declarator y = declarator();
 		if (y == null)
+		{
 			panic("Unable to match the declarator when parsing plain-declaration.");
+			return null;
+		}
 
 		return new PlainDeclaration(x, y);
 	}
 
 	private Declarator declarator() throws Exception
 	{
-		Declarator ret = null;
 		PlainDeclarator pdlr = plain_declarator();
 		if (pdlr == null)
+		{
 			panic("Unable to match a plain declarator.");
+			return null;
+		}
 
-		ret = new Declarator(pdlr);
+		Declarator ret = new Declarator(pdlr);
 		while (match(Tag.LMPAREN))
 		{
 			ConstantExpr e = const_expr();
 			if (e == null)
+			{
 				panic("Unable to match a const expression.");
-			ret.add_expr(e);
+				return null;
+			}
+			else
+				ret.add_expr(e);
 
 			if (!match(Tag.RMPAREN))
-				panic("Missing \']\'");
+			{
+				panic("Missing \']\'.");
+				return null;
+			}
 		}
 
 		return ret;
@@ -337,12 +477,17 @@ public class Parser
 		while (match(Tag.TIMES))
 			++n;
 
-		if (!cur_is(Tag.ID))
+		if (!peek(Tag.ID))
+		{
 			panic("Unable to match the identifier when parsing plain-declarator.");
-
-		String name = ((Identifier) look).name;
-		move();
-		return new PlainDeclarator(n, name);
+			return null;
+		}
+		else
+		{
+			String name = ((Identifier) look).name;
+			advance();
+			return new PlainDeclarator(n, name);
+		}
 	}
 
 	private Stmt stmt() throws Exception
@@ -352,18 +497,26 @@ public class Parser
 		ret = expression_stmt();
 		if (ret != null)
 			return ret;
+		else
+			dump_cur_derivation();
 
 		ret = compound_stmt();
 		if (ret != null)
 			return ret;
+		else
+			dump_cur_derivation();
 
 		ret = selection_stmt();
 		if (ret != null)
 			return ret;
+		else
+			dump_cur_derivation();
 
 		ret = iteration_stmt();
 		if (ret != null)
 			return ret;
+		else
+			dump_cur_derivation();
 
 		ret = jump_stmt();
 		if (ret != null)
@@ -381,10 +534,16 @@ public class Parser
 		{
 			Expression x = expression();
 			if (x == null)
+			{
 				panic("Unable to match an expression when parsing expression-statement.");
+				return null;
+			}
 
 			if (!match(Tag.SEMI))
+			{
 				panic("Missing \';\'.");
+				return null;
+			}
 
 			return new ExpressionStmt(x);
 		}
@@ -394,13 +553,19 @@ public class Parser
 	{
 		CompoundStmt ret = new CompoundStmt();
 		if (!match(Tag.LBRACE))
+		{
 			panic("Missing \'{\'.");
+			return null;
+		}
 
 		for (;;)
 		{
 			Declaration x = declaration();
 			if (x == null)
+			{
+				dump_cur_derivation();
 				break;
+			}
 
 			ret.add_decl(x);
 		}
@@ -409,13 +574,19 @@ public class Parser
 		{
 			Stmt x = stmt();
 			if (x == null)
+			{
+				dump_cur_derivation();
 				break;
+			}
 
 			ret.add_stmt(x);
 		}
 
 		if (!match(Tag.RBRACE))
+		{
 			panic("Missing \'}\'.");
+			return null;
+		}
 
 		return ret;
 	}
@@ -477,7 +648,7 @@ public class Parser
 			if (!match(Tag.LPAREN))
 				panic("Missing \'(\' in \'for\' iteration-statement.");
 			Expression init = null, judge = null, next = null;
-			if (!cur_is(Tag.SEMI))
+			if (!peek(Tag.SEMI))
 			{
 				init = expression();
 				if (init == null)
@@ -486,7 +657,7 @@ public class Parser
 			if (!match(Tag.SEMI))
 				panic("Missing \';\' in \'for\' iteration-statement.");
 
-			if (!cur_is(Tag.SEMI))
+			if (!peek(Tag.SEMI))
 			{
 				judge = expression();
 				if (judge == null)
@@ -495,7 +666,7 @@ public class Parser
 			if (!match(Tag.SEMI))
 				panic("Missing \';\' in \'for\' iteration-statement.");
 
-			if (!cur_is(Tag.RPAREN))
+			if (!peek(Tag.RPAREN))
 			{
 				next = expression();
 				if (next == null)
@@ -525,7 +696,7 @@ public class Parser
 			ret = new JumpStmt(JumpStmt.BRK, null);
 		else if (match(Tag.RETURN))
 		{
-			if (cur_is(Tag.SEMI))
+			if (peek(Tag.SEMI))
 				ret = new JumpStmt(JumpStmt.RET, null);
 			else
 			{
@@ -727,10 +898,10 @@ public class Parser
 			}
 			else if (match(Tag.LPAREN))
 			{
-				if (cur_is(Tag.RPAREN))
+				if (peek(Tag.RPAREN))
 				{
 					ret.add_elem(PostfixExpr.paren, null);
-					move();
+					advance();
 				}
 				else
 				{
@@ -743,21 +914,21 @@ public class Parser
 			}
 			else if (match(Tag.DOT))
 			{
-				if (!cur_is(Tag.ID))
+				if (!peek(Tag.ID))
 					panic("Unable to match a identifier when parsing postfix.");
 
 				String name = ((Identifier) look).name;
 				ret.add_elem(PostfixExpr.dot, name);
-				move();
+				advance();
 			}
 			else if (match(Tag.PTR))
 			{
-				if (!cur_is(Tag.ID))
+				if (!peek(Tag.ID))
 					panic("Unable to match a identifier when parsing postfix.");
 
 				String name = ((Identifier) look).name;
 				ret.add_elem(PostfixExpr.ptr, name);
-				move();
+				advance();
 			}
 			else if (match(Tag.INC))
 				ret.add_elem(PostfixExpr.inc, null);
@@ -797,23 +968,24 @@ public class Parser
 	private PrimaryExpr primary_expr() throws Exception
 	{
 		PrimaryExpr ret = null;
-		if (cur_is(Tag.ID) || cur_is(Tag.CH) || cur_is(Tag.NUM) || cur_is(Tag.REAL) || cur_is(Tag.STR))
+		if (peek(Tag.ID) || peek(Tag.CH) || peek(Tag.NUM) || peek(Tag.REAL) || peek(Tag.STR))
 		{
 			ret = new PrimaryExpr(look);
-			move();
+			advance();
 		}
 		else
 		{
 			if (!match(Tag.LPAREN))
-				panic("Missing \'(\' when parsing primary expr.");
+				panic("Missing \'(\' when parsing primary-expr.");
 
 			Expression x = expression();
 			if (x == null)
-				panic("Failed to match an expr when parsing primary expr.");
+				panic("Failed to match an expr when parsing primary-expr.");
+
+			if (!match(Tag.RPAREN))
+				panic("Missing \')\' when parsing primary-expr.");
 
 			ret = new PrimaryExpr(x);
-			if (!match(Tag.RPAREN))
-				panic("Missing \')\' when parsing primary expr.");
 		}
 
 		return ret;
@@ -829,5 +1001,11 @@ public class Parser
 			return "3rd".intern();
 		else
 			return n + "th".intern();
+	}
+
+	private void panic(String msg)
+	{
+		String info = String.format("(Line %d, Column %d): %s", look.line, look.column, msg);
+		System.out.println(info);
 	}
 }
