@@ -2,21 +2,32 @@ package compiler.Parser;
 
 import compiler.AST.ASTNodeVisitor;
 
-public class BinaryExpr extends Expr
+public abstract class BinaryExpr extends Expr
 {
-	public static enum Operator
-	{
-		BIT_AND, BIT_XOR, BIT_OR, AND, OR, EQ, NE, LT, GT, LE, GE, SHL, SHR, PLUS, MINUS, TIMES, DIVIDE, MODULE
-	};
+	public static final int BIT_AND = 0;
+	public static final int BIT_XOR = 1;
+	public static final int BIT_OR = 2;
+	public static final int AND = 3;
+	public static final int OR = 4;
+	public static final int EQ = 5;
+	public static final int NE = 6;
+	public static final int LT = 7;
+	public static final int GT = 8;
+	public static final int LE = 9;
+	public static final int GE = 10;
+	public static final int SHL = 11;
+	public static final int SHR = 12;
+	public static final int PLUS = 13;
+	public static final int MINUS = 14;
+	public static final int TIMES = 15;
+	public static final int DIVIDE = 16;
+	public static final int MODULE = 17;
 
-	public Operator op;
-	public Expr left, right;
+	public int op;
 
-	public BinaryExpr(Operator _t, Expr _l, Expr _r)
+	public BinaryExpr(int _t)
 	{
 		op = _t;
-		left = _l;
-		right = _r;
 	}
 
 	public void accept(ASTNodeVisitor v) throws Exception
@@ -24,53 +35,48 @@ public class BinaryExpr extends Expr
 		v.visit(this);
 	}
 
-	public static String getOperator(Operator op)
+	public String getOperator(int op)
 	{
 		switch (op)
 		{
 		case BIT_AND:
-			return "&";
+			return "&".intern();
 		case BIT_XOR:
-			return "^";
+			return "^".intern();
 		case BIT_OR:
-			return "|";
+			return "|".intern();
 		case AND:
-			return "&&";
+			return "&&".intern();
 		case OR:
-			return "||";
+			return "||".intern();
 		case EQ:
-			return "==";
+			return "==".intern();
 		case NE:
-			return "!=";
+			return "!=".intern();
 		case LT:
-			return "<";
+			return "<".intern();
 		case GT:
-			return ">";
+			return ">".intern();
 		case LE:
-			return "<=";
+			return "<=".intern();
 		case GE:
-			return ">=";
+			return ">=".intern();
 		case SHL:
-			return "<<";
+			return "<<".intern();
 		case SHR:
-			return ">>";
+			return ">>".intern();
 		case PLUS:
-			return "+";
+			return "+".intern();
 		case MINUS:
-			return "-";
+			return "-".intern();
 		case TIMES:
-			return "*";
+			return "*".intern();
 		case DIVIDE:
-			return "/";
+			return "/".intern();
 		case MODULE:
-			return "%";
+			return "%".intern();
 		default:
-			return "";
+			return "".intern();
 		}
-	}
-
-	public String getOperator()
-	{
-		return getOperator(op);
 	}
 }

@@ -5,12 +5,17 @@ import compiler.AST.ASTNodeVisitor;
 
 public class ConstantExpr extends ASTNode
 {
+	public BinaryExpr expr;
+
+	public ConstantExpr(BinaryExpr x)
+	{
+		expr = x;
+	}
 
 	@Override
 	public void accept(ASTNodeVisitor v) throws Exception
 	{
-		// TODO Auto-generated method stub
-
+		v.visit(this);
 	}
 
 }

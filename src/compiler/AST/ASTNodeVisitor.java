@@ -20,8 +20,6 @@ public interface ASTNodeVisitor
 	public abstract void visit(PrimaryExpr x) throws Exception;
 
 	/* Stmt */
-	public abstract void visit(StmtList x) throws Exception;
-
 	public abstract void visit(ExpressionStmt x) throws Exception;
 
 	public abstract void visit(CompoundStmt x) throws Exception;
@@ -33,27 +31,15 @@ public interface ASTNodeVisitor
 	public abstract void visit(IterationStmt x) throws Exception;
 
 	/* Decl */
-	public abstract void visit(StarList x) throws Exception;
-
 	public abstract void visit(Declaration x) throws Exception;
 
 	public abstract void visit(Declarator x) throws Exception;
-
-	public abstract void visit(DeclarationList x) throws Exception;
 
 	public abstract void visit(DeclaratorList x) throws Exception;
 
 	public abstract void visit(InitDeclarator x) throws Exception;
 
-	public abstract void visit(InitDeclarators x) throws Exception;
-
 	public abstract void visit(Initializer x) throws Exception;
-
-	public abstract void visit(InitializerList x) throws Exception;
-
-	public abstract void visit(NonInitDeclaration x) throws Exception;
-
-	public abstract void visit(NonInitDeclarationList x) throws Exception;
 
 	public abstract void visit(PlainDeclaration x) throws Exception;
 
@@ -61,10 +47,6 @@ public interface ASTNodeVisitor
 
 	/* Func */
 	public abstract void visit(FuncDef x) throws Exception;
-
-	public abstract void visit(Arguments x) throws Exception;
-
-	public abstract void visit(ParameterList x) throws Exception;
 
 	/* Type */
 	public abstract void visit(TypeName x) throws Exception;
@@ -75,4 +57,6 @@ public interface ASTNodeVisitor
 	public abstract void visit(Program x) throws Exception;
 
 	public abstract void visit(RecordEntry recordEntry);
+
+	public abstract void visit(ConstantExpr constantExpr);
 }
