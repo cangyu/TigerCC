@@ -1,4 +1,4 @@
-package Semantic;
+package compiler.Semantic;
 
 public class Semantic
 {

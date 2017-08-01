@@ -125,20 +125,6 @@ public class Translator implements ASTNodeVisitor
 	}
 
 	@Override
-	public void visit(NonInitDeclaration x) throws Exception
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(NonInitDeclarationList x) throws Exception
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public void visit(PlainDeclaration x) throws Exception
 	{
 		// TODO Auto-generated method stub
@@ -154,13 +140,6 @@ public class Translator implements ASTNodeVisitor
 
 	@Override
 	public void visit(FuncDef x) throws Exception
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(Arguments x) throws Exception
 	{
 		// TODO Auto-generated method stub
 
@@ -189,6 +168,13 @@ public class Translator implements ASTNodeVisitor
 
 	@Override
 	public void visit(RecordEntry recordEntry)
+	{
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(ConstantExpr constantExpr)
 	{
 		// TODO Auto-generated method stub
 
