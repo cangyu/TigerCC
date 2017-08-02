@@ -13,7 +13,7 @@ public class PrimaryExpr extends Expr
 	public int type;
 	public Object elem;
 
-	public PrimaryExpr(Object e) throws Exception
+	public PrimaryExpr(Object e)
 	{
 		if (e instanceof Identifier)
 		{
@@ -45,13 +45,11 @@ public class PrimaryExpr extends Expr
 			Str t = (Str) e;
 			elem = t.lexeme;
 		}
-		else if (e instanceof Expression)
+		else
 		{
-			type = paren_expr;
+			type = paren_expr;// primary-expr ::= (expression)
 			elem = e;
 		}
-		else
-			throw new Exception("Invalid input object.");
 	}
 
 	public void accept(ASTNodeVisitor v) throws Exception
