@@ -794,7 +794,7 @@ public class Parser
 		AssignmentExpr ret = new AssignmentExpr();
 		for (;;)
 		{
-			BinaryExpr loe = binary_expr();
+			LogicalOrExpr loe = logical_or_expr();
 			if (loe == null)
 			{
 				dump_cur_derivation();
@@ -845,19 +845,270 @@ public class Parser
 
 	private ConstantExpr const_expr() throws Exception
 	{
-		BinaryExpr be = binary_expr();
-		if (be == null)
+		LogicalOrExpr x = logical_or_expr();
+		if (x == null)
 		{
 			panic("Unable to match the logic-or-expr when parsing constant-expr.");
 			return null;
 		}
 		else
-			return new ConstantExpr(be);
+			return new ConstantExpr(x);
 	}
 
-	private BinaryExpr binary_expr() throws Exception
+	private LogicalOrExpr logical_or_expr() throws Exception
 	{
-		BinaryExpr ret = null;
+		LogicalOrExpr ret = new LogicalOrExpr();
+		int cnt = 0;
+		do
+		{
+			LogicalAndExpr x = logical_and_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " logical-and-expr when parsing logical-or-expr.");
+				return null;
+			}
+			else
+				ret.add_expr(x);
+
+		} while (match(Tag.OR));
+
+		return ret;
+	}
+
+	private LogicalAndExpr logical_and_expr() throws Exception
+	{
+		LogicalAndExpr ret = new LogicalAndExpr();
+		int cnt = 0;
+		do
+		{
+			InclusiveOrExpr x = inclusive_or_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " inclusive-or-expr when parsing logical-and-expr.");
+				return null;
+			}
+			else
+				ret.add_expr(x);
+		} while (match(Tag.AND));
+
+		return ret;
+	}
+
+	private InclusiveOrExpr inclusive_or_expr() throws Exception
+	{
+		InclusiveOrExpr ret = new InclusiveOrExpr();
+		int cnt = 0;
+		do
+		{
+			ExclusiveOrExpr x = exclusive_or_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " exclusive-or-expr when parsing inclusive-or-expr.");
+				return null;
+			}
+			else
+				ret.add_expr(x);
+		} while (match(Tag.AND));
+
+		return ret;
+	}
+
+	private ExclusiveOrExpr exclusive_or_expr() throws Exception
+	{
+		ExclusiveOrExpr ret = new ExclusiveOrExpr();
+		int cnt = 0;
+		do
+		{
+			AndExpr x = and_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " and-expr when parsing exclusive-or-expr.");
+				return null;
+			}
+			else
+				ret.add_expr(x);
+
+		} while (match(Tag.AND));
+
+		return ret;
+	}
+
+	private AndExpr and_expr() throws Exception
+	{
+		AndExpr ret = new AndExpr();
+		int cnt = 0;
+		do
+		{
+			EqualityExpr x = equality_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " equality-expr when parsing and-expr.");
+				return null;
+			}
+			else
+				ret.add_expr(x);
+		} while (match(Tag.AND));
+
+		return ret;
+	}
+
+	private EqualityExpr equality_expr() throws Exception
+	{
+		EqualityExpr ret = new EqualityExpr();
+		int cnt = 0;
+		for (;;)
+		{
+			RelationalExpr x = relational_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " relational-expr when parsing equality-expr.");
+				return null;
+			}
+			else
+			{
+				if (match(Tag.EQ))
+					ret.add_expr(x, BinaryExpr.EQ);
+				else if (match(Tag.NE))
+					ret.add_expr(x, BinaryExpr.NE);
+				else
+				{
+					ret.add_expr(x);
+					break;
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	private RelationalExpr relational_expr() throws Exception
+	{
+		RelationalExpr ret = new RelationalExpr();
+		int cnt = 0;
+		for (;;)
+		{
+			ShiftExpr x = shift_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " shift-expr when parsing relational-expr.");
+				return null;
+			}
+			else
+			{
+				if (match(Tag.LT))
+					ret.add_expr(x, BinaryExpr.LT);
+				else if (match(Tag.GT))
+					ret.add_expr(x, BinaryExpr.GT);
+				else if (match(Tag.LE))
+					ret.add_expr(x, BinaryExpr.LE);
+				else if (match(Tag.GE))
+					ret.add_expr(x, BinaryExpr.GE);
+				else
+				{
+					ret.add_expr(x);
+					break;
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	private ShiftExpr shift_expr() throws Exception
+	{
+		ShiftExpr ret = new ShiftExpr();
+		int cnt = 0;
+		for (;;)
+		{
+			AdditiveExpr x = additive_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " additive-expr when parsing shift-expr.");
+				return null;
+			}
+			else
+			{
+				if (match(Tag.SHL))
+					ret.add_expr(x, BinaryExpr.SHL);
+				else if (match(Tag.SHR))
+					ret.add_expr(x, BinaryExpr.SHR);
+				else
+				{
+					ret.add_expr(x);
+					break;
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	private AdditiveExpr additive_expr() throws Exception
+	{
+		AdditiveExpr ret = new AdditiveExpr();
+		int cnt = 0;
+		for (;;)
+		{
+			MultiplicativeExpr x = multiplicative_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " multiplicative-expr when parsing additive-expr.");
+				return null;
+			}
+			else
+			{
+				if (match(Tag.PLUS))
+					ret.add_expr(x, BinaryExpr.PLUS);
+				else if (match(Tag.MINUS))
+					ret.add_expr(x, BinaryExpr.MINUS);
+				else
+				{
+					ret.add_expr(x);
+					break;
+				}
+			}
+		}
+
+		return ret;
+	}
+
+	private MultiplicativeExpr multiplicative_expr() throws Exception
+	{
+		MultiplicativeExpr ret = new MultiplicativeExpr();
+		int cnt = 0;
+		for (;;)
+		{
+			CastExpr x = cast_expr();
+			++cnt;
+			if (x == null)
+			{
+				panic("Unable to match the " + num2idx(cnt) + " cast-expr when parsing multiplicative-expr.");
+				return null;
+			}
+			else
+			{
+				if (match(Tag.TIMES))
+					ret.add_expr(x, BinaryExpr.TIMES);
+				else if (match(Tag.DIVIDE))
+					ret.add_expr(x, BinaryExpr.DIVIDE);
+				else if (match(Tag.MODULE))
+					ret.add_expr(x, BinaryExpr.MODULE);
+				else
+				{
+					ret.add_expr(x);
+					break;
+				}
+			}
+		}
 
 		return ret;
 	}

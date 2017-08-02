@@ -5,9 +5,9 @@ import compiler.AST.ASTNodeVisitor;
 
 public class ConstantExpr extends ASTNode
 {
-	public BinaryExpr expr;
+	public LogicalOrExpr expr;
 
-	public ConstantExpr(BinaryExpr x)
+	public ConstantExpr(LogicalOrExpr x)
 	{
 		expr = x;
 	}

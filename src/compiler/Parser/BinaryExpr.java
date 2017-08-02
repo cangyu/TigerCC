@@ -30,6 +30,11 @@ public abstract class BinaryExpr extends Expr
 		op = _t;
 	}
 
+	public BinaryExpr()
+	{
+		op = -1;// Undetermined
+	}
+
 	public void accept(ASTNodeVisitor v) throws Exception
 	{
 		v.visit(this);
