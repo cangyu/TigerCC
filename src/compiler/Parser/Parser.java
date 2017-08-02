@@ -206,13 +206,14 @@ public class Parser
 			}
 		}
 
-		if (!match(Tag.RPAREN))
+		if (match(Tag.RPAREN))
+			advance();
+		else
 		{
 			panic_missing(')');
 			return null;
 		}
 
-		advance();
 		CompoundStmt y = compound_stmt();
 		if (y == null)
 		{
@@ -264,12 +265,12 @@ public class Parser
 		start_pos.push(look);
 		if (match(Tag.LBRACE))
 		{
+			advance();
 			Initializer ret = new Initializer();
 			int cnt = 0;
 
-			do
+			for (;;)
 			{
-				advance();
 				Initializer x = initializer();
 				++cnt;
 				if (x == null)
@@ -283,7 +284,12 @@ public class Parser
 					start_pos.pop();
 					ret.add_initializer(x);
 				}
-			} while (match(Tag.COMMA));
+
+				if (match(Tag.COMMA))
+					advance();
+				else
+					break;
+			}
 
 			if (match(Tag.RBRACE))
 			{
@@ -336,7 +342,7 @@ public class Parser
 			advance();
 			return TypeSpecifier.TS_FLOAT;
 		}
-		else if(match(Tag.DOUBLE))
+		else if (match(Tag.DOUBLE))
 		{
 			advance();
 			return TypeSpecifier.TS_DOUBLE;
@@ -377,7 +383,6 @@ public class Parser
 			else if (match(Tag.LBRACE)) // type_specifier: struct { (type_specifier declarator+ ;)+ }
 			{
 				advance();
-
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_struct);
 				if (handle_record_entry(ret) == null)
 				{
@@ -724,6 +729,8 @@ public class Parser
 				panic("Unable to match the expression when parsing expression-statement.");
 				return null;
 			}
+			else
+				start_pos.pop();
 
 			if (match(Tag.SEMI))
 			{
@@ -1869,6 +1876,7 @@ public class Parser
 					advance();
 					ret.add_elem(PostfixExpr.mparen, x);
 				}
+				else
 				{
 					panic_missing(']');
 					return null;
