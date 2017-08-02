@@ -1,8 +1,8 @@
 package compiler.Main;
 
 import java.io.*;
-
 import compiler.Lexer.*;
+import compiler.Parser.*;
 
 public class Main
 {
@@ -16,12 +16,11 @@ public class Main
 	private static void tokenize(InputStream ips) throws IOException
 	{
 		Lexer lex = new Lexer(ips);
-		for (;;)
-		{
-			Token tk = lex.next_token();
-			System.out.println(tk.toString());
-			if (tk.tag == Tag.EOF)
-				break;
-		}
+		Parser psr = new Parser(lex);
+		Program prog = psr.parse();
+		if (prog != null)
+			System.out.println("OK!");
+		else
+			System.out.println("WTF?");
 	}
 }

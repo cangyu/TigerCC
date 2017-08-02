@@ -3,9 +3,6 @@ package compiler.Parser;
 import java.io.*;
 import java.util.*;
 import compiler.Lexer.*;
-import compiler.Symbols.*;
-import compiler.AST.*;
-import compiler.Types.*;
 
 //Recursive Decent Parser
 public class Parser
@@ -29,11 +26,6 @@ public class Parser
 			if (tmp.tag == Tag.EOF)
 				break;
 		}
-	}
-
-	private Token next_token()
-	{
-		return token_buf.get(look + 1);
 	}
 
 	private void advance()
@@ -110,6 +102,8 @@ public class Parser
 			panic("Unable to match the type-specifier when parsing declaration.");
 			return null;
 		}
+		else
+			start_pos.pop();
 
 		if (match(Tag.SEMI))
 		{
@@ -119,7 +113,7 @@ public class Parser
 
 		Declaration ret = new Declaration(t);
 		int cnt = 0;
-		do
+		for (;;)
 		{
 			InitDeclarator x = init_declarator();
 			++cnt;
@@ -134,7 +128,12 @@ public class Parser
 				start_pos.pop();
 				ret.add_elem(x);
 			}
-		} while (match(Tag.COMMA));
+
+			if (match(Tag.COMMA))
+				advance();
+			else
+				break;
+		}
 
 		if (match(Tag.SEMI))
 		{
@@ -158,6 +157,8 @@ public class Parser
 			panic("Unable to match the typs-specifier when parsing function-definition.");
 			return null;
 		}
+		else
+			start_pos.pop();
 
 		PlainDeclarator pd = plain_declarator();
 		if (pd == null)
@@ -166,6 +167,8 @@ public class Parser
 			panic("Unable to match the plain-declarator when parsing function-definition.");
 			return null;
 		}
+		else
+			start_pos.pop();
 
 		if (match(Tag.LPAREN))
 			advance();
@@ -180,7 +183,7 @@ public class Parser
 		if (!match(Tag.RPAREN))
 		{
 			int cnt = 0;
-			do
+			for (;;)
 			{
 				PlainDeclaration x = plain_declaration();
 				++cnt;
@@ -195,7 +198,12 @@ public class Parser
 					start_pos.pop();
 					ret.add_param(x);
 				}
-			} while (match(Tag.COMMA));
+
+				if (match(Tag.COMMA))
+					advance();
+				else
+					break;
+			}
 		}
 
 		if (!match(Tag.RPAREN))
@@ -212,9 +220,12 @@ public class Parser
 			panic("Unable to match the compound-statement when parsing function-definition.");
 			return null;
 		}
-
-		ret.add_body(y);
-		return ret;
+		else
+		{
+			start_pos.pop();
+			ret.add_body(y);
+			return ret;
+		}
 	}
 
 	private InitDeclarator init_declarator()
@@ -324,6 +335,11 @@ public class Parser
 		{
 			advance();
 			return TypeSpecifier.TS_FLOAT;
+		}
+		else if(match(Tag.DOUBLE))
+		{
+			advance();
+			return TypeSpecifier.TS_DOUBLE;
 		}
 		else if (match(Tag.STRUCT))
 		{
@@ -726,7 +742,10 @@ public class Parser
 	{
 		start_pos.push(look);
 		CompoundStmt ret = new CompoundStmt();
-		if (!match(Tag.LBRACE))
+
+		if (match(Tag.LBRACE))
+			advance();
+		else
 		{
 			panic_missing('{');
 			return null;
@@ -778,51 +797,68 @@ public class Parser
 	{
 		start_pos.push(look);
 		SelectionStmt ret = null;
-		if (!match(Tag.IF))
+
+		if (match(Tag.IF))
+			advance();
+		else
 		{
 			panic("Unable to match \'if\' keyword.");
 			return null;
 		}
 
-		if (!match(Tag.LPAREN))
+		if (match(Tag.LPAREN))
+			advance();
+		else
 		{
-			panic("Missing \'(\'.");
+			panic_missing('(');
 			return null;
 		}
 
 		Expression cond = expression();
 		if (cond == null)
 		{
+			look = start_pos.pop();
 			panic("Unable to match the condition expr when parsing selection-statement.");
 			return null;
 		}
+		else
+			start_pos.pop();
 
-		if (!match(Tag.RPAREN))
+		if (match(Tag.RPAREN))
+			advance();
+		else
 		{
-			panic("Missing \')\'.");
+			panic_missing(')');
 			return null;
 		}
 
 		Stmt if_clause = stmt();
 		if (if_clause == null)
 		{
+			look = start_pos.pop();
 			panic("Unable to match the 1st clause when parsing selection-statement.");
 			return null;
 		}
-
-		if (!match(Tag.ELSE))
-			ret = new SelectionStmt(cond, if_clause, null);
 		else
+			start_pos.pop();
+
+		if (match(Tag.ELSE))
 		{
+			advance();
 			Stmt else_clause = stmt();
 			if (else_clause == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the 2nd clause when parsing selection-statement.");
 				return null;
 			}
+			else
+				start_pos.pop();
 
 			ret = new SelectionStmt(cond, if_clause, else_clause);
 		}
+		else
+			ret = new SelectionStmt(cond, if_clause, null);
 
 		return ret;
 	}
@@ -832,96 +868,129 @@ public class Parser
 		start_pos.push(look);
 		if (match(Tag.WHILE))
 		{
-			if (!match(Tag.LPAREN))
+			advance();
+			if (match(Tag.LPAREN))
+				advance();
+			else
 			{
-				panic("Missing \'(\'.");
+				panic_missing('(');
 				return null;
 			}
 
 			Expression x = expression();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the expression when parsing \'while\' iteration-statement.");
 				return null;
 			}
+			else
+				start_pos.pop();
 
-			if (!match(Tag.RPAREN))
+			if (match(Tag.RPAREN))
+				advance();
+			else
 			{
-				panic("Missing \')\'.");
+				panic_missing(')');
 				return null;
 			}
 
 			Stmt y = stmt();
 			if (y == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match a statement when parsing \'while\' iteration-statement.");
 				return null;
 			}
+			else
+				start_pos.pop();
 
 			return new IterationStmt(x, y);
 		}
 		else if (match(Tag.FOR))
 		{
-			if (!match(Tag.LPAREN))
+			advance();
+			if (match(Tag.LPAREN))
+				advance();
+			else
 			{
-				panic("Missing \'(\'.");
+				panic_missing('(');
 				return null;
 			}
 
 			Expression init = null, judge = null, next = null;
-			if (!match(Tag.SEMI))
+			if (!match(Tag.SEMI)) // init-expr
 			{
 				init = expression();
 				if (init == null)
 				{
+					look = start_pos.pop();
 					panic("Unable to match the 1st expression when parsing \'for\' iteration-statement.");
 					return null;
 				}
+				else
+					start_pos.pop();
 			}
 
-			if (!match(Tag.SEMI))
+			if (match(Tag.SEMI)) // first SEMI
+				advance();
+			else
 			{
-				panic("Missing \';\'.");
+				panic_missing(';');
 				return null;
 			}
 
-			if (!match(Tag.SEMI))
+			if (!match(Tag.SEMI)) // judge-expr
 			{
 				judge = expression();
 				if (judge == null)
 				{
+					look = start_pos.pop();
 					panic("Unable to match the 2nd expression when parsing \'for\' iteration-statemen");
 					return null;
 				}
+				else
+					start_pos.pop();
 			}
 
-			if (!match(Tag.SEMI))
+			if (match(Tag.SEMI)) // second SEMI
+				advance();
+			else
 			{
-				panic("Missing \';\'.");
+				panic_missing(';');
 				return null;
 			}
 
-			if (!match(Tag.RPAREN))
+			if (!match(Tag.RPAREN)) // next-expr
 			{
 				next = expression();
 				if (next == null)
 				{
+					look = start_pos.pop();
 					panic("Unable to match the 3rd expression when parsing \'for\' iteration-statemen");
 					return null;
 				}
+				else
+					start_pos.pop();
 			}
-			if (!match(Tag.RPAREN))
+
+			if (match(Tag.RPAREN))
+				advance();
+			else
 			{
-				panic("Missing \')\'.");
+				panic_missing(')');
 				return null;
 			}
 
 			Stmt y = stmt();
 			if (y == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match a statement when parsing \'for\' iteration-statement.");
 				return null;
 			}
+			else
+				start_pos.pop();
 
 			return new IterationStmt(init, judge, next, y);
 		}
@@ -937,22 +1006,34 @@ public class Parser
 		start_pos.push(look);
 		JumpStmt ret = null;
 		if (match(Tag.CONTINUE))
+		{
+			advance();
 			ret = new JumpStmt(JumpStmt.CTNU, null);
+		}
 		else if (match(Tag.BREAK))
+		{
+			advance();
 			ret = new JumpStmt(JumpStmt.BRK, null);
+		}
 		else if (match(Tag.RETURN))
 		{
+			advance();
 			if (match(Tag.SEMI))
-				ret = new JumpStmt(JumpStmt.RET, null);
+				ret = new JumpStmt(JumpStmt.RET, null); // check SEMI later
 			else
 			{
 				Expression x = expression();
 				if (x == null)
 				{
+					look = start_pos.pop();
 					panic("Unable to match the expression when parsing \'return\' jump-statement");
 					return null;
 				}
-				ret = new JumpStmt(JumpStmt.RET, x);
+				else
+				{
+					start_pos.pop();
+					ret = new JumpStmt(JumpStmt.RET, x);
+				}
 			}
 		}
 		else
@@ -961,13 +1042,16 @@ public class Parser
 			return null;
 		}
 
-		if (!match(Tag.SEMI))
+		if (match(Tag.SEMI))
 		{
-			panic("Missing \';\'.");
+			advance();
+			return ret;
+		}
+		else
+		{
+			panic_missing(';');
 			return null;
 		}
-
-		return ret;
 	}
 
 	private Expression expression()
@@ -976,18 +1060,27 @@ public class Parser
 		Expression ret = new Expression();
 		int cnt = 0;
 
-		do
+		for (;;)
 		{
 			AssignmentExpr x = assignment_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " assignment-expr when parsing expression.");
 				return null;
 			}
 			else
+			{
+				start_pos.pop();
 				ret.add_expr(x);
-		} while (match(Tag.COMMA));
+			}
+
+			if (match(Tag.COMMA))
+				advance();
+			else
+				break;
+		}
 
 		return ret;
 	}
@@ -996,50 +1089,93 @@ public class Parser
 	{
 		start_pos.push(look);
 		AssignmentExpr ret = new AssignmentExpr();
+
 		for (;;)
 		{
+			int loe_end = -1;
 			LogicalOrExpr loe = logical_or_expr();
 			if (loe == null)
 			{
-				dump_cur_derivation();
-				UnaryExpr ue = unary_expr();
-				if (ue == null)
-				{
-					panic("Unable to match the unary-expr when parsing assignment-expr.");
-					return null;
-				}
-
-				if (match(Tag.ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.ASSIGN);
-				else if (match(Tag.MUL_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.MUL_ASSIGN);
-				else if (match(Tag.DIV_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.DIV_ASSIGN);
-				else if (match(Tag.ADD_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.ADD_ASSIGN);
-				else if (match(Tag.SUB_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.SUB_ASSIGN);
-				else if (match(Tag.MOD_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.MOD_ASSIGN);
-				else if (match(Tag.SHL_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.SHL_ASSIGN);
-				else if (match(Tag.SHR_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.SHR_ASSIGN);
-				else if (match(Tag.AND_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.AND_ASSIGN);
-				else if (match(Tag.XOR_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.XOR_ASSIGN);
-				else if (match(Tag.OR_ASSIGN))
-					ret.add_left_expr(ue, AssignmentExpr.OR_ASSIGN);
-				else
-				{
-					panic("Unable to match a valid assignment-operator when parsing assignment-expr.");
-					return null;
-				}
+				look = start_pos.pop();
+				panic("Unable to match the 1st expr when parsing assignment-expr.");
+				return null;
 			}
 			else
 			{
+				loe_end = look;
+				look = start_pos.pop(); // mark and backtrack to test another possibility
+			}
+
+			UnaryExpr ue = unary_expr();
+			if (ue == null)
+			{
+				start_pos.pop();
+				look = loe_end;
 				ret.set_origin(loe);
+				break;
+			}
+			else
+				start_pos.pop();
+
+			if (match(Tag.ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.ASSIGN);
+			}
+			else if (match(Tag.MUL_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.MUL_ASSIGN);
+			}
+			else if (match(Tag.DIV_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.DIV_ASSIGN);
+			}
+			else if (match(Tag.ADD_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.ADD_ASSIGN);
+			}
+			else if (match(Tag.SUB_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.SUB_ASSIGN);
+			}
+			else if (match(Tag.MOD_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.MOD_ASSIGN);
+			}
+			else if (match(Tag.SHL_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.SHL_ASSIGN);
+			}
+			else if (match(Tag.SHR_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.SHR_ASSIGN);
+			}
+			else if (match(Tag.AND_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.AND_ASSIGN);
+			}
+			else if (match(Tag.XOR_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.XOR_ASSIGN);
+			}
+			else if (match(Tag.OR_ASSIGN))
+			{
+				advance();
+				ret.add_left_expr(ue, AssignmentExpr.OR_ASSIGN);
+			}
+			else
+			{
+				look = loe_end;
+				ret.set_origin(loe); // special case: assignment-expr ::= unary-expr
 				break;
 			}
 		}
@@ -1053,11 +1189,15 @@ public class Parser
 		LogicalOrExpr x = logical_or_expr();
 		if (x == null)
 		{
+			look = start_pos.pop();
 			panic("Unable to match the logic-or-expr when parsing constant-expr.");
 			return null;
 		}
 		else
+		{
+			start_pos.pop();
 			return new ConstantExpr(x);
+		}
 	}
 
 	private LogicalOrExpr logical_or_expr()
@@ -1065,19 +1205,28 @@ public class Parser
 		start_pos.push(look);
 		LogicalOrExpr ret = new LogicalOrExpr();
 		int cnt = 0;
-		do
+
+		for (;;)
 		{
 			LogicalAndExpr x = logical_and_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " logical-and-expr when parsing logical-or-expr.");
 				return null;
 			}
 			else
+			{
+				start_pos.pop();
 				ret.add_expr(x);
+			}
 
-		} while (match(Tag.OR));
+			if (match(Tag.OR))
+				advance();
+			else
+				break;
+		}
 
 		return ret;
 	}
@@ -1087,18 +1236,28 @@ public class Parser
 		start_pos.push(look);
 		LogicalAndExpr ret = new LogicalAndExpr();
 		int cnt = 0;
-		do
+
+		for (;;)
 		{
 			InclusiveOrExpr x = inclusive_or_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " inclusive-or-expr when parsing logical-and-expr.");
 				return null;
 			}
 			else
+			{
+				start_pos.pop();
 				ret.add_expr(x);
-		} while (match(Tag.AND));
+			}
+
+			if (match(Tag.AND))
+				advance();
+			else
+				break;
+		}
 
 		return ret;
 	}
@@ -1108,18 +1267,28 @@ public class Parser
 		start_pos.push(look);
 		InclusiveOrExpr ret = new InclusiveOrExpr();
 		int cnt = 0;
-		do
+
+		for (;;)
 		{
 			ExclusiveOrExpr x = exclusive_or_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " exclusive-or-expr when parsing inclusive-or-expr.");
 				return null;
 			}
 			else
+			{
+				start_pos.pop();
 				ret.add_expr(x);
-		} while (match(Tag.AND));
+			}
+
+			if (match(Tag.BIT_OR))
+				advance();
+			else
+				break;
+		}
 
 		return ret;
 	}
@@ -1129,19 +1298,28 @@ public class Parser
 		start_pos.push(look);
 		ExclusiveOrExpr ret = new ExclusiveOrExpr();
 		int cnt = 0;
-		do
+
+		for (;;)
 		{
 			AndExpr x = and_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " and-expr when parsing exclusive-or-expr.");
 				return null;
 			}
 			else
+			{
+				start_pos.pop();
 				ret.add_expr(x);
+			}
 
-		} while (match(Tag.AND));
+			if (match(Tag.BIT_XOR))
+				advance();
+			else
+				break;
+		}
 
 		return ret;
 	}
@@ -1151,18 +1329,28 @@ public class Parser
 		start_pos.push(look);
 		AndExpr ret = new AndExpr();
 		int cnt = 0;
-		do
+
+		for (;;)
 		{
 			EqualityExpr x = equality_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " equality-expr when parsing and-expr.");
 				return null;
 			}
 			else
+			{
+				start_pos.pop();
 				ret.add_expr(x);
-		} while (match(Tag.AND));
+			}
+
+			if (match(Tag.BIT_AND))
+				advance();
+			else
+				break;
+		}
 
 		return ret;
 	}
@@ -1172,21 +1360,30 @@ public class Parser
 		start_pos.push(look);
 		EqualityExpr ret = new EqualityExpr();
 		int cnt = 0;
+
 		for (;;)
 		{
 			RelationalExpr x = relational_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " relational-expr when parsing equality-expr.");
 				return null;
 			}
 			else
 			{
+				start_pos.pop();
 				if (match(Tag.EQ))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.EQ);
+				}
 				else if (match(Tag.NE))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.NE);
+				}
 				else
 				{
 					ret.add_expr(x);
@@ -1203,25 +1400,40 @@ public class Parser
 		start_pos.push(look);
 		RelationalExpr ret = new RelationalExpr();
 		int cnt = 0;
+
 		for (;;)
 		{
 			ShiftExpr x = shift_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " shift-expr when parsing relational-expr.");
 				return null;
 			}
 			else
 			{
+				start_pos.pop();
 				if (match(Tag.LT))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.LT);
+				}
 				else if (match(Tag.GT))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.GT);
+				}
 				else if (match(Tag.LE))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.LE);
+				}
 				else if (match(Tag.GE))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.GE);
+				}
 				else
 				{
 					ret.add_expr(x);
@@ -1238,21 +1450,30 @@ public class Parser
 		start_pos.push(look);
 		ShiftExpr ret = new ShiftExpr();
 		int cnt = 0;
+
 		for (;;)
 		{
 			AdditiveExpr x = additive_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " additive-expr when parsing shift-expr.");
 				return null;
 			}
 			else
 			{
+				start_pos.pop();
 				if (match(Tag.SHL))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.SHL);
+				}
 				else if (match(Tag.SHR))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.SHR);
+				}
 				else
 				{
 					ret.add_expr(x);
@@ -1269,21 +1490,30 @@ public class Parser
 		start_pos.push(look);
 		AdditiveExpr ret = new AdditiveExpr();
 		int cnt = 0;
+
 		for (;;)
 		{
 			MultiplicativeExpr x = multiplicative_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " multiplicative-expr when parsing additive-expr.");
 				return null;
 			}
 			else
 			{
+				start_pos.pop();
 				if (match(Tag.PLUS))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.PLUS);
+				}
 				else if (match(Tag.MINUS))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.MINUS);
+				}
 				else
 				{
 					ret.add_expr(x);
@@ -1300,23 +1530,35 @@ public class Parser
 		start_pos.push(look);
 		MultiplicativeExpr ret = new MultiplicativeExpr();
 		int cnt = 0;
+
 		for (;;)
 		{
 			CastExpr x = cast_expr();
 			++cnt;
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match the " + num2idx(cnt) + " cast-expr when parsing multiplicative-expr.");
 				return null;
 			}
 			else
 			{
+				start_pos.pop();
 				if (match(Tag.TIMES))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.TIMES);
+				}
 				else if (match(Tag.DIVIDE))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.DIVIDE);
+				}
 				else if (match(Tag.MODULE))
+				{
+					advance();
 					ret.add_expr(x, BinaryExpr.MODULE);
+				}
 				else
 				{
 					ret.add_expr(x);
@@ -1337,19 +1579,26 @@ public class Parser
 			UnaryExpr ue = unary_expr();
 			if (ue == null)
 			{
-				dump_cur_derivation();
+				look = start_pos.pop(); // backtrack
 				if (match(Tag.LPAREN))
 				{
+					advance();
 					TypeName tn = type_name();
 					if (tn == null)
 					{
+						look = start_pos.pop();
 						panic("Unable to match type-name when parsing cast-expr.");
 						return null;
 					}
 					else
+					{
+						start_pos.pop();
 						ret.add_type(tn);
+					}
 
-					if (!match(Tag.RPAREN))
+					if (match(Tag.RPAREN))
+						advance();
+					else
 					{
 						panic_missing(')');
 						return null;
@@ -1357,14 +1606,14 @@ public class Parser
 				}
 				else
 				{
-					panic_missing('(');
+					panic("Unable to match a valid cast-expr.");
 					return null;
 				}
 			}
 			else
 			{
+				start_pos.pop();
 				ret.set_origin(ue);
-				clear_cur_derivation();
 				break;
 			}
 		}
@@ -1378,13 +1627,19 @@ public class Parser
 		TypeSpecifier x = type_specifier();
 		if (x == null)
 		{
+			look = start_pos.pop();
 			panic("Unable to match a type-specifier when parsing type-name");
 			return null;
 		}
+		else
+			start_pos.pop();
 
 		int cnt = 0;
 		while (match(Tag.TIMES))
+		{
 			++cnt;
+			advance();
+		}
 
 		return new TypeName(x, cnt);
 	}
@@ -1395,123 +1650,184 @@ public class Parser
 		UnaryExpr ret = null;
 		if (match(Tag.BIT_AND))
 		{
+			advance();
 			CastExpr x = cast_expr();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match a cast expr when parsing unary-expr.");
 				return null;
 			}
-
-			ret = new UnaryExpr(UnaryExpr.address, x);
+			else
+			{
+				start_pos.pop();
+				ret = new UnaryExpr(UnaryExpr.address, x);
+			}
 		}
 		else if (match(Tag.TIMES))
 		{
+			advance();
 			CastExpr x = cast_expr();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match a cast expr when parsing unary-expr.");
 				return null;
 			}
-
-			ret = new UnaryExpr(UnaryExpr.dereference, x);
+			else
+			{
+				start_pos.pop();
+				ret = new UnaryExpr(UnaryExpr.dereference, x);
+			}
 		}
 		else if (match(Tag.PLUS))
 		{
+			advance();
 			CastExpr x = cast_expr();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match a cast expr when parsing unary-expr.");
 				return null;
 			}
-
-			ret = new UnaryExpr(UnaryExpr.positive, x);
+			else
+			{
+				start_pos.pop();
+				ret = new UnaryExpr(UnaryExpr.positive, x);
+			}
 		}
 		else if (match(Tag.MINUS))
 		{
+			advance();
 			CastExpr x = cast_expr();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match a cast expr when parsing unary-expr.");
 				return null;
 			}
-
-			ret = new UnaryExpr(UnaryExpr.negative, x);
+			else
+			{
+				start_pos.pop();
+				ret = new UnaryExpr(UnaryExpr.negative, x);
+			}
 		}
 		else if (match(Tag.BIT_NOT))
 		{
+			advance();
 			CastExpr x = cast_expr();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match a cast expr when parsing unary-expr.");
 				return null;
 			}
-
-			ret = new UnaryExpr(UnaryExpr.bit_not, x);
+			else
+			{
+				start_pos.pop();
+				ret = new UnaryExpr(UnaryExpr.bit_not, x);
+			}
 		}
 		else if (match(Tag.NOT))
 		{
+			advance();
 			CastExpr x = cast_expr();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match a cast expr when parsing unary-expr.");
 				return null;
 			}
-
-			ret = new UnaryExpr(UnaryExpr.not, x);
+			else
+			{
+				start_pos.pop();
+				ret = new UnaryExpr(UnaryExpr.not, x);
+			}
 		}
 		else if (match(Tag.INC))
 		{
+			advance();
 			UnaryExpr x = unary_expr();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match an unary expr when parsing unary-expr");
 				return null;
 			}
-
-			ret = new UnaryExpr(UnaryExpr.inc, x);
+			else
+			{
+				start_pos.pop();
+				ret = new UnaryExpr(UnaryExpr.inc, x);
+			}
 		}
 		else if (match(Tag.DEC))
 		{
+			advance();
 			UnaryExpr x = unary_expr();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match an unary expr when parsing unary-expr");
 				return null;
 			}
-
-			ret = new UnaryExpr(UnaryExpr.dec, x);
-		}
-		else if (match(Tag.SIZEOF)) // TODO: sizeof unary_expr
-		{
-			if (!match(Tag.LPAREN))
+			else
 			{
-				panic("Missing \'(\' when parsing unary-expr.");
+				start_pos.pop();
+				ret = new UnaryExpr(UnaryExpr.dec, x);
+			}
+		}
+		else if (match(Tag.SIZEOF))
+		{
+			advance();
+			UnaryExpr ue = unary_expr();// firstly, try unary-expr ::= sizeof unary-expr
+			if (ue == null)
+				look = start_pos.pop(); // if fail, backtrack
+			else
+			{
+				start_pos.pop();
+				return new UnaryExpr(UnaryExpr.sizeof, ue);
+			}
+
+			if (match(Tag.LPAREN))
+				advance();
+			else
+			{
+				panic_missing('(');
 				return null;
 			}
 
-			TypeName x = type_name();
+			TypeName x = type_name(); // try unary-expr ::= sizeof(type-name)
 			if (x == null)
 			{
-				panic("Unable to match a type-name when parsing unary-expr.");
+				look = start_pos.pop();
+				panic("Unable to match a type-name when parsing \"\".");
 				return null;
 			}
+			else
+				start_pos.pop();
 
-			if (!match(Tag.RPAREN))
+			if (match(Tag.RPAREN))
 			{
-				panic("Missing \')\' when parsing unary-expr.");
+				advance();
+				return new UnaryExpr(UnaryExpr.sizeof, x);
+			}
+			else
+			{
+				panic_missing(')');
 				return null;
 			}
-
-			ret = new UnaryExpr(UnaryExpr.sizeof, x);
 		}
 		else
 		{
 			PostfixExpr x = postfix_expr();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Unable to match a postfix expr when parsing unary-expr.");
 				return null;
 			}
+			else
+				start_pos.pop();
 
 			ret = new UnaryExpr(UnaryExpr.postfix, x);
 		}
@@ -1525,32 +1841,42 @@ public class Parser
 		PrimaryExpr pe = primary_expr();
 		if (pe == null)
 		{
+			look = start_pos.pop();
 			panic("Unable to match a primary expr when parsing postfix expr.");
 			return null;
 		}
+		else
+			start_pos.pop();
 
 		PostfixExpr ret = new PostfixExpr(pe);
 		for (;;)
 		{
 			if (match(Tag.LMPAREN))
 			{
+				advance();
 				Expression x = expression();
 				if (x == null)
 				{
+					look = start_pos.pop();
 					panic("Unable to match an expression when parsing postfix in postfix expr.");
 					return null;
 				}
+				else
+					start_pos.pop();
 
-				if (!match(Tag.RMPAREN))
+				if (match(Tag.RMPAREN))
 				{
-					panic("Missing \']\'.");
+					advance();
+					ret.add_elem(PostfixExpr.mparen, x);
+				}
+				{
+					panic_missing(']');
 					return null;
 				}
-
-				ret.add_elem(PostfixExpr.mparen, x);
 			}
 			else if (match(Tag.LPAREN))
 			{
+				advance();
 				if (match(Tag.RPAREN))
 				{
 					ret.add_elem(PostfixExpr.paren, null);
@@ -1558,58 +1884,82 @@ public class Parser
 				}
 				else
 				{
-					LinkedList<AssignmentExpr> arg = new LinkedList<AssignmentExpr>();
+					LinkedList<AssignmentExpr> arg = new LinkedList<AssignmentExpr>(); // arguments
 					int cnt = 0;
-					do
+					for (;;)
 					{
 						AssignmentExpr x = assignment_expr();
 						++cnt;
 						if (x == null)
 						{
+							look = start_pos.pop();
 							panic("Unable to match the " + num2idx(cnt) + " asssignment-expr when parsing arguments.");
 							return null;
 						}
 						else
+						{
+							start_pos.pop();
 							arg.add(x);
-					} while (match(Tag.COMMA));
+						}
 
-					if (!match(Tag.RPAREN))
-					{
-						panic("Missing \')\'.");
-						return null;
+						if (match(Tag.COMMA))
+							advance();
+						else
+							break;
 					}
 
-					ret.add_elem(PostfixExpr.paren, arg);
+					if (match(Tag.RPAREN))
+					{
+						advance();
+						ret.add_elem(PostfixExpr.paren, arg);
+					}
+					else
+					{
+						panic_missing(')');
+						return null;
+					}
 				}
 			}
 			else if (match(Tag.DOT))
 			{
-				if (!match(Tag.ID))
+				advance();
+				if (match(Tag.ID))
+				{
+					String name = ((Identifier) token_buf.get(look)).name;
+					advance();
+					ret.add_elem(PostfixExpr.dot, name);
+				}
+				else
 				{
 					panic("Unable to match the identifier when parsing postfix.");
 					return null;
 				}
-
-				String name = ((Identifier) look).name;
-				ret.add_elem(PostfixExpr.dot, name);
-				advance();
 			}
 			else if (match(Tag.PTR))
 			{
-				if (!match(Tag.ID))
+				advance();
+				if (match(Tag.ID))
+				{
+					String name = ((Identifier) token_buf.get(look)).name;
+					advance();
+					ret.add_elem(PostfixExpr.ptr, name);
+				}
+				else
 				{
 					panic("Unable to match a identifier when parsing postfix.");
 					return null;
 				}
-
-				String name = ((Identifier) look).name;
-				ret.add_elem(PostfixExpr.ptr, name);
-				advance();
 			}
 			else if (match(Tag.INC))
+			{
+				advance();
 				ret.add_elem(PostfixExpr.inc, null);
+			}
 			else if (match(Tag.DEC))
+			{
+				advance();
 				ret.add_elem(PostfixExpr.dec, null);
+			}
 			else
 				break;
 		}
@@ -1622,32 +1972,40 @@ public class Parser
 		start_pos.push(look);
 		if (match(Tag.ID) || match(Tag.CH) || match(Tag.NUM) || match(Tag.REAL) || match(Tag.STR))
 		{
-			PrimaryExpr ret = new PrimaryExpr(look);
+			PrimaryExpr ret = new PrimaryExpr(token_buf.get(look));
 			advance();
 			return ret;
 		}
 		else
 		{
-			if (!match(Tag.LPAREN))
+			if (match(Tag.LPAREN))
+				advance();
+			else
 			{
-				panic("Missing \'(\'.");
+				panic_missing('(');
 				return null;
 			}
 
 			Expression x = expression();
 			if (x == null)
 			{
+				look = start_pos.pop();
 				panic("Failed to match an expr when parsing primary-expr.");
 				return null;
 			}
+			else
+				start_pos.pop();
 
-			if (!match(Tag.RPAREN))
+			if (match(Tag.RPAREN))
 			{
-				panic("Missing \')\'.");
+				advance();
+				return new PrimaryExpr(x);
+			}
+			else
+			{
+				panic_missing(')');
 				return null;
 			}
-
-			return new PrimaryExpr(x);
 		}
 	}
 

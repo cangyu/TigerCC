@@ -88,37 +88,37 @@ public class Lexer
 		String s = get_word();
 
 		Token ret = null;
-		if (s == "if")
+		if (s.equals("if".intern()))
 			ret = build_token(Tag.IF);
-		else if (s == "else")
+		else if (s.equals("else".intern()))
 			ret = build_token(Tag.ELSE);
-		else if (s == "while")
+		else if (s.equals("while".intern()))
 			ret = build_token(Tag.WHILE);
-		else if (s == "for")
+		else if (s.equals("for".intern()))
 			ret = build_token(Tag.FOR);
-		else if (s == "continue")
+		else if (s.equals("continue".intern()))
 			ret = build_token(Tag.CONTINUE);
-		else if (s == "break")
+		else if (s.equals("break".intern()))
 			ret = build_token(Tag.BREAK);
-		else if (s == "return")
+		else if (s.equals("return".intern()))
 			ret = build_token(Tag.RETURN);
-		else if (s == "sizeof")
+		else if (s.equals("sizeof".intern()))
 			ret = build_token(Tag.SIZEOF);
-		else if (s == "typedef")
+		else if (s.equals("typedef".intern()))
 			ret = build_token(Tag.TYPEDEF);
-		else if (s == "void")
+		else if (s.equals("void".intern()))
 			ret = build_token(Tag.VOID);
-		else if (s == "int")
+		else if (s.equals("int".intern()))
 			ret = build_token(Tag.INT);
-		else if (s == "double")
+		else if (s.equals("double".intern()))
 			ret = build_token(Tag.DOUBLE);
-		else if (s == "float")
+		else if (s.equals("float".intern()))
 			ret = build_token(Tag.FLOAT);
-		else if (s == "char")
+		else if (s.equals("char".intern()))
 			ret = build_token(Tag.CHAR);
-		else if (s == "struct")
+		else if (s.equals("struct".intern()))
 			ret = build_token(Tag.STRUCT);
-		else if (s == "union")
+		else if (s.equals("union".intern()))
 			ret = build_token(Tag.UNION);
 		else
 			ret = new Identifier(s, line, column);
