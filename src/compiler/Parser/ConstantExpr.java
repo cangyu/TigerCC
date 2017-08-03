@@ -1,9 +1,6 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNode;
-import compiler.AST.ASTNodeVisitor;
-
-public class ConstantExpr extends ASTNode
+public class ConstantExpr
 {
 	public LogicalOrExpr expr;
 
@@ -11,11 +8,4 @@ public class ConstantExpr extends ASTNode
 	{
 		expr = x;
 	}
-
-	@Override
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
-	}
-
 }

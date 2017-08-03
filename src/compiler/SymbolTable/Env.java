@@ -1,4 +1,4 @@
-package compiler.Symbols;
+package compiler.SymbolTable;
 
 import java.util.*;
 

@@ -2,10 +2,7 @@ package compiler.Parser;
 
 import java.util.*;
 
-import compiler.AST.ASTNode;
-import compiler.AST.ASTNodeVisitor;
-
-public class TypeSpecifier extends ASTNode
+public class TypeSpecifier
 {
 	public final static int ts_void = 0;
 	public final static int ts_int = 1;
@@ -14,12 +11,6 @@ public class TypeSpecifier extends ASTNode
 	public final static int ts_double = 4;
 	public final static int ts_struct = 5;
 	public final static int ts_union = 6;
-
-	public final static TypeSpecifier TS_VOID = new TypeSpecifier(ts_void);
-	public final static TypeSpecifier TS_INT = new TypeSpecifier(ts_int);
-	public final static TypeSpecifier TS_CHAR = new TypeSpecifier(ts_char);
-	public final static TypeSpecifier TS_FLOAT = new TypeSpecifier(ts_float);
-	public final static TypeSpecifier TS_DOUBLE = new TypeSpecifier(ts_double);
 
 	public int ts_type;
 	public String name;
@@ -43,10 +34,5 @@ public class TypeSpecifier extends ASTNode
 	public void add_entry(RecordEntry x)
 	{
 		entry.add(x);
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

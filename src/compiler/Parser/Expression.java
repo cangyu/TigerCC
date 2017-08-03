@@ -1,9 +1,8 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
 import java.util.*;
 
-public class Expression extends Expr
+public class Expression
 {
 	public LinkedList<AssignmentExpr> elem;
 
@@ -15,10 +14,5 @@ public class Expression extends Expr
 	public void add_expr(AssignmentExpr x)
 	{
 		elem.add(x);
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

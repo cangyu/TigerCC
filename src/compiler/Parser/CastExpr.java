@@ -1,9 +1,8 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
 import java.util.*;
 
-public class CastExpr extends Expr
+public class CastExpr
 {
 	public LinkedList<TypeName> type_list;
 	public UnaryExpr expr;
@@ -21,10 +20,5 @@ public class CastExpr extends Expr
 	public void set_origin(UnaryExpr x)
 	{
 		expr = x;
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

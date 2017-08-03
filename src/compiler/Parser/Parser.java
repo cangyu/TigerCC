@@ -2,6 +2,8 @@ package compiler.Parser;
 
 import java.io.*;
 import java.util.*;
+
+import compiler.AST.BinaryExpr;
 import compiler.Lexer.*;
 
 //Recursive Decent Parser
@@ -27,6 +29,11 @@ public class Parser
 			if (tmp.tag == Token.EOF)
 				break;
 		}
+	}
+
+	public boolean exit_status()
+	{
+		return start_pos.empty();
 	}
 
 	private void advance()
@@ -326,27 +333,27 @@ public class Parser
 		if (match(Token.VOID))
 		{
 			advance();
-			return TypeSpecifier.TS_VOID;
+			return new TypeSpecifier(TypeSpecifier.ts_void);
 		}
 		else if (match(Token.INT))
 		{
 			advance();
-			return TypeSpecifier.TS_INT;
+			return new TypeSpecifier(TypeSpecifier.ts_int);
 		}
 		else if (match(Token.CHAR))
 		{
 			advance();
-			return TypeSpecifier.TS_CHAR;
+			return new TypeSpecifier(TypeSpecifier.ts_char);
 		}
 		else if (match(Token.FLOAT))
 		{
 			advance();
-			return TypeSpecifier.TS_FLOAT;
+			return new TypeSpecifier(TypeSpecifier.ts_float);
 		}
 		else if (match(Token.DOUBLE))
 		{
 			advance();
-			return TypeSpecifier.TS_DOUBLE;
+			return new TypeSpecifier(TypeSpecifier.ts_double);
 		}
 		else if (match(Token.STRUCT))
 		{
@@ -632,10 +639,10 @@ public class Parser
 		}
 	}
 
-	private Stmt stmt()
+	private Statement stmt()
 	{
 		start_pos.push(look);
-		Stmt ret = null;
+		Statement ret = null;
 		if (match(Token.CONTINUE) || match(Token.BREAK) || match(Token.RETURN))
 		{
 			ret = jump_stmt();
@@ -776,7 +783,7 @@ public class Parser
 
 		for (;;)
 		{
-			Stmt x = stmt();
+			Statement x = stmt();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -840,7 +847,7 @@ public class Parser
 			return null;
 		}
 
-		Stmt if_clause = stmt();
+		Statement if_clause = stmt();
 		if (if_clause == null)
 		{
 			look = start_pos.pop();
@@ -853,7 +860,7 @@ public class Parser
 		if (match(Token.ELSE))
 		{
 			advance();
-			Stmt else_clause = stmt();
+			Statement else_clause = stmt();
 			if (else_clause == null)
 			{
 				look = start_pos.pop();
@@ -903,7 +910,7 @@ public class Parser
 				return null;
 			}
 
-			Stmt y = stmt();
+			Statement y = stmt();
 			if (y == null)
 			{
 				look = start_pos.pop();
@@ -990,7 +997,7 @@ public class Parser
 				return null;
 			}
 
-			Stmt y = stmt();
+			Statement y = stmt();
 			if (y == null)
 			{
 				look = start_pos.pop();

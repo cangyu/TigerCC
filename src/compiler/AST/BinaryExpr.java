@@ -1,6 +1,4 @@
-package compiler.Parser;
-
-import compiler.AST.ASTNodeVisitor;
+package compiler.AST;
 
 public abstract class BinaryExpr extends Expr
 {

@@ -1,17 +1,15 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
-
-public class IterationStmt extends Stmt
+public class IterationStmt extends Statement
 {
 	public static final int WHILE = 0;
 	public static final int FOR = 0;
 
 	public int type;
-	public Expr init, judge, next;
-	public Stmt stmt;
+	public Expression init, judge, next;
+	public Statement stmt;
 
-	public IterationStmt(Expr cond, Stmt st)
+	public IterationStmt(Expression cond, Statement st)
 	{
 		type = WHILE;
 		init = null;
@@ -20,17 +18,12 @@ public class IterationStmt extends Stmt
 		stmt = st;
 	}
 
-	public IterationStmt(Expr t1, Expr t2, Expr t3, Stmt st)
+	public IterationStmt(Expression t1, Expression t2, Expression t3, Statement st)
 	{
 		type = FOR;
 		init = t1;
 		judge = t2;
 		next = t3;
 		stmt = st;
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

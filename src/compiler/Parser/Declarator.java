@@ -2,10 +2,7 @@ package compiler.Parser;
 
 import java.util.LinkedList;
 
-import compiler.AST.ASTNode;
-import compiler.AST.ASTNodeVisitor;
-
-public class Declarator extends ASTNode
+public class Declarator
 {
 	public PlainDeclarator plain_declarator;
 	public LinkedList<ConstantExpr> dimension;
@@ -19,10 +16,5 @@ public class Declarator extends ASTNode
 	public void add_expr(ConstantExpr e)
 	{
 		dimension.add(e);
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

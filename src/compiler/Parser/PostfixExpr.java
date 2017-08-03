@@ -1,9 +1,8 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
 import java.util.*;
 
-public class PostfixExpr extends Expr
+public class PostfixExpr
 {
 	public static final int mparen = 0;
 	public static final int paren = 1;
@@ -36,10 +35,5 @@ public class PostfixExpr extends Expr
 	public void add_elem(int t, Object c)
 	{
 		elem.add(new Postfix(t, c));
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

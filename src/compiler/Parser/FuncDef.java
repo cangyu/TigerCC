@@ -1,9 +1,8 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
 import java.util.*;
 
-public class FuncDef extends ProgramComp
+public class FuncDef extends ProgComp
 {
 	public TypeSpecifier ts;
 	public PlainDeclarator pd;
@@ -26,10 +25,5 @@ public class FuncDef extends ProgramComp
 	public void add_body(CompoundStmt x)
 	{
 		cst = x;
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

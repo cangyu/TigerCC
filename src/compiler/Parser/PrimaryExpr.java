@@ -1,9 +1,8 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
 import compiler.Lexer.*;
 
-public class PrimaryExpr extends Expr
+public class PrimaryExpr
 {
 	public static final int identifier = 0;
 	public static final int constant = 1;
@@ -50,10 +49,5 @@ public class PrimaryExpr extends Expr
 			type = paren_expr;// primary-expr ::= (expression)
 			elem = e;
 		}
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

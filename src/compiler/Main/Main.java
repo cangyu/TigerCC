@@ -17,8 +17,8 @@ public class Main
 	{
 		Lexer lex = new Lexer(ips);
 		Parser psr = new Parser(lex);
-		Program prog = psr.parse();
-		if (prog != null)
+		Program parse_tree = psr.parse();
+		if (parse_tree != null && psr.exit_status())
 			System.out.println("OK!");
 		else
 			System.out.println("WTF?");

@@ -2,13 +2,12 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class ExclusiveOrExpr extends BinaryExpr
+public class ExclusiveOrExpr
 {
 	public LinkedList<AndExpr> expr_list;
 
 	public ExclusiveOrExpr()
 	{
-		super(BinaryExpr.BIT_XOR);
 		expr_list = new LinkedList<AndExpr>();
 	}
 

@@ -1,9 +1,6 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNode;
-import compiler.AST.ASTNodeVisitor;
-
-public class PlainDeclarator extends ASTNode
+public class PlainDeclarator
 {
 	public int star_num;
 	public String name;
@@ -12,10 +9,5 @@ public class PlainDeclarator extends ASTNode
 	{
 		star_num = sn;
 		name = id;
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

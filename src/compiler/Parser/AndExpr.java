@@ -2,13 +2,12 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class AndExpr extends BinaryExpr
+public class AndExpr
 {
 	public LinkedList<EqualityExpr> expr_list;
 
 	public AndExpr()
 	{
-		super(BinaryExpr.BIT_AND);
 		expr_list = new LinkedList<EqualityExpr>();
 	}
 

@@ -1,9 +1,10 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
 import java.util.*;
 
-public class AssignmentExpr extends Expr
+import compiler.AST.BinaryExpr;
+
+public class AssignmentExpr
 {
 	public static final int ASSIGN = 0;
 	public static final int MUL_ASSIGN = 1;
@@ -19,7 +20,7 @@ public class AssignmentExpr extends Expr
 
 	public LinkedList<Integer> op_list;
 	public LinkedList<UnaryExpr> lexpr_list;
-	public BinaryExpr rexpr;
+	public LogicalOrExpr rexpr;
 
 	public AssignmentExpr()
 	{
@@ -33,44 +34,8 @@ public class AssignmentExpr extends Expr
 		op_list.add(new Integer(op));
 	}
 
-	public void set_origin(BinaryExpr y)
+	public void set_origin(LogicalOrExpr y)
 	{
 		rexpr = y;
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
-	}
-
-	public String getOperator(int op)
-	{
-		switch (op)
-		{
-		case ASSIGN:
-			return "=".intern();
-		case MUL_ASSIGN:
-			return "*=".intern();
-		case DIV_ASSIGN:
-			return "/=".intern();
-		case MOD_ASSIGN:
-			return "%=".intern();
-		case ADD_ASSIGN:
-			return "+=".intern();
-		case SUB_ASSIGN:
-			return "-=".intern();
-		case SHL_ASSIGN:
-			return "<<=".intern();
-		case SHR_ASSIGN:
-			return ">>=".intern();
-		case AND_ASSIGN:
-			return "&=".intern();
-		case XOR_ASSIGN:
-			return "^=".intern();
-		case OR_ASSIGN:
-			return "|=".intern();
-		default:
-			return "".intern();
-		}
 	}
 }

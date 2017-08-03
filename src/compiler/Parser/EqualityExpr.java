@@ -2,14 +2,13 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class EqualityExpr extends BinaryExpr
+public class EqualityExpr
 {
 	public LinkedList<Integer> op_list;
 	public LinkedList<RelationalExpr> expr_list;
 
 	public EqualityExpr()
 	{
-		super();
 		op_list = new LinkedList<Integer>();
 		expr_list = new LinkedList<RelationalExpr>();
 	}

@@ -1,6 +1,5 @@
-package compiler.Parser;
+package compiler.AST;
 
-import compiler.AST.ASTNode;
 import compiler.Types.*;
 
 public abstract class Expr extends ASTNode

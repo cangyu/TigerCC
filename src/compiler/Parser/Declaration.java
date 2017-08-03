@@ -1,9 +1,8 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
 import java.util.LinkedList;
 
-public class Declaration extends ProgramComp
+public class Declaration extends ProgComp
 {
 	public TypeSpecifier ts;
 	public LinkedList<InitDeclarator> elem;
@@ -17,10 +16,5 @@ public class Declaration extends ProgramComp
 	public void add_elem(InitDeclarator x)
 	{
 		elem.add(x);
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

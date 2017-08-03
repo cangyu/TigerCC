@@ -2,14 +2,13 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class MultiplicativeExpr extends BinaryExpr
+public class MultiplicativeExpr
 {
 	public LinkedList<CastExpr> expr_list;
 	public LinkedList<Integer> op_list;
 
 	public MultiplicativeExpr()
 	{
-		super();
 		expr_list = new LinkedList<CastExpr>();
 		op_list = new LinkedList<Integer>();
 	}

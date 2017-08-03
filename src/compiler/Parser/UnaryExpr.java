@@ -1,6 +1,7 @@
 package compiler.Parser;
 
 import compiler.AST.ASTNodeVisitor;
+import compiler.AST.Expr;
 
 public class UnaryExpr extends Expr
 {

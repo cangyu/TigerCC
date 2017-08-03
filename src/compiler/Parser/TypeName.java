@@ -1,8 +1,6 @@
 package compiler.Parser;
 
-import compiler.AST.*;
-
-public class TypeName extends ASTNode
+public class TypeName
 {
 	public TypeSpecifier type_specifier;
 	public int star_cnt;
@@ -11,10 +9,5 @@ public class TypeName extends ASTNode
 	{
 		type_specifier = ts;
 		star_cnt = sc;
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

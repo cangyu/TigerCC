@@ -1,10 +1,8 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNode;
-import compiler.AST.ASTNodeVisitor;
 import java.util.LinkedList;
 
-public class Initializer extends ASTNode
+public class Initializer
 {
 	public static final int assign = 0;
 	public static final int list = 1;
@@ -28,10 +26,5 @@ public class Initializer extends ASTNode
 	public void add_initializer(Initializer x)
 	{
 		comp.add(x);
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }

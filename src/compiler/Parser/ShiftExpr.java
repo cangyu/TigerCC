@@ -2,14 +2,13 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class ShiftExpr extends BinaryExpr
+public class ShiftExpr
 {
 	public LinkedList<AdditiveExpr> expr_list;
 	public LinkedList<Integer> op_list;
 
 	public ShiftExpr()
 	{
-		super();
 		expr_list = new LinkedList<AdditiveExpr>();
 		op_list = new LinkedList<Integer>();
 	}

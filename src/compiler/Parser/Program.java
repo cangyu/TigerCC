@@ -2,25 +2,17 @@ package compiler.Parser;
 
 import java.util.*;
 
-import compiler.AST.ASTNode;
-import compiler.AST.ASTNodeVisitor;
-
-public class Program extends ASTNode
+public class Program
 {
-	public LinkedList<ProgramComp> comp;
+	public LinkedList<ProgComp> elem;
 
 	public Program()
 	{
-		comp = new LinkedList<ProgramComp>();
+		elem = new LinkedList<ProgComp>();
 	}
 
-	public void add_elem(ProgramComp x)
+	public void add_elem(ProgComp x)
 	{
-		comp.add(x);
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
+		elem.add(x);
 	}
 }

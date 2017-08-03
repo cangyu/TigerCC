@@ -1,21 +1,14 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
-
-public class SelectionStmt extends Stmt
+public class SelectionStmt extends Statement
 {
-	public Expr cond;
-	public Stmt if_clause, else_clause;
-	
-	public SelectionStmt(Expr _cond, Stmt _ic, Stmt _ec)
+	public Expression cond;
+	public Statement if_clause, else_clause;
+
+	public SelectionStmt(Expression _cond, Statement _ic, Statement _ec)
 	{
 		cond = _cond;
 		if_clause = _ic;
 		else_clause = _ec;
 	}
-	
-    public void accept(ASTNodeVisitor v) throws Exception
-    {
-        v.visit(this);
-    }
 }

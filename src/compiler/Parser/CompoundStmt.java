@@ -1,17 +1,16 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
 import java.util.*;
 
-public class CompoundStmt extends Stmt
+public class CompoundStmt extends Statement
 {
 	public LinkedList<Declaration> decls;
-	public LinkedList<Stmt> stmts;
+	public LinkedList<Statement> stmts;
 
 	public CompoundStmt()
 	{
 		decls = new LinkedList<Declaration>();
-		stmts = new LinkedList<Stmt>();
+		stmts = new LinkedList<Statement>();
 	}
 
 	public void add_decl(Declaration x)
@@ -19,13 +18,8 @@ public class CompoundStmt extends Stmt
 		decls.add(x);
 	}
 
-	public void add_stmt(Stmt x)
+	public void add_stmt(Statement x)
 	{
 		stmts.add(x);
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
 	}
 }
