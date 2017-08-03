@@ -6,7 +6,7 @@ public class Int extends Token
 
 	public Int(int x, int l, int c)
 	{
-		super(Tag.NUM, l, c);
+		super(NUM, l, c);
 		value = x;
 	}
 

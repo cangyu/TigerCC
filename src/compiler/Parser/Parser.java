@@ -5,6 +5,7 @@ import java.util.*;
 import compiler.Lexer.*;
 
 //Recursive Decent Parser
+//TODO: Better error reporting, remove temporary message
 public class Parser
 {
 	private int look;
@@ -20,10 +21,10 @@ public class Parser
 		for (;;)
 		{
 			Token tmp = lex.next_token();
-			if (tmp.tag != Tag.LINECOMMENT && tmp.tag != Tag.BLKCOMMENT)
+			if (tmp.tag != Token.LINECOMMENT && tmp.tag != Token.BLKCOMMENT)
 				token_buf.add(tmp);
 
-			if (tmp.tag == Tag.EOF)
+			if (tmp.tag == Token.EOF)
 				break;
 		}
 	}
@@ -33,7 +34,7 @@ public class Parser
 		++look;
 	}
 
-	private boolean match(Tag t)
+	private boolean match(int t)
 	{
 		return token_buf.get(look).tag == t;
 	}
@@ -62,7 +63,7 @@ public class Parser
 
 		for (;;)
 		{
-			if (match(Tag.EOF))
+			if (match(Token.EOF))
 				break;
 
 			Declaration decl = declaration();
@@ -105,7 +106,7 @@ public class Parser
 		else
 			start_pos.pop();
 
-		if (match(Tag.SEMI))
+		if (match(Token.SEMI))
 		{
 			advance();
 			return new Declaration(t);// declaration ::= type-specifier;
@@ -129,13 +130,13 @@ public class Parser
 				ret.add_elem(x);
 			}
 
-			if (match(Tag.COMMA))
+			if (match(Token.COMMA))
 				advance();
 			else
 				break;
 		}
 
-		if (match(Tag.SEMI))
+		if (match(Token.SEMI))
 		{
 			advance();
 			return ret;
@@ -170,7 +171,7 @@ public class Parser
 		else
 			start_pos.pop();
 
-		if (match(Tag.LPAREN))
+		if (match(Token.LPAREN))
 			advance();
 		else
 		{
@@ -180,7 +181,7 @@ public class Parser
 
 		FuncDef ret = new FuncDef(ts, pd);
 
-		if (!match(Tag.RPAREN))
+		if (!match(Token.RPAREN))
 		{
 			int cnt = 0;
 			for (;;)
@@ -199,14 +200,14 @@ public class Parser
 					ret.add_param(x);
 				}
 
-				if (match(Tag.COMMA))
+				if (match(Token.COMMA))
 					advance();
 				else
 					break;
 			}
 		}
 
-		if (match(Tag.RPAREN))
+		if (match(Token.RPAREN))
 			advance();
 		else
 		{
@@ -243,7 +244,7 @@ public class Parser
 			start_pos.pop();
 
 		Initializer y = null;
-		if (match(Tag.ASSIGN))
+		if (match(Token.ASSIGN))
 		{
 			advance();
 			y = initializer();
@@ -263,7 +264,7 @@ public class Parser
 	private Initializer initializer()
 	{
 		start_pos.push(look);
-		if (match(Tag.LBRACE))
+		if (match(Token.LBRACE))
 		{
 			advance();
 			Initializer ret = new Initializer();
@@ -285,13 +286,13 @@ public class Parser
 					ret.add_initializer(x);
 				}
 
-				if (match(Tag.COMMA))
+				if (match(Token.COMMA))
 					advance();
 				else
 					break;
 			}
 
-			if (match(Tag.RBRACE))
+			if (match(Token.RBRACE))
 			{
 				advance();
 				return ret;
@@ -322,42 +323,42 @@ public class Parser
 	private TypeSpecifier type_specifier()
 	{
 		start_pos.push(look);
-		if (match(Tag.VOID))
+		if (match(Token.VOID))
 		{
 			advance();
 			return TypeSpecifier.TS_VOID;
 		}
-		else if (match(Tag.INT))
+		else if (match(Token.INT))
 		{
 			advance();
 			return TypeSpecifier.TS_INT;
 		}
-		else if (match(Tag.CHAR))
+		else if (match(Token.CHAR))
 		{
 			advance();
 			return TypeSpecifier.TS_CHAR;
 		}
-		else if (match(Tag.FLOAT))
+		else if (match(Token.FLOAT))
 		{
 			advance();
 			return TypeSpecifier.TS_FLOAT;
 		}
-		else if (match(Tag.DOUBLE))
+		else if (match(Token.DOUBLE))
 		{
 			advance();
 			return TypeSpecifier.TS_DOUBLE;
 		}
-		else if (match(Tag.STRUCT))
+		else if (match(Token.STRUCT))
 		{
 			advance();
-			if (match(Tag.ID))
+			if (match(Token.ID))
 			{
 				String name = ((Identifier) token_buf.get(look)).name;
 				advance();
 
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_struct, name);
 
-				if (match(Tag.LBRACE))
+				if (match(Token.LBRACE))
 				{
 					advance();
 					if (handle_record_entry(ret) == null)
@@ -366,7 +367,7 @@ public class Parser
 						return null;
 					}
 
-					if (match(Tag.RBRACE))
+					if (match(Token.RBRACE))
 					{
 						advance();
 						return ret;
@@ -380,7 +381,7 @@ public class Parser
 				else
 					return ret;
 			}
-			else if (match(Tag.LBRACE)) // type_specifier: struct { (type_specifier declarator+ ;)+ }
+			else if (match(Token.LBRACE)) // type_specifier: struct { (type_specifier declarator+ ;)+ }
 			{
 				advance();
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_struct);
@@ -390,7 +391,7 @@ public class Parser
 					return null;
 				}
 
-				if (match(Tag.RBRACE))
+				if (match(Token.RBRACE))
 				{
 					advance();
 					return ret;
@@ -407,17 +408,17 @@ public class Parser
 				return null;
 			}
 		}
-		else if (match(Tag.UNION))
+		else if (match(Token.UNION))
 		{
 			advance();
-			if (match(Tag.ID))
+			if (match(Token.ID))
 			{
 				String name = ((Identifier) token_buf.get(look)).name;
 				advance();
 
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_union, name); // type_specifeir: union identifier
 
-				if (match(Tag.LBRACE)) // type_specifier: union identifier { (type_specifier declarator+ ;)+ }
+				if (match(Token.LBRACE)) // type_specifier: union identifier { (type_specifier declarator+ ;)+ }
 				{
 					advance();
 					if (handle_record_entry(ret) == null)
@@ -426,7 +427,7 @@ public class Parser
 						return null;
 					}
 
-					if (match(Tag.RBRACE))
+					if (match(Token.RBRACE))
 					{
 						advance();
 						return ret;
@@ -440,7 +441,7 @@ public class Parser
 				else
 					return ret;
 			}
-			else if (match(Tag.LBRACE)) // type_specifier: union { (type_specifier declarator+ ;)+ }
+			else if (match(Token.LBRACE)) // type_specifier: union { (type_specifier declarator+ ;)+ }
 			{
 				advance();
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_union);
@@ -450,7 +451,7 @@ public class Parser
 					return null;
 				}
 
-				if (match(Tag.RBRACE))
+				if (match(Token.RBRACE))
 				{
 					advance();
 					return ret;
@@ -512,14 +513,14 @@ public class Parser
 					re.add_elem(dlr);
 				}
 
-				if (match(Tag.COMMA))
+				if (match(Token.COMMA))
 					advance();
 				else
 					break;
 			}
 
 			// entry ending
-			if (match(Tag.SEMI))
+			if (match(Token.SEMI))
 			{
 				advance();
 				x.add_entry(re);
@@ -531,7 +532,7 @@ public class Parser
 			}
 
 			// block ending
-			if (match(Tag.RBRACE))
+			if (match(Token.RBRACE))
 			{
 				advance();
 				return x;
@@ -579,7 +580,7 @@ public class Parser
 			start_pos.pop();
 
 		Declarator ret = new Declarator(pdlr);
-		while (match(Tag.LMPAREN))
+		while (match(Token.LMPAREN))
 		{
 			advance();
 			ConstantExpr e = const_expr();
@@ -595,7 +596,7 @@ public class Parser
 				ret.add_expr(e);
 			}
 
-			if (match(Tag.RMPAREN))
+			if (match(Token.RMPAREN))
 				advance();
 			else
 			{
@@ -612,13 +613,13 @@ public class Parser
 		start_pos.push(look);
 
 		int n = 0;
-		while (match(Tag.TIMES))
+		while (match(Token.TIMES))
 		{
 			++n;
 			advance();
 		}
 
-		if (match(Tag.ID))
+		if (match(Token.ID))
 		{
 			String name = ((Identifier) token_buf.get(look)).name;
 			advance();
@@ -635,7 +636,7 @@ public class Parser
 	{
 		start_pos.push(look);
 		Stmt ret = null;
-		if (match(Tag.CONTINUE) || match(Tag.BREAK) || match(Tag.RETURN))
+		if (match(Token.CONTINUE) || match(Token.BREAK) || match(Token.RETURN))
 		{
 			ret = jump_stmt();
 			if (ret == null)
@@ -650,7 +651,7 @@ public class Parser
 				return ret;
 			}
 		}
-		else if (match(Tag.WHILE) || match(Tag.FOR))
+		else if (match(Token.WHILE) || match(Token.FOR))
 		{
 			ret = iteration_stmt();
 			if (ret == null)
@@ -665,7 +666,7 @@ public class Parser
 				return ret;
 			}
 		}
-		else if (match(Tag.IF))
+		else if (match(Token.IF))
 		{
 			ret = selection_stmt();
 			if (ret == null)
@@ -680,7 +681,7 @@ public class Parser
 				return ret;
 			}
 		}
-		else if (match(Tag.LBRACE))
+		else if (match(Token.LBRACE))
 		{
 			ret = compound_stmt();
 			if (ret == null)
@@ -715,7 +716,7 @@ public class Parser
 	private ExpressionStmt expression_stmt()
 	{
 		start_pos.push(look);
-		if (match(Tag.SEMI))
+		if (match(Token.SEMI))
 		{
 			advance();
 			return new ExpressionStmt(null);
@@ -732,7 +733,7 @@ public class Parser
 			else
 				start_pos.pop();
 
-			if (match(Tag.SEMI))
+			if (match(Token.SEMI))
 			{
 				advance();
 				return new ExpressionStmt(x);
@@ -750,7 +751,7 @@ public class Parser
 		start_pos.push(look);
 		CompoundStmt ret = new CompoundStmt();
 
-		if (match(Tag.LBRACE))
+		if (match(Token.LBRACE))
 			advance();
 		else
 		{
@@ -788,7 +789,7 @@ public class Parser
 			}
 		}
 
-		if (match(Tag.RBRACE))
+		if (match(Token.RBRACE))
 		{
 			advance();
 			return ret;
@@ -805,7 +806,7 @@ public class Parser
 		start_pos.push(look);
 		SelectionStmt ret = null;
 
-		if (match(Tag.IF))
+		if (match(Token.IF))
 			advance();
 		else
 		{
@@ -813,7 +814,7 @@ public class Parser
 			return null;
 		}
 
-		if (match(Tag.LPAREN))
+		if (match(Token.LPAREN))
 			advance();
 		else
 		{
@@ -831,7 +832,7 @@ public class Parser
 		else
 			start_pos.pop();
 
-		if (match(Tag.RPAREN))
+		if (match(Token.RPAREN))
 			advance();
 		else
 		{
@@ -849,7 +850,7 @@ public class Parser
 		else
 			start_pos.pop();
 
-		if (match(Tag.ELSE))
+		if (match(Token.ELSE))
 		{
 			advance();
 			Stmt else_clause = stmt();
@@ -873,10 +874,10 @@ public class Parser
 	private IterationStmt iteration_stmt()
 	{
 		start_pos.push(look);
-		if (match(Tag.WHILE))
+		if (match(Token.WHILE))
 		{
 			advance();
-			if (match(Tag.LPAREN))
+			if (match(Token.LPAREN))
 				advance();
 			else
 			{
@@ -894,7 +895,7 @@ public class Parser
 			else
 				start_pos.pop();
 
-			if (match(Tag.RPAREN))
+			if (match(Token.RPAREN))
 				advance();
 			else
 			{
@@ -914,10 +915,10 @@ public class Parser
 
 			return new IterationStmt(x, y);
 		}
-		else if (match(Tag.FOR))
+		else if (match(Token.FOR))
 		{
 			advance();
-			if (match(Tag.LPAREN))
+			if (match(Token.LPAREN))
 				advance();
 			else
 			{
@@ -926,7 +927,7 @@ public class Parser
 			}
 
 			Expression init = null, judge = null, next = null;
-			if (!match(Tag.SEMI)) // init-expr
+			if (!match(Token.SEMI)) // init-expr
 			{
 				init = expression();
 				if (init == null)
@@ -939,7 +940,7 @@ public class Parser
 					start_pos.pop();
 			}
 
-			if (match(Tag.SEMI)) // first SEMI
+			if (match(Token.SEMI)) // first SEMI
 				advance();
 			else
 			{
@@ -947,7 +948,7 @@ public class Parser
 				return null;
 			}
 
-			if (!match(Tag.SEMI)) // judge-expr
+			if (!match(Token.SEMI)) // judge-expr
 			{
 				judge = expression();
 				if (judge == null)
@@ -960,7 +961,7 @@ public class Parser
 					start_pos.pop();
 			}
 
-			if (match(Tag.SEMI)) // second SEMI
+			if (match(Token.SEMI)) // second SEMI
 				advance();
 			else
 			{
@@ -968,7 +969,7 @@ public class Parser
 				return null;
 			}
 
-			if (!match(Tag.RPAREN)) // next-expr
+			if (!match(Token.RPAREN)) // next-expr
 			{
 				next = expression();
 				if (next == null)
@@ -981,7 +982,7 @@ public class Parser
 					start_pos.pop();
 			}
 
-			if (match(Tag.RPAREN))
+			if (match(Token.RPAREN))
 				advance();
 			else
 			{
@@ -1012,20 +1013,20 @@ public class Parser
 	{
 		start_pos.push(look);
 		JumpStmt ret = null;
-		if (match(Tag.CONTINUE))
+		if (match(Token.CONTINUE))
 		{
 			advance();
 			ret = new JumpStmt(JumpStmt.CTNU, null);
 		}
-		else if (match(Tag.BREAK))
+		else if (match(Token.BREAK))
 		{
 			advance();
 			ret = new JumpStmt(JumpStmt.BRK, null);
 		}
-		else if (match(Tag.RETURN))
+		else if (match(Token.RETURN))
 		{
 			advance();
-			if (match(Tag.SEMI))
+			if (match(Token.SEMI))
 				ret = new JumpStmt(JumpStmt.RET, null); // check SEMI later
 			else
 			{
@@ -1049,7 +1050,7 @@ public class Parser
 			return null;
 		}
 
-		if (match(Tag.SEMI))
+		if (match(Token.SEMI))
 		{
 			advance();
 			return ret;
@@ -1083,7 +1084,7 @@ public class Parser
 				ret.add_expr(x);
 			}
 
-			if (match(Tag.COMMA))
+			if (match(Token.COMMA))
 				advance();
 			else
 				break;
@@ -1124,57 +1125,57 @@ public class Parser
 			else
 				start_pos.pop();
 
-			if (match(Tag.ASSIGN))
+			if (match(Token.ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.ASSIGN);
 			}
-			else if (match(Tag.MUL_ASSIGN))
+			else if (match(Token.MUL_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.MUL_ASSIGN);
 			}
-			else if (match(Tag.DIV_ASSIGN))
+			else if (match(Token.DIV_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.DIV_ASSIGN);
 			}
-			else if (match(Tag.ADD_ASSIGN))
+			else if (match(Token.ADD_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.ADD_ASSIGN);
 			}
-			else if (match(Tag.SUB_ASSIGN))
+			else if (match(Token.SUB_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.SUB_ASSIGN);
 			}
-			else if (match(Tag.MOD_ASSIGN))
+			else if (match(Token.MOD_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.MOD_ASSIGN);
 			}
-			else if (match(Tag.SHL_ASSIGN))
+			else if (match(Token.SHL_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.SHL_ASSIGN);
 			}
-			else if (match(Tag.SHR_ASSIGN))
+			else if (match(Token.SHR_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.SHR_ASSIGN);
 			}
-			else if (match(Tag.AND_ASSIGN))
+			else if (match(Token.AND_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.AND_ASSIGN);
 			}
-			else if (match(Tag.XOR_ASSIGN))
+			else if (match(Token.XOR_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.XOR_ASSIGN);
 			}
-			else if (match(Tag.OR_ASSIGN))
+			else if (match(Token.OR_ASSIGN))
 			{
 				advance();
 				ret.add_left_expr(ue, AssignmentExpr.OR_ASSIGN);
@@ -1229,7 +1230,7 @@ public class Parser
 				ret.add_expr(x);
 			}
 
-			if (match(Tag.OR))
+			if (match(Token.OR))
 				advance();
 			else
 				break;
@@ -1260,7 +1261,7 @@ public class Parser
 				ret.add_expr(x);
 			}
 
-			if (match(Tag.AND))
+			if (match(Token.AND))
 				advance();
 			else
 				break;
@@ -1291,7 +1292,7 @@ public class Parser
 				ret.add_expr(x);
 			}
 
-			if (match(Tag.BIT_OR))
+			if (match(Token.BIT_OR))
 				advance();
 			else
 				break;
@@ -1322,7 +1323,7 @@ public class Parser
 				ret.add_expr(x);
 			}
 
-			if (match(Tag.BIT_XOR))
+			if (match(Token.BIT_XOR))
 				advance();
 			else
 				break;
@@ -1353,7 +1354,7 @@ public class Parser
 				ret.add_expr(x);
 			}
 
-			if (match(Tag.BIT_AND))
+			if (match(Token.BIT_AND))
 				advance();
 			else
 				break;
@@ -1381,12 +1382,12 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				if (match(Tag.EQ))
+				if (match(Token.EQ))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.EQ);
 				}
-				else if (match(Tag.NE))
+				else if (match(Token.NE))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.NE);
@@ -1421,22 +1422,22 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				if (match(Tag.LT))
+				if (match(Token.LT))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.LT);
 				}
-				else if (match(Tag.GT))
+				else if (match(Token.GT))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.GT);
 				}
-				else if (match(Tag.LE))
+				else if (match(Token.LE))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.LE);
 				}
-				else if (match(Tag.GE))
+				else if (match(Token.GE))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.GE);
@@ -1471,12 +1472,12 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				if (match(Tag.SHL))
+				if (match(Token.SHL))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.SHL);
 				}
-				else if (match(Tag.SHR))
+				else if (match(Token.SHR))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.SHR);
@@ -1511,12 +1512,12 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				if (match(Tag.PLUS))
+				if (match(Token.PLUS))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.PLUS);
 				}
-				else if (match(Tag.MINUS))
+				else if (match(Token.MINUS))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.MINUS);
@@ -1551,17 +1552,17 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				if (match(Tag.TIMES))
+				if (match(Token.TIMES))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.TIMES);
 				}
-				else if (match(Tag.DIVIDE))
+				else if (match(Token.DIVIDE))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.DIVIDE);
 				}
-				else if (match(Tag.MODULE))
+				else if (match(Token.MODULE))
 				{
 					advance();
 					ret.add_expr(x, BinaryExpr.MODULE);
@@ -1587,7 +1588,7 @@ public class Parser
 			if (ue == null)
 			{
 				look = start_pos.pop(); // backtrack
-				if (match(Tag.LPAREN))
+				if (match(Token.LPAREN))
 				{
 					advance();
 					TypeName tn = type_name();
@@ -1603,7 +1604,7 @@ public class Parser
 						ret.add_type(tn);
 					}
 
-					if (match(Tag.RPAREN))
+					if (match(Token.RPAREN))
 						advance();
 					else
 					{
@@ -1642,7 +1643,7 @@ public class Parser
 			start_pos.pop();
 
 		int cnt = 0;
-		while (match(Tag.TIMES))
+		while (match(Token.TIMES))
 		{
 			++cnt;
 			advance();
@@ -1655,7 +1656,7 @@ public class Parser
 	{
 		start_pos.push(look);
 		UnaryExpr ret = null;
-		if (match(Tag.BIT_AND))
+		if (match(Token.BIT_AND))
 		{
 			advance();
 			CastExpr x = cast_expr();
@@ -1671,7 +1672,7 @@ public class Parser
 				ret = new UnaryExpr(UnaryExpr.address, x);
 			}
 		}
-		else if (match(Tag.TIMES))
+		else if (match(Token.TIMES))
 		{
 			advance();
 			CastExpr x = cast_expr();
@@ -1687,7 +1688,7 @@ public class Parser
 				ret = new UnaryExpr(UnaryExpr.dereference, x);
 			}
 		}
-		else if (match(Tag.PLUS))
+		else if (match(Token.PLUS))
 		{
 			advance();
 			CastExpr x = cast_expr();
@@ -1703,7 +1704,7 @@ public class Parser
 				ret = new UnaryExpr(UnaryExpr.positive, x);
 			}
 		}
-		else if (match(Tag.MINUS))
+		else if (match(Token.MINUS))
 		{
 			advance();
 			CastExpr x = cast_expr();
@@ -1719,7 +1720,7 @@ public class Parser
 				ret = new UnaryExpr(UnaryExpr.negative, x);
 			}
 		}
-		else if (match(Tag.BIT_NOT))
+		else if (match(Token.BIT_NOT))
 		{
 			advance();
 			CastExpr x = cast_expr();
@@ -1735,7 +1736,7 @@ public class Parser
 				ret = new UnaryExpr(UnaryExpr.bit_not, x);
 			}
 		}
-		else if (match(Tag.NOT))
+		else if (match(Token.NOT))
 		{
 			advance();
 			CastExpr x = cast_expr();
@@ -1751,7 +1752,7 @@ public class Parser
 				ret = new UnaryExpr(UnaryExpr.not, x);
 			}
 		}
-		else if (match(Tag.INC))
+		else if (match(Token.INC))
 		{
 			advance();
 			UnaryExpr x = unary_expr();
@@ -1767,7 +1768,7 @@ public class Parser
 				ret = new UnaryExpr(UnaryExpr.inc, x);
 			}
 		}
-		else if (match(Tag.DEC))
+		else if (match(Token.DEC))
 		{
 			advance();
 			UnaryExpr x = unary_expr();
@@ -1783,7 +1784,7 @@ public class Parser
 				ret = new UnaryExpr(UnaryExpr.dec, x);
 			}
 		}
-		else if (match(Tag.SIZEOF))
+		else if (match(Token.SIZEOF))
 		{
 			advance();
 			UnaryExpr ue = unary_expr();// firstly, try unary-expr ::= sizeof unary-expr
@@ -1795,7 +1796,7 @@ public class Parser
 				return new UnaryExpr(UnaryExpr.sizeof, ue);
 			}
 
-			if (match(Tag.LPAREN))
+			if (match(Token.LPAREN))
 				advance();
 			else
 			{
@@ -1813,7 +1814,7 @@ public class Parser
 			else
 				start_pos.pop();
 
-			if (match(Tag.RPAREN))
+			if (match(Token.RPAREN))
 			{
 				advance();
 				return new UnaryExpr(UnaryExpr.sizeof, x);
@@ -1858,7 +1859,7 @@ public class Parser
 		PostfixExpr ret = new PostfixExpr(pe);
 		for (;;)
 		{
-			if (match(Tag.LMPAREN))
+			if (match(Token.LMPAREN))
 			{
 				advance();
 				Expression x = expression();
@@ -1871,7 +1872,7 @@ public class Parser
 				else
 					start_pos.pop();
 
-				if (match(Tag.RMPAREN))
+				if (match(Token.RMPAREN))
 				{
 					advance();
 					ret.add_elem(PostfixExpr.mparen, x);
@@ -1882,10 +1883,10 @@ public class Parser
 					return null;
 				}
 			}
-			else if (match(Tag.LPAREN))
+			else if (match(Token.LPAREN))
 			{
 				advance();
-				if (match(Tag.RPAREN))
+				if (match(Token.RPAREN))
 				{
 					ret.add_elem(PostfixExpr.paren, null);
 					advance();
@@ -1910,13 +1911,13 @@ public class Parser
 							arg.add(x);
 						}
 
-						if (match(Tag.COMMA))
+						if (match(Token.COMMA))
 							advance();
 						else
 							break;
 					}
 
-					if (match(Tag.RPAREN))
+					if (match(Token.RPAREN))
 					{
 						advance();
 						ret.add_elem(PostfixExpr.paren, arg);
@@ -1928,10 +1929,10 @@ public class Parser
 					}
 				}
 			}
-			else if (match(Tag.DOT))
+			else if (match(Token.DOT))
 			{
 				advance();
-				if (match(Tag.ID))
+				if (match(Token.ID))
 				{
 					String name = ((Identifier) token_buf.get(look)).name;
 					advance();
@@ -1943,10 +1944,10 @@ public class Parser
 					return null;
 				}
 			}
-			else if (match(Tag.PTR))
+			else if (match(Token.PTR))
 			{
 				advance();
-				if (match(Tag.ID))
+				if (match(Token.ID))
 				{
 					String name = ((Identifier) token_buf.get(look)).name;
 					advance();
@@ -1958,12 +1959,12 @@ public class Parser
 					return null;
 				}
 			}
-			else if (match(Tag.INC))
+			else if (match(Token.INC))
 			{
 				advance();
 				ret.add_elem(PostfixExpr.inc, null);
 			}
-			else if (match(Tag.DEC))
+			else if (match(Token.DEC))
 			{
 				advance();
 				ret.add_elem(PostfixExpr.dec, null);
@@ -1978,7 +1979,7 @@ public class Parser
 	private PrimaryExpr primary_expr()
 	{
 		start_pos.push(look);
-		if (match(Tag.ID) || match(Tag.CH) || match(Tag.NUM) || match(Tag.REAL) || match(Tag.STR))
+		if (match(Token.ID) || match(Token.CH) || match(Token.NUM) || match(Token.REAL) || match(Token.STR))
 		{
 			PrimaryExpr ret = new PrimaryExpr(token_buf.get(look));
 			advance();
@@ -1986,7 +1987,7 @@ public class Parser
 		}
 		else
 		{
-			if (match(Tag.LPAREN))
+			if (match(Token.LPAREN))
 				advance();
 			else
 			{
@@ -2004,7 +2005,7 @@ public class Parser
 			else
 				start_pos.pop();
 
-			if (match(Tag.RPAREN))
+			if (match(Token.RPAREN))
 			{
 				advance();
 				return new PrimaryExpr(x);

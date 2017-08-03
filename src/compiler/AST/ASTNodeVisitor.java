@@ -35,8 +35,6 @@ public interface ASTNodeVisitor
 
 	public abstract void visit(Declarator x) throws Exception;
 
-	public abstract void visit(DeclaratorList x) throws Exception;
-
 	public abstract void visit(InitDeclarator x) throws Exception;
 
 	public abstract void visit(Initializer x) throws Exception;

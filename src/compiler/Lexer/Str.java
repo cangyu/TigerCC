@@ -6,7 +6,7 @@ public class Str extends Token
 
 	public Str(String x, int l, int c)
 	{
-		super(Tag.STR, l, c);
+		super(STR, l, c);
 		lexeme = x.intern();
 	}
 

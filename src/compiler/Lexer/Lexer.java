@@ -23,7 +23,7 @@ public class Lexer
 
 		Token ret = null;
 		if (peek == -1)
-			ret = build_token(Tag.EOF);
+			ret = build_token(Token.EOF);
 		else if (peek == '_' || Character.isLetter(peek))
 			ret = handle_word();
 		else if (Character.isDigit(peek))
@@ -89,37 +89,37 @@ public class Lexer
 
 		Token ret = null;
 		if (s.equals("if".intern()))
-			ret = build_token(Tag.IF);
+			ret = build_token(Token.IF);
 		else if (s.equals("else".intern()))
-			ret = build_token(Tag.ELSE);
+			ret = build_token(Token.ELSE);
 		else if (s.equals("while".intern()))
-			ret = build_token(Tag.WHILE);
+			ret = build_token(Token.WHILE);
 		else if (s.equals("for".intern()))
-			ret = build_token(Tag.FOR);
+			ret = build_token(Token.FOR);
 		else if (s.equals("continue".intern()))
-			ret = build_token(Tag.CONTINUE);
+			ret = build_token(Token.CONTINUE);
 		else if (s.equals("break".intern()))
-			ret = build_token(Tag.BREAK);
+			ret = build_token(Token.BREAK);
 		else if (s.equals("return".intern()))
-			ret = build_token(Tag.RETURN);
+			ret = build_token(Token.RETURN);
 		else if (s.equals("sizeof".intern()))
-			ret = build_token(Tag.SIZEOF);
+			ret = build_token(Token.SIZEOF);
 		else if (s.equals("typedef".intern()))
-			ret = build_token(Tag.TYPEDEF);
+			ret = build_token(Token.TYPEDEF);
 		else if (s.equals("void".intern()))
-			ret = build_token(Tag.VOID);
+			ret = build_token(Token.VOID);
 		else if (s.equals("int".intern()))
-			ret = build_token(Tag.INT);
+			ret = build_token(Token.INT);
 		else if (s.equals("double".intern()))
-			ret = build_token(Tag.DOUBLE);
+			ret = build_token(Token.DOUBLE);
 		else if (s.equals("float".intern()))
-			ret = build_token(Tag.FLOAT);
+			ret = build_token(Token.FLOAT);
 		else if (s.equals("char".intern()))
-			ret = build_token(Tag.CHAR);
+			ret = build_token(Token.CHAR);
 		else if (s.equals("struct".intern()))
-			ret = build_token(Tag.STRUCT);
+			ret = build_token(Token.STRUCT);
 		else if (s.equals("union".intern()))
-			ret = build_token(Tag.UNION);
+			ret = build_token(Token.UNION);
 		else
 			ret = new Identifier(s, line, column);
 
@@ -302,22 +302,22 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.LE);
+				ret = build_token(Token.LE);
 			else if (peek == '<')
 			{
 				read_char();
 				if (peek == '=')
-					ret = build_token(Tag.SHL_ASSIGN);
+					ret = build_token(Token.SHL_ASSIGN);
 				else
 				{
 					push_back(peek);
-					ret = build_token(Tag.SHL);
+					ret = build_token(Token.SHL);
 				}
 			}
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.LT);
+				ret = build_token(Token.LT);
 			}
 			break;
 		}
@@ -325,22 +325,22 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.GE);
+				ret = build_token(Token.GE);
 			else if (peek == '>')
 			{
 				read_char();
 				if (peek == '=')
-					ret = build_token(Tag.SHR_ASSIGN);
+					ret = build_token(Token.SHR_ASSIGN);
 				else
 				{
 					push_back(peek);
-					ret = build_token(Tag.SHR);
+					ret = build_token(Token.SHR);
 				}
 			}
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.GT);
+				ret = build_token(Token.GT);
 			}
 			break;
 		}
@@ -348,15 +348,15 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.SUB_ASSIGN);
+				ret = build_token(Token.SUB_ASSIGN);
 			else if (peek == '-')
-				ret = build_token(Tag.DEC);
+				ret = build_token(Token.DEC);
 			else if (peek == '>')
-				ret = build_token(Tag.PTR);
+				ret = build_token(Token.PTR);
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.MINUS);
+				ret = build_token(Token.MINUS);
 			}
 			break;
 		}
@@ -364,13 +364,13 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '&')
-				ret = build_token(Tag.AND);
+				ret = build_token(Token.AND);
 			else if (peek == '=')
-				ret = build_token(Tag.AND_ASSIGN);
+				ret = build_token(Token.AND_ASSIGN);
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.BIT_AND);
+				ret = build_token(Token.BIT_AND);
 			}
 			break;
 		}
@@ -378,13 +378,13 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.ADD_ASSIGN);
+				ret = build_token(Token.ADD_ASSIGN);
 			else if (peek == '+')
-				ret = build_token(Tag.INC);
+				ret = build_token(Token.INC);
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.PLUS);
+				ret = build_token(Token.PLUS);
 			}
 			break;
 		}
@@ -392,13 +392,13 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.OR_ASSIGN);
+				ret = build_token(Token.OR_ASSIGN);
 			else if (peek == '|')
-				ret = build_token(Tag.OR);
+				ret = build_token(Token.OR);
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.BIT_OR);
+				ret = build_token(Token.BIT_OR);
 			}
 			break;
 		}
@@ -406,11 +406,11 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.EQ);
+				ret = build_token(Token.EQ);
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.ASSIGN);
+				ret = build_token(Token.ASSIGN);
 			}
 			break;
 		}
@@ -419,11 +419,11 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.XOR_ASSIGN);
+				ret = build_token(Token.XOR_ASSIGN);
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.BIT_XOR);
+				ret = build_token(Token.BIT_XOR);
 			}
 			break;
 		}
@@ -432,7 +432,7 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.DIV_ASSIGN);
+				ret = build_token(Token.DIV_ASSIGN);
 			else if (peek == '/')
 			{
 				for (;;)
@@ -442,7 +442,7 @@ public class Lexer
 
 					read_char();
 				}
-				ret = build_token(Tag.LINECOMMENT);
+				ret = build_token(Token.LINECOMMENT);
 			}
 			else if (peek == '*')
 			{
@@ -464,12 +464,12 @@ public class Lexer
 				if (peek == -1 && flag != 2)
 					panic("Block comment symbol doesn't match on EOF.");
 
-				ret = build_token(Tag.BLKCOMMENT);
+				ret = build_token(Token.BLKCOMMENT);
 			}
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.DIVIDE);
+				ret = build_token(Token.DIVIDE);
 			}
 			break;
 		}
@@ -477,11 +477,11 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.NE);
+				ret = build_token(Token.NE);
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.NOT);
+				ret = build_token(Token.NOT);
 			}
 			break;
 		}
@@ -489,11 +489,11 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.MUL_ASSIGN);
+				ret = build_token(Token.MUL_ASSIGN);
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.TIMES);
+				ret = build_token(Token.TIMES);
 			}
 			break;
 		}
@@ -501,43 +501,43 @@ public class Lexer
 		{
 			read_char();
 			if (peek == '=')
-				ret = build_token(Tag.MOD_ASSIGN);
+				ret = build_token(Token.MOD_ASSIGN);
 			else
 			{
 				push_back(peek);
-				ret = build_token(Tag.MODULE);
+				ret = build_token(Token.MODULE);
 			}
 			break;
 		}
 		case '~':
-			ret = build_token(Tag.BIT_NOT);
+			ret = build_token(Token.BIT_NOT);
 			break;
 		case ',':
-			ret = build_token(Tag.COMMA);
+			ret = build_token(Token.COMMA);
 			break;
 		case ';':
-			ret = build_token(Tag.SEMI);
+			ret = build_token(Token.SEMI);
 			break;
 		case '.':
-			ret = build_token(Tag.DOT);
+			ret = build_token(Token.DOT);
 			break;
 		case '{':
-			ret = build_token(Tag.LBRACE);
+			ret = build_token(Token.LBRACE);
 			break;
 		case '}':
-			ret = build_token(Tag.RBRACE);
+			ret = build_token(Token.RBRACE);
 			break;
 		case '[':
-			ret = build_token(Tag.LMPAREN);
+			ret = build_token(Token.LMPAREN);
 			break;
 		case ']':
-			ret = build_token(Tag.RMPAREN);
+			ret = build_token(Token.RMPAREN);
 			break;
 		case '(':
-			ret = build_token(Tag.LPAREN);
+			ret = build_token(Token.LPAREN);
 			break;
 		case ')':
-			ret = build_token(Tag.RPAREN);
+			ret = build_token(Token.RPAREN);
 			break;
 		default:
 			panic("Invalid operator symbol.");
@@ -551,7 +551,7 @@ public class Lexer
 		throw new IOException(String.format("(Line %d, Column %d): " + msg, line, column));
 	}
 
-	private Token build_token(Tag type)
+	private Token build_token(int type)
 	{
 		return new Token(type, line, column);
 	}

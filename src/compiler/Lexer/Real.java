@@ -6,7 +6,7 @@ public class Real extends Token
 
 	public Real(double x, int l, int c)
 	{
-		super(Tag.REAL, l, c);
+		super(REAL, l, c);
 		value = x;
 	}
 

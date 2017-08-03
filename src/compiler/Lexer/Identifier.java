@@ -6,7 +6,7 @@ public class Identifier extends Token
 
 	public Identifier(String x, int l, int c)
 	{
-		super(Tag.ID, l, c);
+		super(ID, l, c);
 		name = x.intern();
 	}
 

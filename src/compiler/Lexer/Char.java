@@ -6,7 +6,7 @@ public class Char extends Token
 
 	public Char(Character x, int l, int c)
 	{
-		super(Tag.CH, l, c);
+		super(CH, l, c);
 		value = x;
 	}
 
