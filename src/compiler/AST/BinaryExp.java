@@ -1,6 +1,6 @@
 package compiler.AST;
 
-public abstract class BinaryExpr extends Expr
+public abstract class BinaryExp extends Exp
 {
 	public static final int BIT_AND = 0;
 	public static final int BIT_XOR = 1;
@@ -23,12 +23,12 @@ public abstract class BinaryExpr extends Expr
 
 	public int op;
 
-	public BinaryExpr(int _t)
+	public BinaryExp(int _t)
 	{
 		op = _t;
 	}
 
-	public BinaryExpr()
+	public BinaryExp()
 	{
 		op = -1;// Undetermined
 	}

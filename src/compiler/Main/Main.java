@@ -3,6 +3,7 @@ package compiler.Main;
 import java.io.*;
 import compiler.Lexer.*;
 import compiler.Parser.*;
+import compiler.AST.*;
 
 public class Main
 {
@@ -17,10 +18,13 @@ public class Main
 	{
 		Lexer lex = new Lexer(ips);
 		Parser psr = new Parser(lex);
-		Program parse_tree = psr.parse();
-		if (parse_tree != null && psr.exit_status())
+		Program cst = psr.parse();
+		if (cst != null && psr.exit_status())
 			System.out.println("OK!");
 		else
 			System.out.println("WTF?");
+
+		ASTBuilder bdr = new ASTBuilder(cst);
+		AST ast = bdr.build();
 	}
 }

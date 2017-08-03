@@ -1,9 +1,6 @@
 package compiler.Parser;
 
-import compiler.AST.ASTNodeVisitor;
-import compiler.AST.Expr;
-
-public class UnaryExpr extends Expr
+public class UnaryExpr
 {
 	public static final int postfix = 0;
 	public static final int inc = 1;
@@ -23,37 +20,5 @@ public class UnaryExpr extends Expr
 	{
 		type = t;
 		elem = c;
-	}
-
-	public void accept(ASTNodeVisitor v) throws Exception
-	{
-		v.visit(this);
-	}
-
-	public String getOperator()
-	{
-		switch (type)
-		{
-		case address:
-			return "&".intern();
-		case dereference:
-			return "*".intern();
-		case positive:
-			return "+".intern();
-		case negative:
-			return "-".intern();
-		case bit_not:
-			return "~".intern();
-		case not:
-			return "!".intern();
-		case sizeof:
-			return "sizeof".intern();
-		case inc:
-			return "++".intern();
-		case dec:
-			return "--".intern();
-		default:
-			return "".intern();
-		}
 	}
 }

@@ -2,8 +2,6 @@ package compiler.Parser;
 
 import java.io.*;
 import java.util.*;
-
-import compiler.AST.BinaryExpr;
 import compiler.Lexer.*;
 
 //Recursive Decent Parser
@@ -1392,12 +1390,12 @@ public class Parser
 				if (match(Token.EQ))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.EQ);
+					ret.add_expr(x, Token.EQ);
 				}
 				else if (match(Token.NE))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.NE);
+					ret.add_expr(x, Token.NE);
 				}
 				else
 				{
@@ -1432,22 +1430,22 @@ public class Parser
 				if (match(Token.LT))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.LT);
+					ret.add_expr(x, Token.LT);
 				}
 				else if (match(Token.GT))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.GT);
+					ret.add_expr(x, Token.GT);
 				}
 				else if (match(Token.LE))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.LE);
+					ret.add_expr(x, Token.LE);
 				}
 				else if (match(Token.GE))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.GE);
+					ret.add_expr(x, Token.GE);
 				}
 				else
 				{
@@ -1482,12 +1480,12 @@ public class Parser
 				if (match(Token.SHL))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.SHL);
+					ret.add_expr(x, Token.SHL);
 				}
 				else if (match(Token.SHR))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.SHR);
+					ret.add_expr(x, Token.SHR);
 				}
 				else
 				{
@@ -1522,12 +1520,12 @@ public class Parser
 				if (match(Token.PLUS))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.PLUS);
+					ret.add_expr(x, Token.PLUS);
 				}
 				else if (match(Token.MINUS))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.MINUS);
+					ret.add_expr(x, Token.MINUS);
 				}
 				else
 				{
@@ -1562,17 +1560,17 @@ public class Parser
 				if (match(Token.TIMES))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.TIMES);
+					ret.add_expr(x, Token.TIMES);
 				}
 				else if (match(Token.DIVIDE))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.DIVIDE);
+					ret.add_expr(x, Token.DIVIDE);
 				}
 				else if (match(Token.MODULE))
 				{
 					advance();
-					ret.add_expr(x, BinaryExpr.MODULE);
+					ret.add_expr(x, Token.MODULE);
 				}
 				else
 				{

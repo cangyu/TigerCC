@@ -55,7 +55,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 	}
 
 	@Override
-	public void visit(BinaryExpr x) throws Exception
+	public void visit(BinaryExp x) throws Exception
 	{
 		x.left.accept(this);
 		x.right.accept(this);
@@ -420,10 +420,10 @@ public class PrettyPrinter implements ASTNodeVisitor
 
 		x.plain_declarator.accept(this);
 		x.code_rep[0] += x.plain_declarator.code_rep[0];
-		Iterator<Expr> it = x.dimension.iterator();
+		Iterator<Exp> it = x.dimension.iterator();
 		while (it.hasNext())
 		{
-			Expr ce = it.next();
+			Exp ce = it.next();
 			ce.accept(this);
 			x.code_rep[0] += "[";
 			x.code_rep[0] += ce.code_rep[0];

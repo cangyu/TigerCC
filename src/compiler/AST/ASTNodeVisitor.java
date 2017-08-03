@@ -9,7 +9,7 @@ public interface ASTNodeVisitor
 
 	public abstract void visit(AssignmentExpr x) throws Exception;
 
-	public abstract void visit(BinaryExpr x) throws Exception;
+	public abstract void visit(BinaryExp x) throws Exception;
 
 	public abstract void visit(CastExpr x) throws Exception;
 

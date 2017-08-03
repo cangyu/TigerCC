@@ -103,7 +103,7 @@ public class ASTPrinter implements ASTNodeVisitor
 			ae.ast_rep[cl++] += str;
 	}
 
-	public void visit(BinaryExpr be) throws Exception
+	public void visit(BinaryExp be) throws Exception
 	{
 		// construct sub-nodes and count lines
 		int lc = 2;
@@ -699,7 +699,7 @@ public class ASTPrinter implements ASTNodeVisitor
 
 		if (vd.dimension.size() != 0)
 		{
-			Iterator<Expr> it = vd.dimension.iterator();
+			Iterator<Exp> it = vd.dimension.iterator();
 			while (it.hasNext())
 				it.next().accept(this);
 		}
@@ -709,7 +709,7 @@ public class ASTPrinter implements ASTNodeVisitor
 		lc += vd.plain_declarator.ast_rep.length;
 		if (vd.dimension.size() != 0)
 		{
-			Iterator<Expr> it = vd.dimension.iterator();
+			Iterator<Exp> it = vd.dimension.iterator();
 			while (it.hasNext())
 				lc += it.next().ast_rep.length;
 		}
@@ -727,7 +727,7 @@ public class ASTPrinter implements ASTNodeVisitor
 
 		if (vd.dimension.size() != 0)
 		{
-			Iterator<Expr> it = vd.dimension.iterator();
+			Iterator<Exp> it = vd.dimension.iterator();
 			while (it.hasNext())
 			{
 				String[] _s = it.next().ast_rep;

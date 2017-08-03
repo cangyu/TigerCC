@@ -2,8 +2,6 @@ package compiler.Parser;
 
 import java.util.*;
 
-import compiler.AST.BinaryExpr;
-
 public class AssignmentExpr
 {
 	public static final int ASSIGN = 0;
