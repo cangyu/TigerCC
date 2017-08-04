@@ -1,6 +1,8 @@
 package compiler.AST;
 
 import java.util.*;
+
+import compiler.AST.FuncDec.Parameter;
 import compiler.Parser.*;
 import compiler.SymbolTable.*;
 import compiler.Types.*;
@@ -11,61 +13,107 @@ import compiler.Types.Void;
 public class ASTBuilder
 {
 	private Program entrance;
+	private Prog ast;
+	private int offset;
 	private Env tenv, venv;
-	private LinkedList<Dec> decl;
 
 	public ASTBuilder(Program p)
 	{
 		entrance = p;
-		tenv = new Env(null);
-		venv = new Env(null);
-		decl = new LinkedList<Dec>();
+		ast = new Prog();
+		offset = 0;
+
+		tenv = ast.tenv;
+		venv = ast.venv;
 	}
 
-	public Prog get_ast()
-	{
-		return new Prog(decl, tenv, venv);
-	}
-
-	public void build()
+	public Prog build()
 	{
 		for (ProgComp pc : entrance.elem)
-			parseProgComp(pc);
+		{
+			if (pc instanceof Declaration)
+			{
+				Declaration x = (Declaration) pc;
+				parseDeclaration(x, venv, ast);
+			}
+			else if (pc instanceof FuncDef)
+			{
+				FuncDef x = (FuncDef) pc;
+				parseFuncDef(x, venv, ast);
+			}
+			else
+			{
+				panic("Internal Error.");
+				return null;
+			}
+		}
+
+		return ast;
 	}
 
-	public void parseProgComp(ProgComp pcp)
+	private void parseDeclaration(Declaration x, Env y, Prog z)
 	{
-		if (pcp instanceof Declaration)
+		Type def_type = parseTypeSpecifier(x.ts);
+		for (InitDeclarator idr : x.elem)
 		{
-			Declaration x = (Declaration) pcp;
-			Type dt = parseTypeSpecifier(x.ts);
-			for (InitDeclarator idr : x.elem)
-			{
-				String vn = idr.declarator.plain_declarator.name;
-				Type vt = resolve_type(dt, idr.declarator);
-				Init it = parseInitializer(idr.initializer);
-				decl.add(new VarDec(vt, vn, it));
-			}
+			// Name and Symbol
+			String var_name = idr.declarator.plain_declarator.name;
+			Symbol var_sym = Symbol.getSymbol(var_name);
+
+			// Variable type
+			Type var_type = resolve_type(def_type, idr.declarator);
+
+			// Initializer
+			Init initializer = parseInitializer(idr.initializer);
+			boolean hasInitialized = initializer != null;
+
+			// ASTNode
+			VarDec var_dec = hasInitialized ? new VarDec(var_type, var_name, initializer) : new VarDec(var_type, var_name);
+			z.add_dec(var_dec);
+
+			// Environment
+			VarEntry var_entry = new VarEntry(var_type, y, offset, hasInitialized);
+			offset += var_type.width;
+			y.put(var_sym, var_entry);
 		}
-		else if (pcp instanceof FuncDef)
+	}
+
+	private void parseFuncDef(FuncDef x, Env y, Prog z)
+	{
+		// Name and Symbol
+		String func_name = x.pd.name;
+		Symbol func_sym = Symbol.getSymbol(func_name);
+
+		// Return type
+		Type def_type = parseTypeSpecifier(x.ts);
+		Type ret_type = resolve_plain_type(def_type, x.pd);
+
+		// ASTNode
+		FuncDec func_dec = new FuncDec(ret_type, func_name);
+		func_dec.scope = new Env(y);
+		for (PlainDeclaration pdn : x.pm)
 		{
-			FuncDef x = (FuncDef) pcp;
-			Type dt = parseTypeSpecifier(x.ts);
-			Type ft = resolve_plain_type(dt, x.pd);
-			String fn = x.pd.name;
-			FuncDec fd = new FuncDec(ft, fn);
-			for (PlainDeclaration pdn : x.pm)
-			{
-				String vn = pdn.dlr.plain_declarator.name;
-				Type vt = parsePlainDeclaration(pdn);
-				fd.add_param(vt, vn);
-			}
-			CompStmt cpst = parseCompoundStmt(x.cst);
-			fd.set_body(cpst);
-			decl.add(fd);
+			String param_name = pdn.dlr.plain_declarator.name;
+			Type param_type = parsePlainDeclaration(pdn);
+			func_dec.add_param(param_type, param_name);
+			func_dec.scope.put(Symbol.getSymbol(param_name), new VarEntry(param_type, func_dec.scope, offset, false));
+			offset += param_type.width;
 		}
-		else
-			panic("Internal Error.");
+
+		CompStmt cpst = parseCompoundStmt(x.cst, func_dec.scope);
+		func_dec.set_body(cpst);
+		z.add_dec(func_dec);
+
+		// Environment
+		Function func_type = new Function(new Void(), ret_type);
+		ListIterator<Parameter> lit = func_dec.param.listIterator(func_dec.param.size());
+		while (lit.hasPrevious())
+		{
+			Type ct = lit.previous().type;
+			func_type = new Function(ct, func_type);
+		}
+		FuncEntry func_entry = new FuncEntry(func_type, y);
+		y.put(func_sym, func_entry);
 	}
 
 	public Type parseTypeSpecifier(TypeSpecifier t)
@@ -84,8 +132,6 @@ public class ASTBuilder
 		{
 			Struct ret = new Struct();
 			String tag = t.name;
-			if (tag != null)
-				ret.set_tag(tag);
 
 			for (RecordEntry re : t.entry)
 			{
@@ -97,14 +143,19 @@ public class ASTBuilder
 					ret.add_record(ct, name);
 				}
 			}
+
+			if (tag != null)
+			{
+				ret.set_tag(tag);
+				tenv.put(Symbol.getSymbol(tag), new TypeEntry(ret, tenv));
+			}
+
 			return ret;
 		}
 		else if (t.ts_type == TypeSpecifier.ts_union)
 		{
 			Union ret = new Union();
 			String tag = t.name;
-			if (tag != null)
-				ret.set_tag(tag);
 
 			for (RecordEntry re : t.entry)
 			{
@@ -116,6 +167,13 @@ public class ASTBuilder
 					ret.add_record(ct, name);
 				}
 			}
+
+			if (tag != null)
+			{
+				ret.set_tag(tag);
+				tenv.put(Symbol.getSymbol(tag), new TypeEntry(ret, tenv));
+			}
+
 			return ret;
 		}
 		else
@@ -150,6 +208,9 @@ public class ASTBuilder
 
 	public Init parseInitializer(Initializer x)
 	{
+		if (x == null)
+			return null;
+
 		if (x.type == Initializer.assign)
 		{
 			Exp e = parseAssignExp(x.ae);
@@ -179,51 +240,59 @@ public class ASTBuilder
 		return resolve_type(dt, x.dlr);
 	}
 
-	public CompStmt parseCompoundStmt(CompoundStatement x)
+	public CompStmt parseCompoundStmt(CompoundStatement x, Env y)
 	{
 		CompStmt ret = new CompStmt();
-		ret.scope = new Env(venv);
+		ret.scope = y;
 
 		for (Declaration decl : x.decls)
 		{
-			Type dt = parseTypeSpecifier(decl.ts);
+			Type def_type = parseTypeSpecifier(decl.ts);
 			for (InitDeclarator idr : decl.elem)
 			{
 				String vn = idr.declarator.plain_declarator.name;
-				Type vt = resolve_type(dt, idr.declarator);
+				Type vt = resolve_type(def_type, idr.declarator);
 				Init it = parseInitializer(idr.initializer);
 			}
 		}
 
 		for (Statement st : x.stmts)
 		{
-			if (st instanceof ExpressionStatement)
-			{
 
-			}
-			else if (st instanceof CompoundStatement)
-			{
-
-			}
-			else if (st instanceof SelectionStatement)
-			{
-
-			}
-			else if (st instanceof IterationStatement)
-			{
-
-			}
-			else if (st instanceof JumpStatement)
-			{
-
-			}
-			else
-			{
-				panic("Internal Error.");
-				return null;
-			}
 		}
 		return ret;
+	}
+
+	private Stmt parseStatement(Statement st)
+	{
+		if (st instanceof ExpressionStatement)
+		{
+			ExpressionStatement est = (ExpressionStatement) st;
+
+		}
+		else if (st instanceof CompoundStatement)
+		{
+
+		}
+		else if (st instanceof SelectionStatement)
+		{
+
+		}
+		else if (st instanceof IterationStatement)
+		{
+
+		}
+		else if (st instanceof JumpStatement)
+		{
+
+		}
+		else
+		{
+			panic("Internal Error.");
+			return null;
+		}
+
+		return null;
 	}
 
 	public int parseConstantExpr(ConstantExpr x)

@@ -1,5 +1,6 @@
 package compiler.AST;
 
+import compiler.SymbolTable.Env;
 import compiler.Types.*;
 import java.util.*;
 
@@ -20,6 +21,7 @@ public class FuncDec extends Dec
 	public Type ret_type;
 	public String name;
 	public ArrayList<Parameter> param;
+	public Env scope;
 	public CompStmt body;
 
 	public FuncDec(Type t, String fn)

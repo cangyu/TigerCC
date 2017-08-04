@@ -3,7 +3,6 @@ package compiler.Parser;
 import java.io.*;
 import java.util.*;
 import compiler.Lexer.*;
-import compiler.SymbolTable.Symbol;
 
 //Recursive Decent Parser
 //TODO: Better error reporting, remove temporary message
@@ -360,7 +359,6 @@ public class Parser
 			if (match(Token.ID))
 			{
 				String name = ((Identifier) token_buf.get(look)).name;
-				Symbol.putSymbol(name);
 				advance();
 
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_struct, name);
@@ -421,7 +419,6 @@ public class Parser
 			if (match(Token.ID))
 			{
 				String name = ((Identifier) token_buf.get(look)).name;
-				Symbol.putSymbol(name);
 				advance();
 
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_union, name); // type_specifeir: union identifier
@@ -630,7 +627,6 @@ public class Parser
 		if (match(Token.ID))
 		{
 			String name = ((Identifier) token_buf.get(look)).name;
-			Symbol.putSymbol(name);
 			advance();
 			return new PlainDeclarator(n, name);
 		}
@@ -1990,9 +1986,6 @@ public class Parser
 		start_pos.push(look);
 		if (match(Token.ID) || match(Token.CH) || match(Token.NUM) || match(Token.REAL) || match(Token.STR))
 		{
-			if (match(Token.ID))
-				Symbol.putSymbol(((Identifier) token_buf.get(look)).name);
-
 			PrimaryExpr ret = new PrimaryExpr(token_buf.get(look));
 			advance();
 			return ret;

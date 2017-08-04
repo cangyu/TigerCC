@@ -2,15 +2,13 @@ package compiler.Types;
 
 public final class Function extends Type
 {
-	Type[] arg_type;
-	Type ret_type;
+	Type returnType;
+	Type argumentType;
 
-	public Function(Type ret, Type ...arg)
+	public Function(Type arg, Type ret)
 	{
-		super(4);
-		ret_type = ret;
-		arg_type = new Type[arg.length];
-		for(int i=0;i<arg.length;i++)
-			arg_type[i] = arg[i];
+		super(1);
+		returnType = ret;
+		argumentType = arg;
 	}
 }

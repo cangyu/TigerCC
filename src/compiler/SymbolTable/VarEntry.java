@@ -9,12 +9,10 @@ public final class VarEntry extends Entry
 	public boolean isLval;
 	public boolean isConst;
 
-	public VarEntry(Type t, int off, boolean init, boolean lval, boolean cons)
+	public VarEntry(Type t, Env e, int off, boolean init)
 	{
-		super(t);
+		super(t, e);
 		offset = off;
 		hasInitialized = init;
-		isLval = lval;
-		isConst = cons;
 	}
 }

@@ -5,9 +5,14 @@ import compiler.Types.*;
 public final class TypeEntry extends Entry
 {
 	public Type actual;
-	
-	public TypeEntry(Type t)
+
+	public TypeEntry(Type literal_type, Env belong)
 	{
-		super(t);
+		super(literal_type, belong);
+	}
+
+	public void set_actual(Type ac)
+	{
+		actual = ac;
 	}
 }

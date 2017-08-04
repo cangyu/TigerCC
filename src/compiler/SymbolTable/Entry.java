@@ -5,10 +5,11 @@ import compiler.Types.*;
 public class Entry
 {
 	public Type type;
-	public Env scope;
+	public Env domain;
 
-	public Entry(Type t)
+	public Entry(Type t, Env e)
 	{
 		type = t;
+		domain = e;
 	}
 }

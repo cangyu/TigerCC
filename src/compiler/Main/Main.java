@@ -24,7 +24,7 @@ public class Main
 		else
 			System.out.println("WTF?");
 
-		ASTBuilder bdr = new ASTBuilder(cst);
-		Prog ast = bdr.get_ast();
+		// ASTBuilder bdr = new ASTBuilder(cst);
+		// Prog ast = bdr.get_ast();
 	}
 }
