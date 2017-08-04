@@ -20,15 +20,15 @@ public interface ASTNodeVisitor
 	public abstract void visit(PrimaryExpr x) throws Exception;
 
 	/* Stmt */
-	public abstract void visit(ExpressionStmt x) throws Exception;
+	public abstract void visit(ExpressionStatement x) throws Exception;
 
-	public abstract void visit(CompoundStmt x) throws Exception;
+	public abstract void visit(CompoundStatement x) throws Exception;
 
-	public abstract void visit(SelectionStmt x) throws Exception;
+	public abstract void visit(SelectionStatement x) throws Exception;
 
 	public abstract void visit(JumpStmt x) throws Exception;
 
-	public abstract void visit(IterationStmt x) throws Exception;
+	public abstract void visit(IterationStatement x) throws Exception;
 
 	/* Decl */
 	public abstract void visit(Declaration x) throws Exception;

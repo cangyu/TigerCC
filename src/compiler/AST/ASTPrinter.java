@@ -442,7 +442,7 @@ public class ASTPrinter implements ASTNodeVisitor
 		}
 	}
 
-	public void visit(ExpressionStmt es) throws Exception
+	public void visit(ExpressionStatement es) throws Exception
 	{
 		if (es.e != null)
 		{
@@ -451,7 +451,7 @@ public class ASTPrinter implements ASTNodeVisitor
 		}
 	}
 
-	public void visit(CompoundStmt cs) throws Exception
+	public void visit(CompoundStatement cs) throws Exception
 	{
 		// construct components and count lines
 		int lc = 1;
@@ -485,7 +485,7 @@ public class ASTPrinter implements ASTNodeVisitor
 				cs.ast_rep[cl++] += str;
 	}
 
-	public void visit(SelectionStmt ss) throws Exception
+	public void visit(SelectionStatement ss) throws Exception
 	{
 		// construct sub-nodes and count lines
 		int lc = 1;
@@ -563,7 +563,7 @@ public class ASTPrinter implements ASTNodeVisitor
 		}
 	}
 
-	public void visit(IterationStmt is) throws Exception
+	public void visit(IterationStatement is) throws Exception
 	{
 		// construct sub-nodes and count lines
 		int lc = 2;
@@ -610,7 +610,7 @@ public class ASTPrinter implements ASTNodeVisitor
 		}
 
 		int cl = 2;
-		if (is.iteration_type == IterationStmt.Type.WHILE)
+		if (is.iteration_type == IterationStmt.IterationStatement.WHILE)
 		{
 			for (String str : is.judge.ast_rep)
 				is.ast_rep[cl++] += str;

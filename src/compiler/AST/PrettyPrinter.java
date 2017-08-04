@@ -206,7 +206,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 	}
 
 	@Override
-	public void visit(ExpressionStmt x) throws Exception
+	public void visit(ExpressionStatement x) throws Exception
 	{
 		x.code_rep = new String[1];
 		str_init(x.code_rep, 1);
@@ -221,7 +221,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 	}
 
 	@Override
-	public void visit(CompoundStmt x) throws Exception
+	public void visit(CompoundStatement x) throws Exception
 	{
 		int lc = 2;
 		if (x.declaration_list != null)
@@ -259,7 +259,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 	}
 
 	@Override
-	public void visit(SelectionStmt x) throws Exception
+	public void visit(SelectionStatement x) throws Exception
 	{
 		int lc = 0;
 		x.cond.accept(this);
@@ -327,10 +327,10 @@ public class PrettyPrinter implements ASTNodeVisitor
 	}
 
 	@Override
-	public void visit(IterationStmt x) throws Exception
+	public void visit(IterationStatement x) throws Exception
 	{
 		int lc = 0;
-		if (x.iteration_type == IterationStmt.Type.FOR)
+		if (x.iteration_type == IterationStmt.IterationStatement.FOR)
 		{
 			if (x.init != null)
 				x.init.accept(this);

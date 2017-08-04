@@ -3,6 +3,7 @@ package compiler.Parser;
 import java.io.*;
 import java.util.*;
 import compiler.Lexer.*;
+import compiler.SymbolTable.Symbol;
 
 //Recursive Decent Parser
 //TODO: Better error reporting, remove temporary message
@@ -220,7 +221,7 @@ public class Parser
 			return null;
 		}
 
-		CompoundStmt y = compound_stmt();
+		CompoundStatement y = compound_stmt();
 		if (y == null)
 		{
 			look = start_pos.pop();
@@ -359,6 +360,7 @@ public class Parser
 			if (match(Token.ID))
 			{
 				String name = ((Identifier) token_buf.get(look)).name;
+				Symbol.putSymbol(name);
 				advance();
 
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_struct, name);
@@ -419,6 +421,7 @@ public class Parser
 			if (match(Token.ID))
 			{
 				String name = ((Identifier) token_buf.get(look)).name;
+				Symbol.putSymbol(name);
 				advance();
 
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_union, name); // type_specifeir: union identifier
@@ -627,6 +630,7 @@ public class Parser
 		if (match(Token.ID))
 		{
 			String name = ((Identifier) token_buf.get(look)).name;
+			Symbol.putSymbol(name);
 			advance();
 			return new PlainDeclarator(n, name);
 		}
@@ -718,13 +722,13 @@ public class Parser
 		}
 	}
 
-	private ExpressionStmt expression_stmt()
+	private ExpressionStatement expression_stmt()
 	{
 		start_pos.push(look);
 		if (match(Token.SEMI))
 		{
 			advance();
-			return new ExpressionStmt(null);
+			return new ExpressionStatement(null);
 		}
 		else
 		{
@@ -741,7 +745,7 @@ public class Parser
 			if (match(Token.SEMI))
 			{
 				advance();
-				return new ExpressionStmt(x);
+				return new ExpressionStatement(x);
 			}
 			else
 			{
@@ -751,10 +755,10 @@ public class Parser
 		}
 	}
 
-	private CompoundStmt compound_stmt()
+	private CompoundStatement compound_stmt()
 	{
 		start_pos.push(look);
-		CompoundStmt ret = new CompoundStmt();
+		CompoundStatement ret = new CompoundStatement();
 
 		if (match(Token.LBRACE))
 			advance();
@@ -806,10 +810,10 @@ public class Parser
 		}
 	}
 
-	private SelectionStmt selection_stmt()
+	private SelectionStatement selection_stmt()
 	{
 		start_pos.push(look);
-		SelectionStmt ret = null;
+		SelectionStatement ret = null;
 
 		if (match(Token.IF))
 			advance();
@@ -868,15 +872,15 @@ public class Parser
 			else
 				start_pos.pop();
 
-			ret = new SelectionStmt(cond, if_clause, else_clause);
+			ret = new SelectionStatement(cond, if_clause, else_clause);
 		}
 		else
-			ret = new SelectionStmt(cond, if_clause, null);
+			ret = new SelectionStatement(cond, if_clause, null);
 
 		return ret;
 	}
 
-	private IterationStmt iteration_stmt()
+	private IterationStatement iteration_stmt()
 	{
 		start_pos.push(look);
 		if (match(Token.WHILE))
@@ -918,7 +922,7 @@ public class Parser
 			else
 				start_pos.pop();
 
-			return new IterationStmt(x, y);
+			return new IterationStatement(x, y);
 		}
 		else if (match(Token.FOR))
 		{
@@ -1005,7 +1009,7 @@ public class Parser
 			else
 				start_pos.pop();
 
-			return new IterationStmt(init, judge, next, y);
+			return new IterationStatement(init, judge, next, y);
 		}
 		else
 		{
@@ -1014,25 +1018,25 @@ public class Parser
 		}
 	}
 
-	private JumpStmt jump_stmt()
+	private JumpStatement jump_stmt()
 	{
 		start_pos.push(look);
-		JumpStmt ret = null;
+		JumpStatement ret = null;
 		if (match(Token.CONTINUE))
 		{
 			advance();
-			ret = new JumpStmt(JumpStmt.CTNU, null);
+			ret = new JumpStatement(JumpStatement.CTNU, null);
 		}
 		else if (match(Token.BREAK))
 		{
 			advance();
-			ret = new JumpStmt(JumpStmt.BRK, null);
+			ret = new JumpStatement(JumpStatement.BRK, null);
 		}
 		else if (match(Token.RETURN))
 		{
 			advance();
 			if (match(Token.SEMI))
-				ret = new JumpStmt(JumpStmt.RET, null); // check SEMI later
+				ret = new JumpStatement(JumpStatement.RET, null); // check SEMI later
 			else
 			{
 				Expression x = expression();
@@ -1045,7 +1049,7 @@ public class Parser
 				else
 				{
 					start_pos.pop();
-					ret = new JumpStmt(JumpStmt.RET, x);
+					ret = new JumpStatement(JumpStatement.RET, x);
 				}
 			}
 		}
@@ -1986,6 +1990,9 @@ public class Parser
 		start_pos.push(look);
 		if (match(Token.ID) || match(Token.CH) || match(Token.NUM) || match(Token.REAL) || match(Token.STR))
 		{
+			if (match(Token.ID))
+				Symbol.putSymbol(((Identifier) token_buf.get(look)).name);
+
 			PrimaryExpr ret = new PrimaryExpr(token_buf.get(look));
 			advance();
 			return ret;

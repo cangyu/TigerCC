@@ -26,5 +26,12 @@ public class Symbol
 		return s;
 	}
 
+	public static void putSymbol(String text)
+	{
+		String unique = text.intern();
+		if (!dict.containsKey(unique))
+			dict.put(unique, new Symbol(unique));
+	}
+
 	private static Hashtable<String, Symbol> dict = new Hashtable<String, Symbol>();
 }

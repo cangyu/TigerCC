@@ -17,7 +17,7 @@ public final class Array extends Type
 		comp = new LinkedList<Type>();
 	}
 	
-	public void add_elem(Type x)
+	public void add_init(Type x)
 	{
 		comp.add(x);
 	}

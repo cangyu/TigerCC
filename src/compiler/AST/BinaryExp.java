@@ -22,15 +22,13 @@ public abstract class BinaryExp extends Exp
 	public static final int MODULE = 17;
 
 	public int op;
+	public Exp left, right;
 
-	public BinaryExp(int _t)
+	public BinaryExp(int _t, Exp le, Exp re)
 	{
 		op = _t;
-	}
-
-	public BinaryExp()
-	{
-		op = -1;// Undetermined
+		left = le;
+		right = re;
 	}
 
 	public void accept(ASTNodeVisitor v) throws Exception

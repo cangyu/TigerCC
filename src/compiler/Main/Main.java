@@ -10,11 +10,11 @@ public class Main
 	public static void main(String[] args) throws Exception
 	{
 		InputStream inp = new FileInputStream(args[0]);
-		tokenize(inp);
+		compile(inp);
 		inp.close();
 	}
 
-	private static void tokenize(InputStream ips) throws IOException
+	private static void compile(InputStream ips) throws IOException
 	{
 		Lexer lex = new Lexer(ips);
 		Parser psr = new Parser(lex);
@@ -25,6 +25,6 @@ public class Main
 			System.out.println("WTF?");
 
 		ASTBuilder bdr = new ASTBuilder(cst);
-		AST ast = bdr.build();
+		Prog ast = bdr.get_ast();
 	}
 }

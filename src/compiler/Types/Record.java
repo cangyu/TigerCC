@@ -19,13 +19,6 @@ public abstract class Record extends Type
 	public String tag;
 	public LinkedList<RecordField> fields;
 
-	public Record(String t)
-	{
-		super(0);
-		tag = t;
-		fields = new LinkedList<RecordField>();
-	}
-	
 	public Record()
 	{
 		super(0);
@@ -33,9 +26,8 @@ public abstract class Record extends Type
 		fields = new LinkedList<RecordField>();
 	}
 
-	public void add_record(Type t, String n)
+	public void set_tag(String tg)
 	{
-		fields.add(new RecordField(t, n));
-		width += t.width;
+		tag = tg;
 	}
 }

@@ -2,12 +2,12 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class CompoundStmt extends Statement
+public class CompoundStatement extends Statement
 {
 	public LinkedList<Declaration> decls;
 	public LinkedList<Statement> stmts;
 
-	public CompoundStmt()
+	public CompoundStatement()
 	{
 		decls = new LinkedList<Declaration>();
 		stmts = new LinkedList<Statement>();
