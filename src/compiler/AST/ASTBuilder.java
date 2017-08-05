@@ -295,12 +295,26 @@ public class ASTBuilder
 		return null;
 	}
 
-	public int parseConstantExpr(ConstantExpr x)
+	private Exp parseAssignExp(AssignmentExpr x)
 	{
-		return -1;
+		return null;
 	}
 
-	public Exp parseAssignExp(AssignmentExpr x)
+	private Object parseConstantExpr(ConstantExpr x)
+	{
+		BinaryExp ce = parseLogicalOrExpr(x.expr);
+		if (ce.isConst)
+			return ce.value;
+		else
+			return -1;
+	}
+
+	private BinaryExp parseLogicalOrExpr(LogicalOrExpr x)
+	{
+		return null;
+	}
+
+	private BinaryExp parseLogicalAndExpr(LogicalAndExpr x)
 	{
 		return null;
 	}
