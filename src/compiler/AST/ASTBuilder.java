@@ -4,6 +4,7 @@ import java.util.*;
 
 import compiler.AST.FuncDec.Parameter;
 import compiler.Parser.*;
+import compiler.Parser.PostfixExpr.Postfix;
 import compiler.SymbolTable.*;
 import compiler.Types.*;
 import compiler.Types.Double;
@@ -27,7 +28,7 @@ public class ASTBuilder
 		venv = ast.venv;
 	}
 
-	public Prog build()
+	public Prog build() throws Exception
 	{
 		for (ProgComp pc : entrance.elem)
 		{
@@ -42,16 +43,13 @@ public class ASTBuilder
 				parseFuncDef(x, venv, ast);
 			}
 			else
-			{
 				panic("Internal Error.");
-				return null;
-			}
 		}
 
 		return ast;
 	}
 
-	private void parseDeclaration(Declaration x, Env y, Prog z)
+	private void parseDeclaration(Declaration x, Env y, Prog z) throws Exception
 	{
 		Type def_type = parseTypeSpecifier(x.ts);
 		for (InitDeclarator idr : x.elem)
@@ -72,13 +70,13 @@ public class ASTBuilder
 			z.add_dec(var_dec);
 
 			// Environment
-			VarEntry var_entry = new VarEntry(var_type, y, offset, hasInitialized);
+			VarEntry var_entry = new VarEntry(var_type, offset, hasInitialized);
 			offset += var_type.width;
 			y.put(var_sym, var_entry);
 		}
 	}
 
-	private void parseFuncDef(FuncDef x, Env y, Prog z)
+	private void parseFuncDef(FuncDef x, Env y, Prog z) throws Exception
 	{
 		// Name and Symbol
 		String func_name = x.pd.name;
@@ -96,7 +94,7 @@ public class ASTBuilder
 			String param_name = pdn.dlr.plain_declarator.name;
 			Type param_type = parsePlainDeclaration(pdn);
 			func_dec.add_param(param_type, param_name);
-			func_dec.scope.put(Symbol.getSymbol(param_name), new VarEntry(param_type, func_dec.scope, offset, false));
+			func_dec.scope.put(Symbol.getSymbol(param_name), new VarEntry(param_type, offset, false));
 			offset += param_type.width;
 		}
 
@@ -112,11 +110,11 @@ public class ASTBuilder
 			Type ct = lit.previous().type;
 			func_type = new Function(ct, func_type);
 		}
-		FuncEntry func_entry = new FuncEntry(func_type, y);
+		FuncEntry func_entry = new FuncEntry(func_type);
 		y.put(func_sym, func_entry);
 	}
 
-	public Type parseTypeSpecifier(TypeSpecifier t)
+	public Type parseTypeSpecifier(TypeSpecifier t) throws Exception
 	{
 		if (t.ts_type == TypeSpecifier.ts_void)
 			return new Void();
@@ -147,7 +145,7 @@ public class ASTBuilder
 			if (tag != null)
 			{
 				ret.set_tag(tag);
-				tenv.put(Symbol.getSymbol(tag), new TypeEntry(ret, tenv));
+				tenv.put(Symbol.getSymbol(tag), new TypeEntry(ret));
 			}
 
 			return ret;
@@ -263,7 +261,7 @@ public class ASTBuilder
 		return ret;
 	}
 
-	private Stmt parseStatement(Statement st)
+	private Stmt parseStatement(Statement st) throws Exception
 	{
 		if (st instanceof ExpressionStatement)
 		{
@@ -295,6 +293,11 @@ public class ASTBuilder
 		return null;
 	}
 
+	private CommaExp parseExpression(Expression x, Env y) throws Exception
+	{
+		return null;
+	}
+
 	private Exp parseAssignExp(AssignmentExpr x)
 	{
 		return null;
@@ -319,8 +322,135 @@ public class ASTBuilder
 		return null;
 	}
 
-	private void panic(String msg)
+	private CastExp parseCastExpr(CastExpr x, Env y) throws Exception
 	{
-		System.out.println(msg);
+		return null;
+	}
+
+	private UnaryExp parseUnaryExpr(UnaryExpr x, Env y) throws Exception
+	{
+		return null;
+	}
+
+	private PostfixExp parsePostfixExpr(PostfixExpr x, Env y) throws Exception
+	{
+		PrimaryExp pe = parsePrimaryExpr(x.expr, y);
+		PostfixExp ret = new PostfixExp(pe);
+		ListIterator<Postfix> lit = x.elem.listIterator();
+		Type cur_type = pe.type;
+		while (lit.hasNext())
+		{
+			Postfix pfx = lit.next();
+			if (pfx.type == PostfixExpr.mparen)
+			{
+				if (cur_type instanceof Pointer || cur_type instanceof Array)
+				{
+					CommaExp ce = parseExpression((Expression) pfx.content, y);
+					if (ce.type instanceof Char || ce.type instanceof Int)
+					{
+						cur_type = cur_type instanceof Pointer ? ((Pointer) cur_type).elem_type : ((Array) cur_type).elem_type;
+						ret.add_elem(PostfixExpr.mparen, ce, null, cur_type);
+
+						boolean init_flag = pe.hasInitialized && ce.hasInitialized;
+						ret.decorate(cur_type, false, init_flag, true);
+					}
+					else
+						panic("Index is not an integer.");
+				}
+				else
+					panic("Only pointer or array can be indexed!");
+			}
+			else if (pfx.type == PostfixExpr.paren)
+			{
+				if(cur_type instanceof Function)
+				{
+					
+				}
+				else
+					panic("Only function can be called!");
+			}
+			else if (pfx.type == PostfixExpr.dot)
+			{
+
+			}
+			else if (pfx.type == PostfixExpr.ptr)
+			{
+
+			}
+			else if (pfx.type == PostfixExpr.inc)
+			{
+
+			}
+			else if (pfx.type == PostfixExpr.dec)
+			{
+
+			}
+			else
+				panic("Internal Error.");
+		}
+
+		return ret;
+	}
+
+	private PrimaryExp parsePrimaryExpr(PrimaryExpr x, Env y) throws Exception
+	{
+		PrimaryExp ret = new PrimaryExp();
+		if (x.type == PrimaryExpr.identifier)
+		{
+			String var_name = (String) x.elem;
+			Symbol var_sym = Symbol.getSymbol(var_name);
+			Entry entry = y.get(var_sym);
+
+			if (entry == null)
+				panic("Symbol \'" + var_name + "\' is undefined.");
+			else if (entry instanceof VarEntry)
+			{
+				VarEntry var_entry = (VarEntry) entry;
+				ret.decorate(var_entry.type, false, var_entry.hasInitialized, true);
+			}
+			else if (entry instanceof FuncEntry)
+			{
+				FuncEntry func_entry = (FuncEntry) entry;
+				ret.decorate(func_entry.type, false, true, false);
+			}
+			else
+				panic("Can not use a type as identifier!");
+		}
+		else if (x.type == PrimaryExpr.integer_constant)
+		{
+			ret.decorate(new Int(), true, true, false);
+			ret.set_value(x.elem);
+		}
+		else if (x.type == PrimaryExpr.character_constant)
+		{
+			ret.decorate(new Char(), true, true, false);
+			ret.set_value(x.elem);
+		}
+		else if (x.type == PrimaryExpr.real_constant)
+		{
+			ret.decorate(new Float(), true, true, false);
+			ret.set_value(x.elem);
+		}
+		else if (x.type == PrimaryExpr.string)
+		{
+			ret.decorate(new Pointer(new Char()), false, true, false); // GCC doesn't consider "abcd"[2] as a const
+			ret.set_value(x.elem);
+		}
+		else if (x.type == PrimaryExpr.paren_expr)
+		{
+			CommaExp ce = parseExpression((Expression) x.elem, y);
+			ret.decorate(ce.type, ce.isConst, ce.hasInitialized, false);// GCC doesn't consider (a, b, c) as a lvalue
+			ret.set_value(ce.value);
+			ret.set_expr(ce);
+		}
+		else
+			panic("Internal Error.");
+
+		return ret;
+	}
+
+	private void panic(String msg) throws Exception
+	{
+		throw new Exception(msg);
 	}
 }

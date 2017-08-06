@@ -11,7 +11,7 @@ public class PostfixExpr
 	public static final int inc = 4;
 	public static final int dec = 5;
 
-	class Postfix
+	public class Postfix
 	{
 		public int type;
 		public Object content;

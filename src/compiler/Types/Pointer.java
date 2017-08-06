@@ -2,7 +2,7 @@ package compiler.Types;
 
 public class Pointer extends Type
 {
-	Type elem_type;
+	public Type elem_type;
 
 	public Pointer(Type t)
 	{

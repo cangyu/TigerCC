@@ -2,8 +2,8 @@ package compiler.Types;
 
 public final class Function extends Type
 {
-	Type returnType;
-	Type argumentType;
+	public Type returnType;
+	public Type argumentType;
 
 	public Function(Type arg, Type ret)
 	{

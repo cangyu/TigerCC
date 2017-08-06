@@ -9,4 +9,26 @@ public abstract class Exp extends ASTNode
 	public Object value;
 	public boolean hasInitialized;
 	public boolean isLvalue;
+
+	public Exp()
+	{
+		type = null;
+		isConst = false;
+		value = null;
+		hasInitialized = false;
+		isLvalue = false;
+	}
+
+	public void decorate(Type t, boolean cons, boolean init, boolean lval)
+	{
+		type = t;
+		isConst = cons;
+		hasInitialized = init;
+		isLvalue = lval;
+	}
+
+	public void set_value(Object val)
+	{
+		value = val; // Valid when 'isConst' == true
+	}
 }
