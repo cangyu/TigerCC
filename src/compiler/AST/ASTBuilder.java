@@ -401,23 +401,90 @@ public class ASTBuilder
 					ret.decorate(cur_type, false, true, false);
 				}
 				else
-					panic("Only function can be called!");
+					panic("Only function can be called.");
 			}
 			else if (pfx.type == PostfixExpr.dot)
 			{
+				if (cur_type instanceof Struct)
+				{
+					// Cast
+					Struct pt = (Struct) cur_type;
 
+					// Get member type
+					String member = (String) pfx.content;
+					cur_type = pt.get_member_type(member);
+
+					// Check
+					if (cur_type == null)
+						panic("Not a member.");
+
+					// Decorate the exp
+					ret.add_elem(PostfixExpr.dot, null, member, cur_type);
+					ret.decorate(cur_type, false, pe.hasInitialized, true);
+				}
+				else if (cur_type instanceof Union)
+				{
+					// Cast
+					Union pt = (Union) cur_type;
+
+					// Get member type
+					String member = (String) pfx.content;
+					cur_type = pt.get_member_type(member);
+
+					// Check
+					if (cur_type == null)
+						panic("Not a member.");
+
+					// Decorate the exp
+					ret.add_elem(PostfixExpr.dot, null, member, cur_type);
+					ret.decorate(cur_type, false, pe.hasInitialized, true);
+				}
+				else
+					panic("Not a structure or union.");
 			}
 			else if (pfx.type == PostfixExpr.ptr)
 			{
+				if (cur_type instanceof Pointer)
+				{
+					Type pt = ((Pointer) cur_type).elem_type;
+					if (pt instanceof Struct || pt instanceof Union)
+					{
+						// Cast
+						Record cpt = (Record) pt;
 
+						// Get member type
+						String member = (String) pfx.content;
+						cur_type = cpt.get_member_type(member);
+
+						// Check
+						if (cur_type == null)
+							panic("Not a member.");
+
+						// Decorate the exp
+						ret.add_elem(PostfixExpr.ptr, null, member, cur_type);
+						ret.decorate(cur_type, false, pe.hasInitialized, true);
+					}
+					else
+						panic("Not a pointer to record.");
+				}
+				else
+					panic("Not a pointer.");
 			}
 			else if (pfx.type == PostfixExpr.inc)
 			{
+				boolean operable = Type.numeric(cur_type) || cur_type instanceof Pointer;
+				if (!operable)
+					panic("Can not be incremented.");
 
+				ret.add_elem(PostfixExpr.inc, null, null, cur_type);
 			}
 			else if (pfx.type == PostfixExpr.dec)
 			{
+				boolean operable = Type.numeric(cur_type) || cur_type instanceof Pointer;
+				if (!operable)
+					panic("Can not be decreased.");
 
+				ret.add_elem(PostfixExpr.dec, null, null, cur_type);
 			}
 			else
 				panic("Internal Error.");

@@ -11,7 +11,7 @@ public abstract class Type
 
 	public static boolean numeric(Type p)
 	{
-		return p instanceof Char || p instanceof Int || p instanceof Float;
+		return p instanceof Char || p instanceof Int || p instanceof Float || p instanceof Double;
 	}
 
 	public static Type max(Type p1, Type p2)
@@ -26,8 +26,8 @@ public abstract class Type
 		else
 			return Char.instance;
 	}
-	
+
 	public abstract boolean equals(Type rhs);
-	
+
 	public abstract boolean isConvertableTo(Type rhs);
 }
