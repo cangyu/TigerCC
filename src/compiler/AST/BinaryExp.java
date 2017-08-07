@@ -26,6 +26,7 @@ public abstract class BinaryExp extends Exp
 
 	public BinaryExp(int _t, Exp le, Exp re)
 	{
+		super();
 		op = _t;
 		left = le;
 		right = re;
@@ -34,50 +35,5 @@ public abstract class BinaryExp extends Exp
 	public void accept(ASTNodeVisitor v) throws Exception
 	{
 		v.visit(this);
-	}
-
-	public String getOperator(int op)
-	{
-		switch (op)
-		{
-		case BIT_AND:
-			return "&".intern();
-		case BIT_XOR:
-			return "^".intern();
-		case BIT_OR:
-			return "|".intern();
-		case AND:
-			return "&&".intern();
-		case OR:
-			return "||".intern();
-		case EQ:
-			return "==".intern();
-		case NE:
-			return "!=".intern();
-		case LT:
-			return "<".intern();
-		case GT:
-			return ">".intern();
-		case LE:
-			return "<=".intern();
-		case GE:
-			return ">=".intern();
-		case SHL:
-			return "<<".intern();
-		case SHR:
-			return ">>".intern();
-		case PLUS:
-			return "+".intern();
-		case MINUS:
-			return "-".intern();
-		case TIMES:
-			return "*".intern();
-		case DIVIDE:
-			return "/".intern();
-		case MODULE:
-			return "%".intern();
-		default:
-			return "".intern();
-		}
 	}
 }

@@ -6,6 +6,18 @@ public final class Char extends Type
 	{
 		super(1);
 	}
-	
+
 	public static Char instance = new Char();
+
+	@Override
+	public boolean equals(Type rhs)
+	{
+		return rhs instanceof Char;
+	}
+
+	@Override
+	public boolean isConvertableTo(Type rhs)
+	{
+		return rhs instanceof Char || rhs instanceof Int || rhs instanceof Float;
+	}
 }

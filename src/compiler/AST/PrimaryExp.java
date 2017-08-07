@@ -1,7 +1,5 @@
 package compiler.AST;
 
-import compiler.Types.Type;
-
 public class PrimaryExp extends Exp
 {
 	public CommaExp ce;
@@ -22,7 +20,6 @@ public class PrimaryExp extends Exp
 	@Override
 	public void accept(ASTNodeVisitor v) throws Exception
 	{
-		// TODO Auto-generated method stub
-
+		v.visit(this);
 	}
 }

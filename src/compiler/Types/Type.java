@@ -26,4 +26,8 @@ public abstract class Type
 		else
 			return Char.instance;
 	}
+	
+	public abstract boolean equals(Type rhs);
+	
+	public abstract boolean isConvertableTo(Type rhs);
 }

@@ -9,4 +9,16 @@ public class Pointer extends Type
 		super(4);
 		elem_type = t;
 	}
+
+	@Override
+	public boolean equals(Type rhs)
+	{
+		return rhs instanceof Pointer;
+	}
+
+	@Override
+	public boolean isConvertableTo(Type rhs)
+	{
+		return rhs instanceof Pointer || rhs instanceof Int;
+	}
 }

@@ -1893,12 +1893,12 @@ public class Parser
 				advance();
 				if (match(Token.RPAREN))
 				{
-					ret.add_elem(PostfixExpr.paren, null);
 					advance();
+					ret.add_elem(PostfixExpr.paren, null);
 				}
 				else
 				{
-					LinkedList<AssignmentExpr> arg = new LinkedList<AssignmentExpr>(); // arguments
+					Expression arg = new Expression();// arguments
 					int cnt = 0;
 					for (;;)
 					{
@@ -1913,7 +1913,7 @@ public class Parser
 						else
 						{
 							start_pos.pop();
-							arg.add(x);
+							arg.add_expr(x);
 						}
 
 						if (match(Token.COMMA))

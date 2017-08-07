@@ -14,6 +14,11 @@ public abstract class Record extends Type
 			type = t;
 			name = n;
 		}
+
+		public boolean equals(RecordField rhs)
+		{
+			return type.equals(rhs.type) && name.equals(rhs.name);
+		}
 	}
 
 	public String tag;

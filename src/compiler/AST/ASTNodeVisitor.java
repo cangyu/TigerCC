@@ -1,60 +1,41 @@
 package compiler.AST;
 
-import compiler.Parser.*;
-
 public interface ASTNodeVisitor
 {
-	/* Expr */
-	public abstract void visit(Expression x) throws Exception;
+	/* exp */
+	public abstract void visit(CommaExp x) throws Exception;
 
-	public abstract void visit(AssignmentExpr x) throws Exception;
+	public abstract void visit(AssignExp x) throws Exception;
 
 	public abstract void visit(BinaryExp x) throws Exception;
 
-	public abstract void visit(CastExpr x) throws Exception;
+	public abstract void visit(CastExp x) throws Exception;
 
-	public abstract void visit(UnaryExpr x) throws Exception;
+	public abstract void visit(UnaryExp x) throws Exception;
 
-	public abstract void visit(PostfixExpr x) throws Exception;
+	public abstract void visit(PostfixExp x) throws Exception;
 
-	public abstract void visit(PrimaryExpr x) throws Exception;
+	public abstract void visit(PrimaryExp x) throws Exception;
 
-	/* Stmt */
-	public abstract void visit(ExpressionStatement x) throws Exception;
+	/* stmt */
+	public abstract void visit(ExprStmt x) throws Exception;
 
-	public abstract void visit(CompoundStatement x) throws Exception;
+	public abstract void visit(CompStmt x) throws Exception;
 
-	public abstract void visit(SelectionStatement x) throws Exception;
+	public abstract void visit(SelectStmt x) throws Exception;
 
 	public abstract void visit(JumpStmt x) throws Exception;
 
-	public abstract void visit(IterationStatement x) throws Exception;
+	public abstract void visit(IterStmt x) throws Exception;
 
-	/* Decl */
-	public abstract void visit(Declaration x) throws Exception;
+	/* dec */
+	public abstract void visit(VarDec x) throws Exception;
 
-	public abstract void visit(Declarator x) throws Exception;
+	public abstract void visit(FuncDec x) throws Exception;
 
-	public abstract void visit(InitDeclarator x) throws Exception;
+	/* init */
+	public abstract void visit(Init x) throws Exception;
 
-	public abstract void visit(Initializer x) throws Exception;
-
-	public abstract void visit(PlainDeclaration x) throws Exception;
-
-	public abstract void visit(PlainDeclarator x) throws Exception;
-
-	/* Func */
-	public abstract void visit(FuncDef x) throws Exception;
-
-	/* Type */
-	public abstract void visit(TypeName x) throws Exception;
-
-	public abstract void visit(TypeSpecifier x) throws Exception;
-
-	/* Program */
-	public abstract void visit(Program x) throws Exception;
-
-	public abstract void visit(RecordEntry recordEntry);
-
-	public abstract void visit(ConstantExpr constantExpr);
+	/* prog */
+	public abstract void visit(Prog x) throws Exception;
 }

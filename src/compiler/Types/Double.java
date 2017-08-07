@@ -6,4 +6,16 @@ public class Double extends Type
 	{
 		super(8);
 	}
+
+	@Override
+	public boolean equals(Type rhs)
+	{
+		return rhs instanceof Double;
+	}
+
+	@Override
+	public boolean isConvertableTo(Type rhs)
+	{
+		return rhs instanceof Double || rhs instanceof Float || rhs instanceof Char || rhs instanceof Int;
+	}
 }

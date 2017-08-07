@@ -44,8 +44,6 @@ public class FuncDec extends Dec
 	@Override
 	public void accept(ASTNodeVisitor v) throws Exception
 	{
-		// TODO Auto-generated method stub
-		
+		v.visit(this);
 	}
-
 }

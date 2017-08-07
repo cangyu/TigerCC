@@ -23,7 +23,6 @@ public class Prog extends ASTNode
 	@Override
 	public void accept(ASTNodeVisitor v) throws Exception
 	{
-		// TODO Auto-generated method stub
-
+		v.visit(this);
 	}
 }

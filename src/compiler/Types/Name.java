@@ -9,4 +9,16 @@ public class Name extends Type
 		super(0);
 		name = n;
 	}
+
+	@Override
+	public boolean equals(Type rhs)
+	{
+		return false;
+	}
+
+	@Override
+	public boolean isConvertableTo(Type rhs)
+	{
+		return false;
+	}
 }

@@ -10,4 +10,10 @@ public class CompStmt extends Stmt
 	{
 
 	}
+
+	@Override
+	public void accept(ASTNodeVisitor v) throws Exception
+	{
+		v.visit(this);
+	}
 }

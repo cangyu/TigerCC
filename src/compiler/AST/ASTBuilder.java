@@ -169,7 +169,7 @@ public class ASTBuilder
 			if (tag != null)
 			{
 				ret.set_tag(tag);
-				tenv.put(Symbol.getSymbol(tag), new TypeEntry(ret, tenv));
+				tenv.put(Symbol.getSymbol(tag), new TypeEntry(ret));
 			}
 
 			return ret;
@@ -181,16 +181,19 @@ public class ASTBuilder
 		}
 	}
 
-	public Type resolve_type(Type base, Declarator dr)
+	public Type resolve_type(Type base, Declarator dr) throws Exception
 	{
 		Type ret = resolve_plain_type(base, dr.plain_declarator);
 		for (ConstantExpr ce : dr.dimension)
 		{
-			int cnt = parseConstantExpr(ce);
-			if (cnt < 0)
-				panic("Invalid array definition.");
-			else
+			Object val = parseConstantExpr(ce);
+			if (val instanceof Integer)
+			{
+				int cnt = ((Integer) val).intValue();
 				ret = new Array(cnt, ret);
+			}
+			else
+				panic("Invalid array definition.");
 		}
 
 		return ret;
@@ -204,7 +207,7 @@ public class ASTBuilder
 		return ret;
 	}
 
-	public Init parseInitializer(Initializer x)
+	public Init parseInitializer(Initializer x) throws Exception
 	{
 		if (x == null)
 			return null;
@@ -232,13 +235,13 @@ public class ASTBuilder
 		}
 	}
 
-	public Type parsePlainDeclaration(PlainDeclaration x)
+	public Type parsePlainDeclaration(PlainDeclaration x) throws Exception
 	{
 		Type dt = parseTypeSpecifier(x.ts);
 		return resolve_type(dt, x.dlr);
 	}
 
-	public CompStmt parseCompoundStmt(CompoundStatement x, Env y)
+	public CompStmt parseCompoundStmt(CompoundStatement x, Env y) throws Exception
 	{
 		CompStmt ret = new CompStmt();
 		ret.scope = y;
@@ -298,7 +301,7 @@ public class ASTBuilder
 		return null;
 	}
 
-	private Exp parseAssignExp(AssignmentExpr x)
+	private AssignExp parseAssignExp(AssignmentExpr x)
 	{
 		return null;
 	}
@@ -309,7 +312,7 @@ public class ASTBuilder
 		if (ce.isConst)
 			return ce.value;
 		else
-			return -1;
+			return null;
 	}
 
 	private BinaryExp parseLogicalOrExpr(LogicalOrExpr x)
@@ -335,36 +338,67 @@ public class ASTBuilder
 	private PostfixExp parsePostfixExpr(PostfixExpr x, Env y) throws Exception
 	{
 		PrimaryExp pe = parsePrimaryExpr(x.expr, y);
+
 		PostfixExp ret = new PostfixExp(pe);
-		ListIterator<Postfix> lit = x.elem.listIterator();
 		Type cur_type = pe.type;
+
+		ListIterator<Postfix> lit = x.elem.listIterator();
 		while (lit.hasNext())
 		{
 			Postfix pfx = lit.next();
 			if (pfx.type == PostfixExpr.mparen)
 			{
-				if (cur_type instanceof Pointer || cur_type instanceof Array)
+				CommaExp ce = parseExpression((Expression) pfx.content, y);
+				if (ce.type instanceof Char || ce.type instanceof Int)
 				{
-					CommaExp ce = parseExpression((Expression) pfx.content, y);
-					if (ce.type instanceof Char || ce.type instanceof Int)
+					boolean init_flag = pe.hasInitialized && ce.hasInitialized;
+					if (cur_type instanceof Pointer)
 					{
-						cur_type = cur_type instanceof Pointer ? ((Pointer) cur_type).elem_type : ((Array) cur_type).elem_type;
+						cur_type = ((Pointer) cur_type).elem_type;
 						ret.add_elem(PostfixExpr.mparen, ce, null, cur_type);
-
-						boolean init_flag = pe.hasInitialized && ce.hasInitialized;
+						ret.decorate(cur_type, false, init_flag, true);
+					}
+					else if (cur_type instanceof Array)
+					{
+						cur_type = ((Array) cur_type).elem_type;
+						ret.add_elem(PostfixExpr.mparen, ce, null, cur_type);
 						ret.decorate(cur_type, false, init_flag, true);
 					}
 					else
-						panic("Index is not an integer.");
+						panic("Only pointer or array can be indexed!");
 				}
 				else
-					panic("Only pointer or array can be indexed!");
+					panic("Index is not an integer.");
 			}
 			else if (pfx.type == PostfixExpr.paren)
 			{
-				if(cur_type instanceof Function)
+				if (cur_type instanceof Function)
 				{
-					
+					Expression arg = (Expression) pfx.content;
+					CommaExp ce = parseExpression(arg, y);
+
+					// function definition arguments type
+					LinkedList<Type> fdatp = Function.get_param_type((Function) cur_type);
+
+					if (ce.exp.size() != fdatp.size() - 1)
+						panic("Function arguments quantity doesn't match.");
+
+					// parameter list iterator
+					ListIterator<AssignExp> plit = ce.exp.listIterator();
+
+					// argument type list iterator
+					ListIterator<Type> atlit = fdatp.listIterator();
+
+					while (plit.hasNext())
+					{
+						Type cptp = plit.next().type;
+						Type catp = atlit.next();
+						if (!cptp.isConvertableTo(catp))
+							panic("Incompatible parameter type.");
+					}
+					cur_type = fdatp.getLast();
+					ret.add_elem(PostfixExpr.paren, ce, null, cur_type);
+					ret.decorate(cur_type, false, true, false);
 				}
 				else
 					panic("Only function can be called!");
@@ -403,7 +437,8 @@ public class ASTBuilder
 
 			if (entry == null)
 				panic("Symbol \'" + var_name + "\' is undefined.");
-			else if (entry instanceof VarEntry)
+
+			if (entry instanceof VarEntry)
 			{
 				VarEntry var_entry = (VarEntry) entry;
 				ret.decorate(var_entry.type, false, var_entry.hasInitialized, true);
