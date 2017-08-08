@@ -207,14 +207,14 @@ public class ASTBuilder
 		return ret;
 	}
 
-	public Init parseInitializer(Initializer x) throws Exception
+	public Init parseInitializer(Initializer x, Env y) throws Exception
 	{
 		if (x == null)
 			return null;
 
 		if (x.type == Initializer.assign)
 		{
-			Exp e = parseAssignExp(x.ae);
+			Exp e = parseAssignExp(x.ae, y);
 			return new Init(e);
 
 		}
@@ -223,7 +223,7 @@ public class ASTBuilder
 			Init ret = new Init();
 			for (Initializer it : x.comp)
 			{
-				Init cit = parseInitializer(it);
+				Init cit = parseInitializer(it, y);
 				ret.add_init(cit);
 			}
 			return ret;
@@ -253,7 +253,7 @@ public class ASTBuilder
 			{
 				String vn = idr.declarator.plain_declarator.name;
 				Type vt = resolve_type(def_type, idr.declarator);
-				Init it = parseInitializer(idr.initializer);
+				Init it = parseInitializer(idr.initializer, y);
 			}
 		}
 
@@ -301,38 +301,333 @@ public class ASTBuilder
 		return null;
 	}
 
-	private AssignExp parseAssignExp(AssignmentExpr x)
+	private AssignExp parseAssignExp(AssignmentExpr x, Env y) throws Exception
 	{
 		return null;
 	}
 
-	private Object parseConstantExpr(ConstantExpr x)
+	private Object parseConstantExpr(ConstantExpr x, Env y) throws Exception
 	{
-		BinaryExp ce = parseLogicalOrExpr(x.expr);
+		BinaryExp ce = parseLogicalOrExpr(x.expr, y);
 		if (ce.isConst)
 			return ce.value;
 		else
 			return null;
 	}
 
-	private BinaryExp parseLogicalOrExpr(LogicalOrExpr x)
+	private BinaryExp parseLogicalOrExpr(LogicalOrExpr x, Env y) throws Exception
 	{
 		return null;
 	}
 
-	private BinaryExp parseLogicalAndExpr(LogicalAndExpr x)
+	private BinaryExp parseLogicalAndExpr(LogicalAndExpr x, Env y) throws Exception
 	{
 		return null;
+	}
+
+	private BinaryExp parseInclusiveOrExpr(InclusiveOrExpr x, Env y) throws Exception
+	{
+		return null;
+	}
+
+	private BinaryExp parseExclusiveOrExpr(ExclusiveOrExpr x, Env y) throws Exception
+	{
+		return null;
+	}
+
+	private BinaryExp parseAndExpr(AndExpr x, Env y) throws Exception
+	{
+		return null;
+	}
+
+	private BinaryExp parseRelationalExpr(RelationalExpr x, Env y) throws Exception
+	{
+		return null;
+	}
+
+	private BinaryExp parseShiftExpr(ShiftExpr x, Env y) throws Exception
+	{
+		return null;
+	}
+
+	private BinaryExp parseAdditiveExpr(AdditiveExpr x, Env y) throws Exception
+	{
+		return null;
+	}
+
+	private BinaryExp parseMultiplicativeExpr(MultiplicativeExpr x, Env y) throws Exception
+	{
+		BinaryExp ret = new BinaryExp();
+		Exp cur = ret;
+		ListIterator<CastExpr> clit = x.expr_list.listIterator(x.expr_list.size());
+		ListIterator<Integer> plit = x.op_list.listIterator(x.op_list.size());
+		while (plit.hasPrevious())
+		{
+			
+		}
+
+		return ret;
 	}
 
 	private CastExp parseCastExpr(CastExpr x, Env y) throws Exception
 	{
-		return null;
+		UnaryExp ue = parseUnaryExpr(x.expr, y);
+		CastExp ret = new CastExp(ue);
+
+		Type cur_type = ue.type;
+		ListIterator<TypeName> lit = x.type_list.listIterator(x.type_list.size());
+		while (lit.hasPrevious())
+		{
+			Type ct = parseTypeName(lit.previous());
+			if (cur_type.isConvertableTo(ct))
+			{
+				ret.add_type(ct);
+				cur_type = ct;
+			}
+			else
+				panic("Invalid type conversion.");
+		}
+
+		ret.decorate(cur_type, ue.isConst, ue.hasInitialized, false);
+		if (ret.isConst)
+		{
+			// TODO
+			ret.set_value(ue.value);
+		}
+
+		return ret;
 	}
 
 	private UnaryExp parseUnaryExpr(UnaryExpr x, Env y) throws Exception
 	{
-		return null;
+		UnaryExp ret = null;
+		if (x.type == UnaryExpr.postfix)
+		{
+			PostfixExpr per = (PostfixExpr) x.elem;
+			PostfixExp pe = parsePostfixExpr(per, y);
+			ret = new UnaryExp(UnaryExpr.postfix, pe, null);
+			ret.decorate(pe.type, pe.isConst, pe.hasInitialized, pe.isLvalue);
+		}
+		else if (x.type == UnaryExpr.inc)
+		{
+			UnaryExpr uer = (UnaryExpr) x.elem;
+			UnaryExp ue = parseUnaryExpr(uer, y);
+			if (!ue.isLvalue)
+				panic("Not assignable.");
+			boolean operable = Type.numeric(ue.type) || ue.type instanceof Pointer;
+			if (!operable)
+				panic("Can not be incremented.");
+
+			ret = new UnaryExp(UnaryExpr.inc, ue, null);
+			ret.decorate(ue.type, false, ue.hasInitialized, false);
+		}
+		else if (x.type == UnaryExpr.dec)
+		{
+			UnaryExpr uer = (UnaryExpr) x.elem;
+			UnaryExp ue = parseUnaryExpr(uer, y);
+			if (!ue.isLvalue)
+				panic("Not assignable.");
+			boolean operable = Type.numeric(ue.type) || ue.type instanceof Pointer;
+			if (!operable)
+				panic("Can not be decreased.");
+
+			ret = new UnaryExp(UnaryExpr.dec, ue, null);
+			ret.decorate(ue.type, false, ue.hasInitialized, false);
+		}
+		else if (x.type == UnaryExpr.address)
+		{
+			CastExpr cer = (CastExpr) x.elem;
+			CastExp ce = parseCastExpr(cer, y);
+			ret = new UnaryExp(UnaryExpr.address, ce, null);
+			ret.decorate(new Pointer(ce.type), true, true, false);
+		}
+		else if (x.type == UnaryExpr.dereference)
+		{
+			CastExpr cer = (CastExpr) x.elem;
+			CastExp ce = parseCastExpr(cer, y);
+			Type cur_type = ce.type;
+			if (cur_type instanceof Array)
+			{
+				Array ay = (Array) cur_type;
+				ret = new UnaryExp(UnaryExpr.dereference, ce, null);
+				ret.decorate(ay.elem_type, false, ce.hasInitialized, true);
+			}
+			else if (cur_type instanceof Pointer)
+			{
+				Pointer pr = (Pointer) cur_type;
+				ret = new UnaryExp(UnaryExpr.dereference, ce, null);
+				ret.decorate(pr.elem_type, false, ce.hasInitialized, true);
+			}
+			else
+				panic("Only array or pointer can be dereferenced!");
+		}
+		else if (x.type == UnaryExpr.positive)
+		{
+			CastExpr cer = (CastExpr) x.elem;
+			CastExp ce = parseCastExpr(cer, y);
+
+			Type cur_type = ce.type;
+			if (!Type.numeric(cur_type))
+				panic("Not an numeric type.");
+
+			ret = new UnaryExp(UnaryExpr.positive, ce, null);
+			ret.decorate(cur_type, ce.isConst, ce.hasInitialized, false);
+			if (ret.isConst)
+				ret.set_value(ce.value);
+		}
+		else if (x.type == UnaryExpr.negative)
+		{
+			CastExpr cer = (CastExpr) x.elem;
+			CastExp ce = parseCastExpr(cer, y);
+
+			Type cur_type = ce.type;
+			if (!Type.numeric(cur_type))
+				panic("Not an numeric type.");
+
+			ret = new UnaryExp(UnaryExpr.negative, ce, null);
+			ret.decorate(cur_type, ce.isConst, ce.hasInitialized, false);
+			if (ret.isConst)
+			{
+				if (cur_type instanceof Int)
+				{
+					int cval = ((Integer) ce.value).intValue();
+					ret.set_value(new Integer(-cval));
+				}
+				else if (cur_type instanceof Char)
+				{
+					int cval = (int) ((Character) ce.value).charValue();
+					ret.set_value(new Integer(-cval));
+				}
+				else if (cur_type instanceof Float)
+				{
+					float cval = (float) ce.value;
+					ret.set_value(cval);
+				}
+				else if (cur_type instanceof Double)
+				{
+					double cval = (double) ce.value;
+					ret.set_value(cval);
+				}
+				else
+					panic("Internal Error.");
+			}
+		}
+		else if (x.type == UnaryExpr.bit_not)
+		{
+			CastExpr cer = (CastExpr) x.elem;
+			CastExp ce = parseCastExpr(cer, y);
+			Type cur_type = ce.type;
+			if (cur_type instanceof Int)
+			{
+				ret = new UnaryExp(UnaryExpr.bit_not, ce, null);
+				ret.decorate(cur_type, ce.isConst, ce.hasInitialized, false);
+				if (ret.isConst)
+				{
+					int cval = ((Integer) ce.value).intValue();
+					ret.set_value(new Integer(~cval));
+				}
+			}
+			else if (cur_type instanceof Char)
+			{
+				ret = new UnaryExp(UnaryExpr.bit_not, ce, null);
+				ret.decorate(cur_type, ce.isConst, ce.hasInitialized, false);
+				if (ret.isConst)
+				{
+					int cval = (int) ((Character) ce.value).charValue();
+					ret.set_value(new Integer(~cval));
+				}
+			}
+			else
+				panic("Invalid operand.");
+		}
+		else if (x.type == UnaryExpr.not)
+		{
+			CastExpr cer = (CastExpr) x.elem;
+			CastExp ce = parseCastExpr(cer, y);
+			Type cur_type = ce.type;
+			if (cur_type instanceof Pointer || Type.numeric(cur_type))
+			{
+				ret = new UnaryExp(UnaryExpr.not, ce, null);
+				ret.decorate(new Int(), ce.isConst, ce.hasInitialized, false);
+				if (ret.isConst)
+				{
+					if (cur_type instanceof Int)
+					{
+						int cval = ((Integer) ce.value).intValue();
+						cval = cval == 0 ? 0 : 1;
+						ret.set_value(new Integer(cval));
+					}
+					else if (cur_type instanceof Char)
+					{
+						int cval = (int) ((Character) ce.value).charValue();
+						cval = cval == 0 ? 0 : 1;
+						ret.set_value(new Integer(cval));
+					}
+					else if (cur_type instanceof Float)
+					{
+						float cval = (float) ce.value;
+						if (cval == 0)
+							ret.set_value(0);
+						else
+							ret.set_value(1);
+					}
+					else if (cur_type instanceof Double)
+					{
+						double cval = (double) ce.value;
+						if (cval == 0)
+							ret.set_value(0);
+						else
+							ret.set_value(1);
+					}
+					else if (cur_type instanceof Pointer)
+					{
+						int cval = ((Integer) ce.value).intValue();
+						cval = cval == 0 ? 0 : 1;
+						ret.set_value(new Integer(cval));
+					}
+					else
+						panic("Internal Error.");
+				}
+			}
+			else
+				panic("Invalid operand.");
+		}
+		else if (x.type == UnaryExpr.sizeof)
+		{
+			if (x.elem instanceof UnaryExpr)
+			{
+				UnaryExpr uer = (UnaryExpr) x.elem;
+				UnaryExp ue = parseUnaryExpr(uer, y);
+
+				ret = new UnaryExp(UnaryExpr.sizeof, ue, null);
+				ret.decorate(new Int(), true, true, false);
+				ret.set_value(ue.type.width);
+			}
+			else if (x.elem instanceof TypeName)
+			{
+				TypeName tpn = (TypeName) x.elem;
+				Type t = parseTypeName(tpn);
+
+				ret = new UnaryExp(UnaryExpr.sizeof, null, t);
+				ret.decorate(new Int(), true, true, false);
+				ret.set_value(t.width);
+			}
+			else
+				panic("Internal Error.");
+		}
+		else
+			panic("Internal Error.");
+
+		return ret;
+	}
+
+	private Type parseTypeName(TypeName x) throws Exception
+	{
+		Type ret = parseTypeSpecifier(x.type_specifier);
+		for (int i = 0; i < x.star_cnt; i++)
+			ret = new Pointer(ret);
+
+		return ret;
 	}
 
 	private PostfixExp parsePostfixExpr(PostfixExpr x, Env y) throws Exception

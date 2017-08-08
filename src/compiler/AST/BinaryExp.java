@@ -1,6 +1,6 @@
 package compiler.AST;
 
-public abstract class BinaryExp extends Exp
+public class BinaryExp extends Exp
 {
 	public static final int BIT_AND = 0;
 	public static final int BIT_XOR = 1;
@@ -30,6 +30,14 @@ public abstract class BinaryExp extends Exp
 		op = _t;
 		left = le;
 		right = re;
+	}
+
+	public BinaryExp()
+	{
+		super();
+		op = -1;
+		left = null;
+		right = null;
 	}
 
 	public void accept(ASTNodeVisitor v) throws Exception
