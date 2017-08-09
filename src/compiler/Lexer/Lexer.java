@@ -2,7 +2,7 @@ package compiler.Lexer;
 
 import java.io.*;
 
-//TODO: 解析科学计数；越界处理；负数；忽略#include
+//TODO: 解析科学计数；越界处理；忽略#include
 public class Lexer
 {
 	private int line, column;

@@ -12,6 +12,11 @@ public class CommaExp extends Exp
 		exp = new LinkedList<AssignExp>();
 	}
 
+	public void add_exp(AssignExp x)
+	{
+		exp.add(x);
+	}
+
 	@Override
 	public void accept(ASTNodeVisitor v) throws Exception
 	{
