@@ -8,12 +8,6 @@ public class VarDec extends Dec
 	public String name;
 	public Init init;
 
-	public VarDec(Type t, String vn)
-	{
-		type = t;
-		name = vn;
-	}
-
 	public VarDec(Type t, String vn, Init it)
 	{
 		type = t;

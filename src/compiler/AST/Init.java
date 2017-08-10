@@ -5,10 +5,10 @@ import java.util.*;
 public class Init extends ASTNode
 {
 	public boolean listed;
-	public Exp exp;
+	public AssignExp exp;
 	public LinkedList<Init> init_list;
 
-	public Init(Exp e)
+	public Init(AssignExp e)
 	{
 		listed = false;
 		exp = e;

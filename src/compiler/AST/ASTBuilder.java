@@ -6,8 +6,7 @@ import compiler.Parser.*;
 import compiler.Parser.PostfixExpr.Postfix;
 import compiler.SymbolTable.*;
 import compiler.Types.*;
-import compiler.Types.Double;
-import compiler.Types.Float;
+import compiler.Types.FP;
 import compiler.Types.Void;
 
 public class ASTBuilder
@@ -50,7 +49,7 @@ public class ASTBuilder
 
 	private void parseDeclaration(Declaration x, Env y, Prog z) throws Exception
 	{
-		Type def_type = parseTypeSpecifier(x.ts);
+		Type def_type = parseTypeSpecifier(x.ts, y);
 		for (InitDeclarator idr : x.elem)
 		{
 			// Name and Symbol
@@ -58,18 +57,18 @@ public class ASTBuilder
 			Symbol var_sym = Symbol.getSymbol(var_name);
 
 			// Variable type
-			Type var_type = resolve_type(def_type, idr.declarator);
+			Type var_type = resolve_type(def_type, idr.declarator, y);
 
 			// Initializer
 			Init initializer = parseInitializer(idr.initializer, y);
-			boolean hasInitialized = initializer != null;
 
 			// ASTNode
-			VarDec var_dec = hasInitialized ? new VarDec(var_type, var_name, initializer) : new VarDec(var_type, var_name);
+			VarDec var_dec = new VarDec(var_type, var_name, initializer);
 			z.add_dec(var_dec);
 
 			// Environment
-			VarEntry var_entry = new VarEntry(var_type, offset, hasInitialized);
+			boolean hasInitialized = initializer != null;
+			VarEntry var_entry = new VarEntry(var_type, offset, hasInitialized, true, false);
 			offset += var_type.width;
 			y.put(var_sym, var_entry);
 		}
@@ -82,7 +81,7 @@ public class ASTBuilder
 		Symbol func_sym = Symbol.getSymbol(func_name);
 
 		// Return type
-		Type def_type = parseTypeSpecifier(x.ts);
+		Type def_type = parseTypeSpecifier(x.ts, y);
 		Type ret_type = resolve_plain_type(def_type, x.pd);
 
 		// ASTNode
@@ -91,9 +90,11 @@ public class ASTBuilder
 		for (PlainDeclaration pdn : x.pm)
 		{
 			String param_name = pdn.dlr.plain_declarator.name;
-			Type param_type = parsePlainDeclaration(pdn);
+			Symbol param_sym = Symbol.getSymbol(param_name);
+			Type param_type = parsePlainDeclaration(pdn, y);
+			VarEntry param_entry = new VarEntry(param_type, offset, false, true, false);
 			func_dec.add_param(param_type, param_name);
-			func_dec.scope.put(Symbol.getSymbol(param_name), new VarEntry(param_type, offset, false));
+			func_dec.scope.put(param_sym, param_entry);
 			offset += param_type.width;
 		}
 
@@ -102,7 +103,7 @@ public class ASTBuilder
 		z.add_dec(func_dec);
 
 		// Environment
-		Function func_type = new Function(new Void(), ret_type);
+		Function func_type = new Function(Void.instance, ret_type);
 		ListIterator<Parameter> lit = func_dec.param.listIterator(func_dec.param.size());
 		while (lit.hasPrevious())
 		{
@@ -113,18 +114,16 @@ public class ASTBuilder
 		y.put(func_sym, func_entry);
 	}
 
-	private Type parseTypeSpecifier(TypeSpecifier t) throws Exception
+	private Type parseTypeSpecifier(TypeSpecifier t, Env y) throws Exception
 	{
 		if (t.ts_type == TypeSpecifier.ts_void)
-			return new Void();
+			return Void.instance;
 		else if (t.ts_type == TypeSpecifier.ts_int)
-			return new Int();
+			return Int.instance;
 		else if (t.ts_type == TypeSpecifier.ts_char)
-			return new Char();
-		else if (t.ts_type == TypeSpecifier.ts_float)
-			return new Float();
-		else if (t.ts_type == TypeSpecifier.ts_double)
-			return new Double();
+			return Char.instance;
+		else if (t.ts_type == TypeSpecifier.ts_float || t.ts_type == TypeSpecifier.ts_double)
+			return FP.instance;
 		else if (t.ts_type == TypeSpecifier.ts_struct)
 		{
 			Struct ret = new Struct();
@@ -132,11 +131,11 @@ public class ASTBuilder
 
 			for (RecordEntry re : t.entry)
 			{
-				Type dt = parseTypeSpecifier(re.ts);
+				Type dt = parseTypeSpecifier(re.ts, y);
 				for (Declarator dclr : re.dls)
 				{
 					String name = dclr.plain_declarator.name;
-					Type ct = resolve_type(dt, dclr);
+					Type ct = resolve_type(dt, dclr, y);
 					ret.add_record(ct, name);
 				}
 			}
@@ -156,11 +155,11 @@ public class ASTBuilder
 
 			for (RecordEntry re : t.entry)
 			{
-				Type dt = parseTypeSpecifier(re.ts);
+				Type dt = parseTypeSpecifier(re.ts, y);
 				for (Declarator dclr : re.dls)
 				{
 					String name = dclr.plain_declarator.name;
-					Type ct = resolve_type(dt, dclr);
+					Type ct = resolve_type(dt, dclr, y);
 					ret.add_record(ct, name);
 				}
 			}
@@ -213,9 +212,8 @@ public class ASTBuilder
 
 		if (x.type == Initializer.assign)
 		{
-			Exp e = parseAssignmentExpr(x.ae, y);
+			AssignExp e = parseAssignmentExpr(x.ae, y);
 			return new Init(e);
-
 		}
 		else if (x.type == Initializer.list)
 		{
@@ -234,16 +232,15 @@ public class ASTBuilder
 		}
 	}
 
-	private Type parsePlainDeclaration(PlainDeclaration x) throws Exception
+	private Type parsePlainDeclaration(PlainDeclaration x, Env y) throws Exception
 	{
-		Type dt = parseTypeSpecifier(x.ts);
-		return resolve_type(dt, x.dlr);
+		Type dt = parseTypeSpecifier(x.ts, y);
+		return resolve_type(dt, x.dlr, y);
 	}
 
 	private Stmt parseStatement(Statement st, Env y) throws Exception
 	{
 		Stmt ret = null;
-
 		if (st instanceof ExpressionStatement)
 			ret = parseExpressionStatement((ExpressionStatement) st, y);
 		else if (st instanceof CompoundStatement)
@@ -256,14 +253,12 @@ public class ASTBuilder
 			ret = parseJumpStatement((JumpStatement) st, y);
 		else
 			panic("Internal Error.");
-
 		return ret;
 	}
 
 	private ExprStmt parseExpressionStatement(ExpressionStatement x, Env y) throws Exception
 	{
 		ExprStmt ret = null;
-
 		if (x.elem == null)
 			ret = new ExprStmt(null);
 		else
@@ -271,7 +266,6 @@ public class ASTBuilder
 			CommaExp e = parseExpression(x.elem, y);
 			ret = new ExprStmt(e);
 		}
-
 		return ret;
 	}
 
@@ -282,14 +276,18 @@ public class ASTBuilder
 
 		for (Declaration decl : x.decls)
 		{
-			Type def_type = parseTypeSpecifier(decl.ts);
+			Type def_type = parseTypeSpecifier(decl.ts, y);
 			for (InitDeclarator idr : decl.elem)
 			{
 				String var_name = idr.declarator.plain_declarator.name;
 				Symbol var_sym = Symbol.getSymbol(var_name);
 				Type var_type = resolve_type(def_type, idr.declarator, y);
 				Init var_it = parseInitializer(idr.initializer, y);
-				ret.scope.put(var_sym, new VarEntry(var_type, 0, var_it != null));
+				boolean hasInit = var_it != null;
+				VarEntry var_entry = new VarEntry(var_type, offset, hasInit, true, false);
+				VarDec var_dec = new VarDec(var_type, var_name, var_it);
+				ret.scope.put(var_sym, var_entry);
+				ret.add_var(var_dec);
 			}
 		}
 
@@ -305,6 +303,7 @@ public class ASTBuilder
 	private SelectStmt parseSelectionStatement(SelectionStatement x, Env y) throws Exception
 	{
 		CommaExp ce = parseExpression(x.cond, y);
+
 		Stmt stt = parseStatement(x.if_clause, y);
 		Stmt stf = null;
 		if (x.else_clause != null)
@@ -357,14 +356,23 @@ public class ASTBuilder
 
 	private CommaExp parseExpression(Expression x, Env y) throws Exception
 	{
-		CommaExp ret = new CommaExp();
+		if (x == null)
+			return null;
 
+		// build
+		CommaExp ret = new CommaExp();
 		ListIterator<AssignmentExpr> lit = x.elem.listIterator();
 		while (lit.hasNext())
 		{
 			AssignExp ae = parseAssignmentExpr(lit.next(), y);
 			ret.add_exp(ae);
 		}
+
+		// decorate
+		AssignExp last = ret.exp.getLast();
+		ret.decorate(last.type, last.isConst, last.hasInitialized, false);
+		if (ret.isConst)
+			ret.set_value(last.value);
 
 		return ret;
 	}
@@ -401,21 +409,135 @@ public class ASTBuilder
 			}
 		}
 
+		// Decorate
+		// C11: An assignment expression has the value of the left operand after the assignment.
+		if (ret.left != null)
+			ret.decorate(ret.left.type, false, true, false);
+		else
+		{
+			ret.decorate(ret.right.type, ret.right.isConst, ret.right.hasInitialized, false);
+			if (ret.isConst)
+				ret.set_value(ret.right.value);
+		}
+
 		return ret;
 	}
 
 	private Object parseConstantExpr(ConstantExpr x, Env y) throws Exception
 	{
 		BinaryExp ce = parseLogicalOrExpr(x.expr, y);
+
+		// In this simplified grammar, constant-expression is used only in array index
+		// So, it should be an integer-constant, no need to decorate here
 		if (ce.isConst)
 			return ce.value;
 		else
 			return null;
 	}
 
+	private void calc_const_val(BinaryExp x) throws Exception
+	{
+		if (x.op == BinaryExp.BIT_AND)
+		{
+			if (!Type.integer(x.left.type))
+				panic("Invalid left operand.");
+			if (!Type.integer(x.right.type))
+				panic("Invalid right operand.");
+
+			int val = ((int) x.left.value) & ((int) x.right.value);
+			x.set_value(new Integer(val));
+		}
+		else if (x.op == BinaryExp.BIT_XOR)
+		{
+			if (!Type.integer(x.left.type))
+				panic("Invalid left operand.");
+			if (!Type.integer(x.right.type))
+				panic("Invalid right operand.");
+
+			int val = ((int) x.left.value) ^ ((int) x.right.value);
+			x.set_value(new Integer(val));
+		}
+		else if (x.op == BinaryExp.BIT_OR)
+		{
+			if (!Type.integer(x.left.type))
+				panic("Invalid left operand.");
+			if (!Type.integer(x.right.type))
+				panic("Invalid right operand.");
+
+			int val = ((int) x.left.value) | ((int) x.right.value);
+			x.set_value(new Integer(val));
+		}
+		else if (x.op == BinaryExp.AND)
+		{
+			x.value = (((int) x.left.value) != 0 && ((int) x.right.value) != 0) ? 1 : 0;
+		}
+		else if (x.op == BinaryExp.OR)
+		{
+			x.value = (((int) x.left.value) != 0 || ((int) x.right.value) != 0) ? 1 : 0;
+		}
+		else if (x.op == BinaryExp.EQ)
+		{
+			x.value = (((int) x.left.value) == ((int) x.right.value)) ? 1 : 0;
+		}
+		else if (x.op == BinaryExp.NE)
+		{
+			x.value = (((int) x.left.value) != ((int) x.right.value)) ? 1 : 0;
+		}
+		else if (x.op == BinaryExp.LT)
+		{
+			x.value = (((int) x.left.value) < ((int) x.right.value)) ? 1 : 0;
+		}
+		else if (x.op == BinaryExp.GT)
+		{
+			x.value = (((int) x.left.value) > ((int) x.right.value)) ? 1 : 0;
+		}
+		else if (x.op == BinaryExp.LE)
+		{
+			x.value = (((int) x.left.value) <= ((int) x.right.value)) ? 1 : 0;
+		}
+		else if (x.op == BinaryExp.GE)
+		{
+			x.value = (((int) x.left.value) >= ((int) x.right.value)) ? 1 : 0;
+		}
+		else if (x.op == BinaryExp.SHL)
+		{
+			x.value = ((int) x.left.value) << ((int) x.right.value);
+		}
+		else if (x.op == BinaryExp.SHR)
+		{
+			x.value = ((int) x.left.value) >> ((int) x.right.value);
+		}
+		else if (x.op == BinaryExp.PLUS)
+		{
+			x.value = ((int) x.left.value) + ((int) x.right.value);
+		}
+		else if (x.op == BinaryExp.MINUS)
+		{
+			x.value = ((int) x.left.value) - ((int) x.right.value);
+		}
+		else if (x.op == BinaryExp.TIMES)
+		{
+			x.value = ((int) x.left.value) * ((int) x.right.value);
+		}
+		else if (x.op == BinaryExp.DIVIDE)
+		{
+			if ((int) x.right.value == 0)
+				panic("Dividend shall not be zero!");
+			else
+				x.value = ((int) x.left.value) / ((int) x.right.value);
+		}
+		else if (x.op == BinaryExp.MODULE)
+		{
+			x.value = ((int) x.left.value) % ((int) x.right.value);
+		}
+		else
+			panic("Internal Error.");
+	}
+
 	private BinaryExp parseLogicalOrExpr(LogicalOrExpr x, Env y) throws Exception
 	{
-		if (x.expr_list.size() < 1)
+		// Pre-check
+		if (x.expr_list.isEmpty())
 			panic("Internal Error.");
 
 		ListIterator<LogicalAndExpr> clit = x.expr_list.listIterator();
@@ -423,12 +545,21 @@ public class ASTBuilder
 		// first expr
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseLogicalAndExpr(clit.next(), y);
+		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
+		if (ret.isConst)
+			ret.set_value(ret.left.value);
 
 		// leaf or node cluster
 		while (clit.hasNext())
 		{
-			ret.op = BinaryExp.BIT_OR;
+			ret.op = BinaryExp.OR;
 			ret.right = parseLogicalAndExpr(clit.next(), y);
+			if (ret.left.isConst && ret.right.isConst)
+			{
+				ret.decorate(Int.instance, true, true, false);
+				calc_const_val(ret);
+			}
+
 			if (clit.hasNext())
 			{
 				BinaryExp nrt = new BinaryExp();
@@ -827,7 +958,7 @@ public class ASTBuilder
 					float cval = (float) ce.value;
 					ret.set_value(cval);
 				}
-				else if (cur_type instanceof Double)
+				else if (cur_type instanceof FP)
 				{
 					double cval = (double) ce.value;
 					ret.set_value(cval);
@@ -895,7 +1026,7 @@ public class ASTBuilder
 						else
 							ret.set_value(1);
 					}
-					else if (cur_type instanceof Double)
+					else if (cur_type instanceof FP)
 					{
 						double cval = (double) ce.value;
 						if (cval == 0)
@@ -1149,7 +1280,7 @@ public class ASTBuilder
 		}
 		else if (x.type == PrimaryExpr.real_constant)
 		{
-			ret.decorate(new Float(), true, true, false);
+			ret.decorate(FP.instance, true, true, false);
 			ret.set_value(x.elem);
 		}
 		else if (x.type == PrimaryExpr.string)

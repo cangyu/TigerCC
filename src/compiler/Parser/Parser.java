@@ -358,7 +358,7 @@ public class Parser
 			advance();
 			if (match(Token.ID))
 			{
-				String name = ((Identifier) token_buf.get(look)).name;
+				String name = (String) token_buf.get(look).content;
 				advance();
 
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_struct, name);
@@ -418,7 +418,7 @@ public class Parser
 			advance();
 			if (match(Token.ID))
 			{
-				String name = ((Identifier) token_buf.get(look)).name;
+				String name = (String) token_buf.get(look).content;
 				advance();
 
 				TypeSpecifier ret = new TypeSpecifier(TypeSpecifier.ts_union, name); // type_specifeir: union identifier
@@ -626,7 +626,7 @@ public class Parser
 
 		if (match(Token.ID))
 		{
-			String name = ((Identifier) token_buf.get(look)).name;
+			String name = (String) token_buf.get(look).content;
 			advance();
 			return new PlainDeclarator(n, name);
 		}
@@ -1939,7 +1939,7 @@ public class Parser
 				advance();
 				if (match(Token.ID))
 				{
-					String name = ((Identifier) token_buf.get(look)).name;
+					String name = (String) token_buf.get(look).content;
 					advance();
 					ret.add_elem(PostfixExpr.dot, name);
 				}
@@ -1954,7 +1954,7 @@ public class Parser
 				advance();
 				if (match(Token.ID))
 				{
-					String name = ((Identifier) token_buf.get(look)).name;
+					String name = (String) token_buf.get(look).content;
 					advance();
 					ret.add_elem(PostfixExpr.ptr, name);
 				}

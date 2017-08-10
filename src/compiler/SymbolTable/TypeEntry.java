@@ -9,6 +9,7 @@ public final class TypeEntry extends Entry
 	public TypeEntry(Type literal_type)
 	{
 		super(literal_type);
+		actual = null;
 	}
 
 	public void set_actual(Type ac)

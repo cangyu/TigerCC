@@ -16,39 +16,44 @@ public class PrimaryExpr
 
 	public PrimaryExpr(Object e)
 	{
-		if (e instanceof Identifier)
+		if (e instanceof Token)
 		{
-			type = identifier;
-			Identifier t = (Identifier) e;
-			elem = t.name;
-		}
-		else if (e instanceof Char)
-		{
-			type = character_constant;
-			Char t = (Char) e;
-			elem = t.value;
-		}
-		else if (e instanceof Int)
-		{
-			type = integer_constant;
-			Int t = (Int) e;
-			elem = t.value;
-		}
-		else if (e instanceof Real)
-		{
-			type = real_constant;
-			Real t = (Real) e;
-			elem = t.value;
-		}
-		else if (e instanceof Str)
-		{
-			type = string;
-			Str t = (Str) e;
-			elem = t.lexeme;
+			Token tk = (Token) e;
+			if (tk.tag == Token.ID)
+			{
+				type = identifier;
+				elem = tk.content;
+			}
+			else if (tk.tag == Token.CH)
+			{
+				type = character_constant;
+				elem = tk.content;
+			}
+			else if (tk.tag == Token.NUM)
+			{
+				type = integer_constant;
+				elem = tk.content;
+			}
+			else if (tk.tag == Token.REAL)
+			{
+				type = real_constant;
+				elem = tk.content;
+			}
+			else if (tk.tag == Token.STR)
+			{
+				type = string;
+				elem = tk.content;
+			}
+			else
+			{
+				type = -1;
+				elem = null;
+			}
 		}
 		else
 		{
-			type = paren_expr;// primary-expr ::= (expression)
+			// primary-expression ::= '(' expression ')'
+			type = paren_expr;
 			elem = e;
 		}
 	}

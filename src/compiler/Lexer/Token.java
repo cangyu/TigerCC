@@ -72,12 +72,49 @@ public class Token
 
 	public final int tag;
 	public int line, column;
+	public Object content;
 
 	public Token(int x, int l, int c)
 	{
 		tag = x;
 		line = l;
 		column = c;
+		content = null;
+	}
+
+	public static Token from_character(char ch, int l, int c)
+	{
+		Token ret = new Token(CH, l, c);
+		ret.content = new Character(ch);
+		return ret;
+	}
+
+	public static Token from_integer(int x, int l, int c)
+	{
+		Token ret = new Token(NUM, l, c);
+		ret.content = new Integer(x);
+		return ret;
+	}
+
+	public static Token from_real(double x, int l, int c)
+	{
+		Token ret = new Token(REAL, l, c);
+		ret.content = new Double(x);
+		return ret;
+	}
+
+	public static Token from_string(String str, int l, int c)
+	{
+		Token ret = new Token(STR, l, c);
+		ret.content = str.intern();
+		return ret;
+	}
+
+	public static Token from_identifier(String id, int l, int c)
+	{
+		Token ret = new Token(ID, l, c);
+		ret.content = id.intern();
+		return ret;
 	}
 
 	public String toString()
@@ -86,6 +123,16 @@ public class Token
 		{
 		case EOF:
 			return "EOF".intern();
+		case ID:
+			return "Identifier: ".intern() + (String) content;
+		case NUM:
+			return "Integer: ".intern() + ((Integer) content).toString();
+		case CH:
+			return "Char Literal: ".intern() + (Character) content;
+		case REAL:
+			return "Real: ".intern() + ((Double) content).toString();
+		case STR:
+			return "String Literal: ".intern() + (String) content;
 		case VOID:
 			return "VOID".intern();
 		case INT:

@@ -121,7 +121,7 @@ public class Lexer
 		else if (s.equals("union".intern()))
 			ret = build_token(Token.UNION);
 		else
-			ret = new Identifier(s, line, column);
+			ret = Token.from_identifier(s, line, column);
 
 		return ret;
 	}
@@ -168,7 +168,7 @@ public class Lexer
 				}
 
 				push_back(peek);
-				return new Int(val, line, column); // Hex integer
+				return Token.from_integer(val, line, column); // Hex integer
 			}
 			else
 			{
@@ -186,7 +186,7 @@ public class Lexer
 						panic("Invalid octal constant.");
 
 					push_back(peek);
-					return new Int(val, line, column);// Octal integer
+					return Token.from_integer(val, line, column);// Octal integer
 				}
 				else if (peek == '.')
 				{
@@ -201,12 +201,12 @@ public class Lexer
 						d *= 10;
 					}
 					push_back(peek);
-					return new Real(x, line, column); // Decimal fraction
+					return Token.from_real(x, line, column); // Decimal fraction
 				}
 				else
 				{
 					push_back(peek);
-					return new Int(0, line, column); // Constant 0
+					return Token.from_integer(0, line, column); // Constant 0
 				}
 			}
 		}
@@ -234,12 +234,12 @@ public class Lexer
 					d *= 10;
 				}
 				push_back(peek);
-				return new Real(x, line, column); // Decimal float
+				return Token.from_real(x, line, column); // Decimal float
 			}
 			else
 			{
 				push_back(peek);
-				return new Int(val, line, column); // Decimal integer
+				return Token.from_integer(val, line, column); // Decimal integer
 			}
 		}
 	}
@@ -271,7 +271,7 @@ public class Lexer
 				panic("Missing character terminating symbol.");
 		}
 
-		return new Char((char) tmp, line, column);
+		return Token.from_character((char) tmp, line, column);
 	}
 
 	private Token handle_str() throws IOException
@@ -288,7 +288,7 @@ public class Lexer
 		if (peek == -1)
 			panic("String symbol doesn't match on EOF.");
 
-		return new Str(b.toString(), line, column);
+		return Token.from_string(b.toString(), line, column);
 	}
 
 	private Token handle_misc() throws IOException

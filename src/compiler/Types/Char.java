@@ -18,6 +18,6 @@ public final class Char extends Type
 	@Override
 	public boolean isConvertableTo(Type rhs)
 	{
-		return rhs instanceof Char || rhs instanceof Int || rhs instanceof Float;
+		return rhs instanceof Char || rhs instanceof Int || rhs instanceof FP;
 	}
 }

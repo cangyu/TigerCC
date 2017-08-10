@@ -18,6 +18,6 @@ public final class Int extends Type
 	@Override
 	public boolean isConvertableTo(Type rhs)
 	{
-		return rhs instanceof Int || rhs instanceof Char || rhs instanceof Float || rhs instanceof Pointer;
+		return rhs instanceof Int || rhs instanceof Char || rhs instanceof FP || rhs instanceof Pointer;
 	}
 }
