@@ -1,4 +1,4 @@
-package compiler.Types;
+package compiler.Typing;
 
 public final class Char extends Type
 {

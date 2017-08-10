@@ -1,4 +1,4 @@
-package compiler.Types;
+package compiler.Typing;
 
 public abstract class Type
 {

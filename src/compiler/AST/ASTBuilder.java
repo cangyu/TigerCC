@@ -5,9 +5,7 @@ import compiler.AST.FuncDec.Parameter;
 import compiler.Parser.*;
 import compiler.Parser.PostfixExpr.Postfix;
 import compiler.SymbolTable.*;
-import compiler.Types.*;
-import compiler.Types.FP;
-import compiler.Types.Void;
+import compiler.Typing.*;
 
 public class ASTBuilder
 {

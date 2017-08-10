@@ -1,6 +1,6 @@
 package compiler.SymbolTable;
 
-import compiler.Types.*;
+import compiler.Typing.*;
 
 public class Entry
 {

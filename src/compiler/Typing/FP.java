@@ -1,4 +1,4 @@
-package compiler.Types;
+package compiler.Typing;
 
 public class FP extends Type
 {

@@ -1,4 +1,4 @@
-package compiler.Types;
+package compiler.Typing;
 
 import java.util.LinkedList;
 

@@ -1,7 +1,7 @@
 package compiler.AST;
 
 import compiler.SymbolTable.Env;
-import compiler.Types.*;
+import compiler.Typing.*;
 import java.util.*;
 
 public class FuncDec extends Dec

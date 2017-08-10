@@ -1,4 +1,4 @@
-package compiler.Types;
+package compiler.Typing;
 
 public final class Int extends Type
 {

@@ -1,6 +1,6 @@
 package compiler.AST;
 
-import compiler.Types.Type;
+import compiler.Typing.Type;
 
 public class UnaryExp extends Exp
 {

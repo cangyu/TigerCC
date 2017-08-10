@@ -1,8 +1,11 @@
-package compiler.Types;
+package compiler.Typing;
 
-public final class Struct extends Record
+import java.lang.Math;
+import java.util.*;
+
+public final class Union extends Record
 {
-	public Struct()
+	public Union()
 	{
 		super();
 	}
@@ -10,7 +13,7 @@ public final class Struct extends Record
 	public void add_record(Type t, String n)
 	{
 		field.put(n, t);
-		width += t.width;
+		width = Math.max(width, t.width);
 	}
 
 	@Override
@@ -22,6 +25,6 @@ public final class Struct extends Record
 	@Override
 	public boolean isConvertableTo(Type rhs)
 	{
-		return equals(rhs);
+		return false;
 	}
 }

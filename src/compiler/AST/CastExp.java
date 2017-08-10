@@ -1,7 +1,7 @@
 package compiler.AST;
 
 import java.util.LinkedList;
-import compiler.Types.Type;
+import compiler.Typing.Type;
 
 public class CastExp extends Exp
 {

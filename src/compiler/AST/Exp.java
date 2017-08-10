@@ -1,6 +1,6 @@
 package compiler.AST;
 
-import compiler.Types.*;
+import compiler.Typing.*;
 
 public abstract class Exp extends ASTNode
 {
