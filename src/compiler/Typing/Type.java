@@ -1,7 +1,5 @@
 package compiler.Typing;
 
-import compiler.AST.BinaryExp;
-
 public abstract class Type
 {
 	public int width;
