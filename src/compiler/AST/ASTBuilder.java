@@ -1,11 +1,15 @@
 package compiler.AST;
 
 import java.util.*;
+
+import javax.net.ssl.ExtendedSSLSession;
+
 import compiler.AST.FuncDec.Parameter;
 import compiler.Parser.*;
 import compiler.Parser.PostfixExpr.Postfix;
 import compiler.SymbolTable.*;
 import compiler.Typing.*;
+import compiler.Typing.Void;
 
 public class ASTBuilder
 {
@@ -433,77 +437,183 @@ public class ASTBuilder
 			return null;
 	}
 
+	private boolean equals_zero(Object x) throws Exception
+	{
+		if (x instanceof Character)
+			return (int)((Character) x).charValue() == 0;
+		else if (x instanceof Integer)
+			return ((Integer) x).intValue() == 0;
+		else if (x instanceof Double)
+			return ((Double) x).doubleValue() == 0.0;
+		else
+			return false;
+	}
+
 	private void calc_const_val(BinaryExp x) throws Exception
 	{
-		if (x.op == BinaryExp.BIT_AND)
+		if (x.op == BinaryExp.BIT_AND || x.op == BinaryExp.BIT_XOR || x.op == BinaryExp.BIT_OR)
 		{
 			if (!Type.integer(x.left.type))
 				panic("Invalid left operand.");
 			if (!Type.integer(x.right.type))
 				panic("Invalid right operand.");
 
-			int val = ((int) x.left.value) & ((int) x.right.value);
+			int val = -1;
+			if(x.op == BinaryExp.BIT_AND)
+				val = ((int) x.left.value) & ((int) x.right.value);
+			else if(x.op == BinaryExp.BIT_XOR)
+				val = ((int) x.left.value) ^ ((int) x.right.value);
+			else
+				val = ((int) x.left.value) | ((int) x.right.value);
+
 			x.set_value(new Integer(val));
 		}
-		else if (x.op == BinaryExp.BIT_XOR)
+		else if (x.op == BinaryExp.AND || x.op == BinaryExp.OR)
 		{
-			if (!Type.integer(x.left.type))
+			boolean lval = equals_zero(x.left.value);
+			boolean rval = equals_zero(x.right.value);
+
+			int val = -1;
+			if(x.op == BinaryExp.AND)
+				val = lval && rval ? 1 : 0;
+			else
+				val = lval || rval ? 1 : 0;
+
+			x.set_value(new Integer(val));
+		}
+		else if (x.op == BinaryExp.EQ || x.op == BinaryExp.NE || x.op == BinaryExp.LT || x.op == BinaryExp.GT || x.op == BinaryExp.LE || x.op == BinaryExp.GE)
+		{
+			Object lhs = x.left.value;
+			Object rhs = x.right.value;
+
+			int val = -1;
+			if (lhs instanceof Character)
+			{
+				char lval = ((Character) lhs).charValue();
+				if (rhs instanceof Character)
+				{
+					char rval = ((Character) rhs).charValue();
+					if(x.op == BinaryExp.EQ || x.op == BinaryExp.NE)
+						val = x.op == BinaryExp.EQ ? (lval == rval ? 1 : 0) : (lval != rval ? 1 : 0);
+					else if(x.op == BinaryExp.LT || x.op == BinaryExp.GT)
+						val = x.op == BinaryExp.LT ? (lval < rval ? 1 : 0) : (lval > rval ? 1 : 0);
+					else
+						val =  x.op == BinaryExp.LE ? (lval <= rval ? 1 : 0) : (lval >= rval ? 1 : 0);
+				}
+				else if (rhs instanceof Integer)
+				{
+					int rval = ((Integer) rhs).intValue();
+					if(x.op == BinaryExp.EQ || x.op == BinaryExp.NE)
+						val = x.op == BinaryExp.EQ ? (lval == rval ? 1 : 0) : (lval != rval ? 1 : 0);
+					else if(x.op == BinaryExp.LT || x.op == BinaryExp.GT)
+						val = x.op == BinaryExp.LT ? (lval < rval ? 1 : 0) : (lval > rval ? 1 : 0);
+					else
+						val =  x.op == BinaryExp.LE ? (lval <= rval ? 1 : 0) : (lval >= rval ? 1 : 0);
+				}
+				else if (rhs instanceof Double)
+				{
+					double rval = ((Double) rhs).doubleValue();
+					if(x.op == BinaryExp.EQ || x.op == BinaryExp.NE)
+						val = x.op == BinaryExp.EQ ? (lval == rval ? 1 : 0) : (lval != rval ? 1 : 0);
+					else if(x.op == BinaryExp.LT || x.op == BinaryExp.GT)
+						val = x.op == BinaryExp.LT ? (lval < rval ? 1 : 0) : (lval > rval ? 1 : 0);
+					else
+						val =  x.op == BinaryExp.LE ? (lval <= rval ? 1 : 0) : (lval >= rval ? 1 : 0);
+				}
+				else
+					panic("Invalid right operand.");
+			}
+			else if (lhs instanceof Integer)
+			{
+				int lval = ((Integer) lhs).intValue();
+				if (rhs instanceof Character)
+				{
+					char rval = ((Character) rhs).charValue();
+					if(x.op == BinaryExp.EQ || x.op == BinaryExp.NE)
+						val = x.op == BinaryExp.EQ ? (lval == rval ? 1 : 0) : (lval != rval ? 1 : 0);
+					else if(x.op == BinaryExp.LT || x.op == BinaryExp.GT)
+						val = x.op == BinaryExp.LT ? (lval < rval ? 1 : 0) : (lval > rval ? 1 : 0);
+					else
+						val =  x.op == BinaryExp.LE ? (lval <= rval ? 1 : 0) : (lval >= rval ? 1 : 0);
+				}
+				else if (rhs instanceof Integer)
+				{
+					int rval = ((Integer) rhs).intValue();
+					if(x.op == BinaryExp.EQ || x.op == BinaryExp.NE)
+						val = x.op == BinaryExp.EQ ? (lval == rval ? 1 : 0) : (lval != rval ? 1 : 0);
+					else if(x.op == BinaryExp.LT || x.op == BinaryExp.GT)
+						val = x.op == BinaryExp.LT ? (lval < rval ? 1 : 0) : (lval > rval ? 1 : 0);
+					else
+						val =  x.op == BinaryExp.LE ? (lval <= rval ? 1 : 0) : (lval >= rval ? 1 : 0);
+				}
+				else if (rhs instanceof Double)
+				{
+					double rval = ((Double) rhs).doubleValue();
+					if(x.op == BinaryExp.EQ || x.op == BinaryExp.NE)
+						val = x.op == BinaryExp.EQ ? (lval == rval ? 1 : 0) : (lval != rval ? 1 : 0);
+					else if(x.op == BinaryExp.LT || x.op == BinaryExp.GT)
+						val = x.op == BinaryExp.LT ? (lval < rval ? 1 : 0) : (lval > rval ? 1 : 0);
+					else
+						val =  x.op == BinaryExp.LE ? (lval <= rval ? 1 : 0) : (lval >= rval ? 1 : 0);
+				}
+				else
+					panic("Invalid right operand.");
+			}
+			else if (lhs instanceof Double)
+			{
+				double lval = ((Double) lhs).doubleValue();
+				if (rhs instanceof Character)
+				{
+					char rval = ((Character) rhs).charValue();
+					if(x.op == BinaryExp.EQ || x.op == BinaryExp.NE)
+						val = x.op == BinaryExp.EQ ? (lval == rval ? 1 : 0) : (lval != rval ? 1 : 0);
+					else if(x.op == BinaryExp.LT || x.op == BinaryExp.GT)
+						val = x.op == BinaryExp.LT ? (lval < rval ? 1 : 0) : (lval > rval ? 1 : 0);
+					else
+						val =  x.op == BinaryExp.LE ? (lval <= rval ? 1 : 0) : (lval >= rval ? 1 : 0);
+				}
+				else if (rhs instanceof Integer)
+				{
+					int rval = ((Integer) rhs).intValue();
+					if(x.op == BinaryExp.EQ || x.op == BinaryExp.NE)
+						val = x.op == BinaryExp.EQ ? (lval == rval ? 1 : 0) : (lval != rval ? 1 : 0);
+					else if(x.op == BinaryExp.LT || x.op == BinaryExp.GT)
+						val = x.op == BinaryExp.LT ? (lval < rval ? 1 : 0) : (lval > rval ? 1 : 0);
+					else
+						val =  x.op == BinaryExp.LE ? (lval <= rval ? 1 : 0) : (lval >= rval ? 1 : 0);
+				}
+				else if (rhs instanceof Double)
+				{
+					double rval = ((Double) rhs).doubleValue();
+					if(x.op == BinaryExp.EQ || x.op == BinaryExp.NE)
+						val = x.op == BinaryExp.EQ ? (lval == rval ? 1 : 0) : (lval != rval ? 1 : 0);
+					else if(x.op == BinaryExp.LT || x.op == BinaryExp.GT)
+						val = x.op == BinaryExp.LT ? (lval < rval ? 1 : 0) : (lval > rval ? 1 : 0);
+					else
+						val =  x.op == BinaryExp.LE ? (lval <= rval ? 1 : 0) : (lval >= rval ? 1 : 0);
+				}
+				else
+					panic("Invalid right operand.");
+			}
+			else
 				panic("Invalid left operand.");
-			if (!Type.integer(x.right.type))
+
+			x.set_value(new Integer(val));
+		}
+		else if (x.op == BinaryExp.SHL || x.op == BinaryExp.SHR)
+		{
+			if (!(x.left.value instanceof Character || x.left.value instanceof Integer))
+				panic("Invalid left operand.");
+			if (!(x.right.value instanceof Character || x.right.value instanceof Integer))
 				panic("Invalid right operand.");
 
-			int val = ((int) x.left.value) ^ ((int) x.right.value);
-			x.set_value(new Integer(val));
-		}
-		else if (x.op == BinaryExp.BIT_OR)
-		{
-			if (!Type.integer(x.left.type))
-				panic("Invalid left operand.");
-			if (!Type.integer(x.right.type))
-				panic("Invalid right operand.");
+			int val = -1;
+			if(x.op == BinaryExp.SHL)
+				val = ((int) x.left.value) << ((int) x.right.value);
+			else
+				val = ((int) x.left.value) >> ((int) x.right.value);
 
-			int val = ((int) x.left.value) | ((int) x.right.value);
 			x.set_value(new Integer(val));
-		}
-		else if (x.op == BinaryExp.AND)
-		{
-			x.value = (((int) x.left.value) != 0 && ((int) x.right.value) != 0) ? 1 : 0;
-		}
-		else if (x.op == BinaryExp.OR)
-		{
-			x.value = (((int) x.left.value) != 0 || ((int) x.right.value) != 0) ? 1 : 0;
-		}
-		else if (x.op == BinaryExp.EQ)
-		{
-			x.value = (((int) x.left.value) == ((int) x.right.value)) ? 1 : 0;
-		}
-		else if (x.op == BinaryExp.NE)
-		{
-			x.value = (((int) x.left.value) != ((int) x.right.value)) ? 1 : 0;
-		}
-		else if (x.op == BinaryExp.LT)
-		{
-			x.value = (((int) x.left.value) < ((int) x.right.value)) ? 1 : 0;
-		}
-		else if (x.op == BinaryExp.GT)
-		{
-			x.value = (((int) x.left.value) > ((int) x.right.value)) ? 1 : 0;
-		}
-		else if (x.op == BinaryExp.LE)
-		{
-			x.value = (((int) x.left.value) <= ((int) x.right.value)) ? 1 : 0;
-		}
-		else if (x.op == BinaryExp.GE)
-		{
-			x.value = (((int) x.left.value) >= ((int) x.right.value)) ? 1 : 0;
-		}
-		else if (x.op == BinaryExp.SHL)
-		{
-			x.value = ((int) x.left.value) << ((int) x.right.value);
-		}
-		else if (x.op == BinaryExp.SHR)
-		{
-			x.value = ((int) x.left.value) >> ((int) x.right.value);
 		}
 		else if (x.op == BinaryExp.PLUS)
 		{
@@ -526,6 +636,7 @@ public class ASTBuilder
 		}
 		else if (x.op == BinaryExp.MODULE)
 		{
+			//The result of a modulus operation's sign is implementation-defined.
 			x.value = ((int) x.left.value) % ((int) x.right.value);
 		}
 		else
@@ -534,7 +645,7 @@ public class ASTBuilder
 
 	private BinaryExp parseLogicalOrExpr(LogicalOrExpr x, Env y) throws Exception
 	{
-		// Pre-check
+		// defensive check
 		if (x.expr_list.isEmpty())
 			panic("Internal Error.");
 
