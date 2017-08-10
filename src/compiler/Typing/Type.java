@@ -1,5 +1,7 @@
 package compiler.Typing;
 
+import compiler.AST.BinaryExp;
+
 public abstract class Type
 {
 	public int width;
@@ -8,6 +10,10 @@ public abstract class Type
 	{
 		width = n;
 	}
+	
+	public abstract boolean equals(Type rhs);
+
+	public abstract boolean isConvertableTo(Type rhs);
 
 	public static boolean numeric(Type p)
 	{
@@ -31,8 +37,4 @@ public abstract class Type
 		else
 			return Char.instance;
 	}
-
-	public abstract boolean equals(Type rhs);
-
-	public abstract boolean isConvertableTo(Type rhs);
 }
