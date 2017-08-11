@@ -875,7 +875,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 	}
 
 	@Override
-	public void visit(Program x) throws Exception
+	public void visit(Prog x) throws Exception
 	{
 		Program y = x;
 		int lc = 0;
@@ -898,12 +898,5 @@ public class PrettyPrinter implements ASTNodeVisitor
 			cl++;
 			y = y.next;
 		}
-	}
-
-	@Override
-	public void visit(RecordEntry recordEntry)
-	{
-		// TODO Auto-generated method stub
-
 	}
 }

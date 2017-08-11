@@ -14,12 +14,14 @@ public class ASTBuilder
 	private Prog ast;
 	private int offset;
 	private Env tenv, venv;
+	private int loop_cnt;
 
 	public ASTBuilder(Program p)
 	{
 		entrance = p;
 		ast = new Prog();
 		offset = 0;
+		loop_cnt = 0;
 
 		tenv = ast.tenv;
 		venv = ast.venv;
@@ -49,24 +51,62 @@ public class ASTBuilder
 	private void parseDeclaration(Declaration x, Env y, Prog z) throws Exception
 	{
 		Type def_type = parseTypeSpecifier(x.ts, y);
+		if (x.elem.isEmpty())
+		{
+			if (def_type instanceof Void || def_type instanceof Char || def_type instanceof Int || def_type instanceof FP)
+				panic("Meaningless declaration of intrinsic type!");
+
+			if (def_type instanceof Record)
+			{
+				Record st = (Record) def_type;
+				if (st.field.isEmpty())
+				{
+					Symbol ss = Symbol.getSymbol(st.tag);
+					tenv.put(ss, new TypeEntry(def_type));
+				}
+			}
+			else
+				panic("Internal Error.");
+			
+			return;
+		}
+		else 
+		{
+			
+		}
+
 		for (InitDeclarator idr : x.elem)
 		{
 			// Name and Symbol
 			String var_name = idr.declarator.plain_declarator.name;
 			Symbol var_sym = Symbol.getSymbol(var_name);
 
+			// Check if has been declared
+			if (y.get(var_sym) != null)
+				panic("Variable: " + var_name + " has been declared in this scope!");
+
 			// Variable type
 			Type var_type = resolve_type(def_type, idr.declarator, y);
 
+			// 'void' is incomplete
+			if (var_type instanceof Void)
+				panic("Variable has incomplete type \'void\'.");
+
 			// Initializer
 			Init initializer = parseInitializer(idr.initializer, y);
+			boolean hasInitialized = initializer != null;
+
+			// Check if the initialization is proper
+			if (hasInitialized)
+			{
+				// TODO
+			}
 
 			// ASTNode
 			VarDec var_dec = new VarDec(var_type, var_name, initializer);
 			z.add_dec(var_dec);
 
 			// Environment
-			boolean hasInitialized = initializer != null;
 			VarEntry var_entry = new VarEntry(var_type, offset, hasInitialized, true, false);
 			offset += var_type.width;
 			y.put(var_sym, var_entry);
@@ -78,6 +118,10 @@ public class ASTBuilder
 		// Name and Symbol
 		String func_name = x.pd.name;
 		Symbol func_sym = Symbol.getSymbol(func_name);
+
+		// Check if the function has been declared
+		if (y.get(func_sym) != null)
+			panic("Function: " + func_name + " has already been declared!");
 
 		// Return type
 		Type def_type = parseTypeSpecifier(x.ts, y);
@@ -125,8 +169,43 @@ public class ASTBuilder
 			return FP.instance;
 		else if (t.ts_type == TypeSpecifier.ts_struct)
 		{
-			Struct ret = new Struct();
 			String tag = t.name;
+			if (t.entry.isEmpty())
+			{
+				// type-specifier ::= 'struct' identifier
+
+				// defensive check
+				if (tag == null)
+					panic("Internal Error.");
+
+				Symbol ss = Symbol.getSymbol(tag);
+				TypeEntry ste = (TypeEntry) tenv.get(ss);
+
+				if (ste != null)
+				{
+					// has been declared,
+					// just check type
+					if (!(ste.type instanceof Struct))
+						panic(tag + " is not declared as struct!");
+
+					return ste.type;
+				}
+				else
+				{
+					// maybe just declaration,
+					// maybe undefined usage,
+					// need to check further
+					Struct ret = new Struct();
+					ret.set_tag(tag);
+					return ret;
+				}
+			}
+			else
+			{
+
+			}
+
+			Struct ret = new Struct();
 
 			for (RecordEntry re : t.entry)
 			{

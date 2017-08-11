@@ -1,6 +1,7 @@
 package compiler.AST;
 
 import java.util.*;
+import compiler.Typing.*;
 
 public class Init extends ASTNode
 {
@@ -23,6 +24,13 @@ public class Init extends ASTNode
 	public void add_init(Init x)
 	{
 		init_list.add(x);
+	}
+
+	public Type get_type()
+	{
+		Type ret = null;
+
+		return ret;
 	}
 
 	@Override
