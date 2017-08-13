@@ -5,13 +5,13 @@ import java.util.*;
 public abstract class Record extends Type
 {
 	public String tag;
-	public Hashtable<String, Type> field;
+	public LinkedHashMap<String, Type> field;
 
 	public Record()
 	{
 		super(0);
 		tag = null;
-		field = new Hashtable<String, Type>();
+		field = new LinkedHashMap<String, Type>();
 	}
 
 	public void set_tag(String tg)

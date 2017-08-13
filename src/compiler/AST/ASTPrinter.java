@@ -1291,4 +1291,81 @@ public class ASTPrinter implements ASTNodeVisitor
 			cp = cp.next;
 		}
 	}
+
+	@Override
+	public void visit(CastExp x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(UnaryExp x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(PostfixExp x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(PrimaryExp x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(ExprStmt x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(CompStmt x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(SelectStmt x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(IterStmt x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(VarDec x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(FuncDec x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void visit(Init x) throws Exception
+	{
+		// TODO Auto-generated method stub
+		
+	}
 }

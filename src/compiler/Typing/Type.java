@@ -3,6 +3,7 @@ package compiler.Typing;
 public abstract class Type
 {
 	public int width;
+	public boolean complete;
 
 	public Type(int n)
 	{

@@ -67,49 +67,43 @@ public class ASTBuilder
 			}
 			else
 				panic("Internal Error.");
-			
-			return;
 		}
-		else 
+		else
 		{
-			
-		}
-
-		for (InitDeclarator idr : x.elem)
-		{
-			// Name and Symbol
-			String var_name = idr.declarator.plain_declarator.name;
-			Symbol var_sym = Symbol.getSymbol(var_name);
-
-			// Check if has been declared
-			if (y.get(var_sym) != null)
-				panic("Variable: " + var_name + " has been declared in this scope!");
-
-			// Variable type
-			Type var_type = resolve_type(def_type, idr.declarator, y);
-
-			// 'void' is incomplete
-			if (var_type instanceof Void)
-				panic("Variable has incomplete type \'void\'.");
-
-			// Initializer
-			Init initializer = parseInitializer(idr.initializer, y);
-			boolean hasInitialized = initializer != null;
-
-			// Check if the initialization is proper
-			if (hasInitialized)
+			for (InitDeclarator idr : x.elem)
 			{
-				// TODO
+				// Name and Symbol
+				String var_name = idr.declarator.plain_declarator.name;
+				Symbol var_sym = Symbol.getSymbol(var_name);
+
+				// Check if has been declared
+				if (y.get(var_sym) != null)
+					panic("Variable: " + var_name + " has been declared in this scope!");
+
+				// Variable type
+				Type var_type = resolve_type(def_type, idr.declarator, y);
+
+				// 'void' is incomplete
+				if (var_type instanceof Void)
+					panic("Variable has incomplete type \'void\'.");
+
+				// Initializer
+				boolean hasInitialized = idr.initializer != null;
+				Init initializer = hasInitialized ? parseInitializer(idr.initializer, y) : null;
+
+				// Check if the initialization is proper
+				if (hasInitialized && !initializer.check_init(var_type))
+					panic("Invalid initialization.");
+
+				// ASTNode
+				VarDec var_dec = new VarDec(var_type, var_name, initializer);
+				z.add_dec(var_dec);
+
+				// Environment
+				VarEntry var_entry = new VarEntry(var_type, offset, hasInitialized, true, false);
+				offset += var_type.width;
+				y.put(var_sym, var_entry);
 			}
-
-			// ASTNode
-			VarDec var_dec = new VarDec(var_type, var_name, initializer);
-			z.add_dec(var_dec);
-
-			// Environment
-			VarEntry var_entry = new VarEntry(var_type, offset, hasInitialized, true, false);
-			offset += var_type.width;
-			y.put(var_sym, var_entry);
 		}
 	}
 
@@ -134,11 +128,19 @@ public class ASTBuilder
 		{
 			String param_name = pdn.dlr.plain_declarator.name;
 			Symbol param_sym = Symbol.getSymbol(param_name);
-			Type param_type = parsePlainDeclaration(pdn, y);
-			VarEntry param_entry = new VarEntry(param_type, offset, false, true, false);
-			func_dec.add_param(param_type, param_name);
-			func_dec.scope.put(param_sym, param_entry);
-			offset += param_type.width;
+
+			if (func_dec.scope.get(param_sym) == null)
+			{
+				Type param_type = parsePlainDeclaration(pdn, func_dec.scope);
+				func_dec.add_param(param_name, param_type);
+
+				VarEntry param_entry = new VarEntry(param_type, offset, false, true, false);
+				func_dec.scope.put(param_sym, param_entry);
+
+				offset += param_type.width;
+			}
+			else
+				panic("Variable \'" + param_name + "\' has been declared.");
 		}
 
 		CompStmt cpst = parseCompoundStmt(x.cst, func_dec.scope);
@@ -170,21 +172,19 @@ public class ASTBuilder
 		else if (t.ts_type == TypeSpecifier.ts_struct)
 		{
 			String tag = t.name;
-			if (t.entry.isEmpty())
+			if (t.entry.isEmpty()) // type-specifier ::= 'struct' identifier
 			{
-				// type-specifier ::= 'struct' identifier
-
 				// defensive check
 				if (tag == null)
 					panic("Internal Error.");
 
+				// get symbol from tag-environment
 				Symbol ss = Symbol.getSymbol(tag);
 				TypeEntry ste = (TypeEntry) tenv.get(ss);
 
 				if (ste != null)
 				{
-					// has been declared,
-					// just check type
+					// has been declared, just check type
 					if (!(ste.type instanceof Struct))
 						panic(tag + " is not declared as struct!");
 
@@ -192,9 +192,7 @@ public class ASTBuilder
 				}
 				else
 				{
-					// maybe just declaration,
-					// maybe undefined usage,
-					// need to check further
+					// maybe just declaration, maybe undefined usage, need to check further
 					Struct ret = new Struct();
 					ret.set_tag(tag);
 					return ret;
@@ -202,66 +200,140 @@ public class ASTBuilder
 			}
 			else
 			{
+				Struct ret = null;
 
-			}
-
-			Struct ret = new Struct();
-
-			for (RecordEntry re : t.entry)
-			{
-				Type dt = parseTypeSpecifier(re.ts, y);
-				for (Declarator dclr : re.dls)
+				if (tag != null) // type-specifier ::= 'struct' identifier { ... }
 				{
-					String name = dclr.plain_declarator.name;
-					Type ct = resolve_type(dt, dclr, y);
-					ret.add_record(ct, name);
+					Symbol tag_sym = Symbol.getSymbol(tag);
+					TypeEntry ce = (TypeEntry) tenv.get(tag_sym);
+
+					if (ce != null)// Has been declared before
+					{
+						if (!(ce.type instanceof Struct))
+							panic(tag + " is not declared as struct!");
+
+						ret = (Struct) ce.type;
+						if (ret.field.size() == 0)
+							panic("struct " + tag + " has been defined before!");
+					}
+					else // First time meet
+					{
+						ret = new Struct();
+						ret.set_tag(tag);
+						tenv.put(tag_sym, new TypeEntry(ret));
+					}
 				}
-			}
 
-			if (tag != null)
-			{
-				ret.set_tag(tag);
-				tenv.put(Symbol.getSymbol(tag), new TypeEntry(ret));
-			}
+				// type-specifier ::= 'struct' { ... }
+				// only add entries
+				for (RecordEntry re : t.entry)
+				{
+					Type dt = parseTypeSpecifier(re.ts, y);
+					for (Declarator dclr : re.dls)
+					{
+						String name = dclr.plain_declarator.name;
+						if (ret.field.containsKey(name))
+							panic("Variable \'" + name + "\' in current tag scope has been defined.");
 
-			return ret;
+						Type ct = resolve_type(dt, dclr, y);
+						ret.add_record(name, ct);
+					}
+				}
+
+				return ret;
+			}
 		}
 		else if (t.ts_type == TypeSpecifier.ts_union)
 		{
-			Union ret = new Union();
 			String tag = t.name;
-
-			for (RecordEntry re : t.entry)
+			if (t.entry.isEmpty()) // type-specifier ::= 'union' identifier
 			{
-				Type dt = parseTypeSpecifier(re.ts, y);
-				for (Declarator dclr : re.dls)
+				// defensive check
+				if (tag == null)
+					panic("Internal Error.");
+
+				// get symbol from tag-environment
+				Symbol ss = Symbol.getSymbol(tag);
+				TypeEntry ste = (TypeEntry) tenv.get(ss);
+
+				if (ste != null)
 				{
-					String name = dclr.plain_declarator.name;
-					Type ct = resolve_type(dt, dclr, y);
-					ret.add_record(ct, name);
+					// has been declared, just check type
+					if (!(ste.type instanceof Union))
+						panic(tag + " is not declared as union!");
+
+					return ste.type;
+				}
+				else
+				{
+					// maybe just declaration, maybe undefined usage, need to check further
+					Union ret = new Union();
+					ret.set_tag(tag);
+					return ret;
 				}
 			}
-
-			if (tag != null)
+			else
 			{
-				ret.set_tag(tag);
-				tenv.put(Symbol.getSymbol(tag), new TypeEntry(ret));
-			}
+				Union ret = null;
 
-			return ret;
+				if (tag != null) // type-specifier ::= 'union' identifier { ... }
+				{
+					Symbol tag_sym = Symbol.getSymbol(tag);
+					TypeEntry ce = (TypeEntry) tenv.get(tag_sym);
+
+					if (ce != null)// Has been declared before
+					{
+						if (!(ce.type instanceof Union))
+							panic(tag + " is not declared as union!");
+
+						ret = (Union) ce.type;
+						if (ret.field.size() == 0)
+							panic("union " + tag + " has been defined before!");
+					}
+					else // First time meet
+					{
+						ret = new Union();
+						ret.set_tag(tag);
+						tenv.put(tag_sym, new TypeEntry(ret));
+					}
+				}
+
+				// type-specifier ::= 'union' { ... } also applys
+				// only add entries
+				for (RecordEntry re : t.entry)
+				{
+					Type dt = parseTypeSpecifier(re.ts, y);
+					for (Declarator dclr : re.dls)
+					{
+						String name = dclr.plain_declarator.name;
+						if (ret.field.containsKey(name))
+							panic("Variable \'" + name + "\' in current tag scope has been defined.");
+
+						Type ct = resolve_type(dt, dclr, y);
+						ret.add_record(name, ct);
+					}
+				}
+
+				return ret;
+			}
 		}
 		else
 		{
-			panic("Internal Error!");
+			panic("Internal Error.");
 			return null;
 		}
 	}
 
 	private Type resolve_type(Type base, Declarator dr, Env y) throws Exception
 	{
+		// Base type
 		Type ret = resolve_plain_type(base, dr.plain_declarator);
-		for (ConstantExpr ce : dr.dimension)
+
+		// Note that the order must be counted from tail to head
+		ListIterator<ConstantExpr> lit = dr.dimension.listIterator(dr.dimension.size());
+		while (lit.hasPrevious())
 		{
+			ConstantExpr ce = lit.previous();
 			Object val = parseConstantExpr(ce, y);
 			if (val instanceof Integer)
 			{
@@ -285,17 +357,18 @@ public class ASTBuilder
 
 	private Init parseInitializer(Initializer x, Env y) throws Exception
 	{
-		if (x == null)
-			return null;
-
-		if (x.type == Initializer.assign)
+		Init ret = null;
+		if (x.type == Initializer.assign)// x = a;
 		{
 			AssignExp e = parseAssignmentExpr(x.ae, y);
-			return new Init(e);
+			if (!e.hasInitialized)
+				panic("Unintialized assignment-expression can not be used as an intializer!");
+
+			ret = new Init(e);
 		}
-		else if (x.type == Initializer.list)
+		else if (x.type == Initializer.list)// x[3] = {a, b, c}
 		{
-			Init ret = new Init();
+			ret = new Init();
 			for (Initializer it : x.comp)
 			{
 				Init cit = parseInitializer(it, y);
@@ -304,10 +377,9 @@ public class ASTBuilder
 			return ret;
 		}
 		else
-		{
 			panic("Internal Error.");
-			return null;
-		}
+
+		return ret;
 	}
 
 	private Type parsePlainDeclaration(PlainDeclaration x, Env y) throws Exception

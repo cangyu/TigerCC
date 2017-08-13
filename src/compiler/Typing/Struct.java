@@ -7,7 +7,7 @@ public final class Struct extends Record
 		super();
 	}
 
-	public void add_record(Type t, String n)
+	public void add_record(String n, Type t)
 	{
 		field.put(n, t);
 		width += t.width;

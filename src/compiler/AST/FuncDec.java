@@ -8,12 +8,12 @@ public class FuncDec extends Dec
 {
 	class Parameter
 	{
-		public Type type;
 		public String name;
+		public Type type;
 
-		public Parameter(Type t, String text)
+		public Parameter(String text, Type tp)
 		{
-			type = t;
+			type = tp;
 			name = text;
 		}
 	}
@@ -31,9 +31,9 @@ public class FuncDec extends Dec
 		param = new ArrayList<Parameter>();
 	}
 
-	public void add_param(Type t, String vn)
+	public void add_param(String vn, Type t)
 	{
-		param.add(new Parameter(t, vn));
+		param.add(new Parameter(vn, t));
 	}
 
 	public void set_body(CompStmt cs)
