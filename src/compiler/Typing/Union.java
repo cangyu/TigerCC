@@ -11,7 +11,7 @@ public final class Union extends Record
 
 	public void add_record(String n, Type t)
 	{
-		field.put(n, t);
+		add_member(n, t);
 		width = Math.max(width, t.width);
 	}
 
