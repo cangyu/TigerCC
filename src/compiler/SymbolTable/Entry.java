@@ -1,13 +1,22 @@
 package compiler.SymbolTable;
 
+import compiler.AST.ASTNode;
 import compiler.Typing.*;
 
 public class Entry
 {
-	public Type type;
+	public static final int ety_var = 0;
+	public static final int ety_func = 1;
+	public static final int ety_type = 2;
 
-	public Entry(Type t)
+	public int type;
+	public ASTNode mirror;
+	public Type actual;
+
+	public Entry(int tp, ASTNode m)
 	{
-		type = t;
+		type = tp;
+		mirror = m;
+		actual = null;
 	}
 }

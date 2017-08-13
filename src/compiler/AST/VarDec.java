@@ -7,19 +7,20 @@ public class VarDec extends Dec
 	public Type type;
 	public String name;
 	public Init init;
-	public int start_pos;
+	public boolean hasAssigned;
 
 	public VarDec(Type t, String vn, Init it)
 	{
 		type = t;
 		name = vn;
 		init = it;
-		start_pos = 0;
+		offset = 0;
+		hasAssigned = false;
 	}
 
 	public void set_pos(int p)
 	{
-		start_pos = p;
+		offset = p;
 	}
 
 	@Override

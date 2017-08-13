@@ -431,10 +431,14 @@ public class ASTBuilder
 			{
 				String var_name = idr.declarator.plain_declarator.name;
 				Symbol var_sym = Symbol.getSymbol(var_name);
+				if (ret.scope.get(var_sym) != null)
+					panic("Variable " + var_name + " has been declared in this scope.");
+
 				Type var_type = resolve_type(def_type, idr.declarator, y);
-				Init var_it = parseInitializer(idr.initializer, y);
-				boolean hasInit = var_it != null;
+				boolean hasInit = idr.initializer != null;
+				Init var_it = hasInit ? parseInitializer(idr.initializer, y) : null;
 				VarEntry var_entry = new VarEntry(var_type, offset, hasInit, true, false);
+				offset += var_type.width;
 				VarDec var_dec = new VarDec(var_type, var_name, var_it);
 				ret.scope.put(var_sym, var_entry);
 				ret.add_var(var_dec);
@@ -465,7 +469,7 @@ public class ASTBuilder
 	private IterStmt parseIterationStatement(IterationStatement x, Env y) throws Exception
 	{
 		IterStmt ret = null;
-
+		++loop_cnt;
 		if (x.type == IterationStatement.WHILE)
 		{
 			CommaExp ce = parseExpression(x.judge, y);
@@ -488,20 +492,35 @@ public class ASTBuilder
 
 	private JumpStmt parseJumpStatement(JumpStatement x, Env y) throws Exception
 	{
+		JumpStmt ret = null;
 		if (x.type == JumpStatement.CTNU)
-			return new JumpStmt(JumpStmt.jp_ctn);
+		{
+			if (--loop_cnt < 0)
+				panic("Continue statement not within a loop!");
+
+			ret = new JumpStmt(JumpStmt.jp_ctn);
+		}
 		else if (x.type == JumpStatement.BRK)
-			return new JumpStmt(JumpStmt.jp_brk);
-		else
+		{
+			if (--loop_cnt < 0)
+				panic("Break statement not within a loop!");
+
+			ret = new JumpStmt(JumpStmt.jp_brk);
+		}
+		else if (x.type == JumpStatement.RET)
 		{
 			if (x.expr == null)
-				return new JumpStmt(JumpStmt.jp_ret);
+				ret = new JumpStmt(JumpStmt.jp_ret);
 			else
 			{
 				CommaExp ce = parseExpression(x.expr, y);
-				return new JumpStmt(ce);
+				ret = new JumpStmt(ce);
 			}
 		}
+		else
+			panic("Internal Error.");
+
+		return ret;
 	}
 
 	private CommaExp parseExpression(Expression x, Env y) throws Exception
@@ -514,7 +533,8 @@ public class ASTBuilder
 		ListIterator<AssignmentExpr> lit = x.elem.listIterator();
 		while (lit.hasNext())
 		{
-			AssignExp ae = parseAssignmentExpr(lit.next(), y);
+			AssignmentExpr aer = lit.next();
+			AssignExp ae = parseAssignmentExpr(aer, y);
 			ret.add_exp(ae);
 		}
 
