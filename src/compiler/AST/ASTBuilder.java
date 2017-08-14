@@ -5,7 +5,7 @@ import compiler.AST.FuncDec.Parameter;
 import compiler.AST.PostfixExp.PostfixElem;
 import compiler.Parser.*;
 import compiler.Parser.PostfixExpr.Postfix;
-import compiler.SymTbl.*;
+import compiler.Scoping.*;
 import compiler.Typing.*;
 import compiler.Typing.Void;
 

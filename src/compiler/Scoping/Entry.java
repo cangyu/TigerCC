@@ -1,4 +1,4 @@
-package compiler.SymTbl;
+package compiler.Scoping;
 
 import compiler.AST.ASTNode;
 import compiler.Typing.*;

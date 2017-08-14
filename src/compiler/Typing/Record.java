@@ -2,7 +2,7 @@ package compiler.Typing;
 
 import java.util.*;
 
-import compiler.SymTbl.Symbol;
+import compiler.Scoping.Symbol;
 
 public abstract class Record extends Type
 {

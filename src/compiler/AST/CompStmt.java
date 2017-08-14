@@ -1,8 +1,7 @@
 package compiler.AST;
 
 import java.util.*;
-
-import compiler.SymTbl.*;
+import compiler.Scoping.*;
 
 public class CompStmt extends Stmt
 {

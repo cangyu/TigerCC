@@ -1,4 +1,4 @@
-package compiler.SymTbl;
+package compiler.Scoping;
 
 import java.util.*;
 

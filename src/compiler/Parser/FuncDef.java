@@ -1,7 +1,8 @@
 package compiler.Parser;
 
 import java.util.*;
-import compiler.SymTbl.Env;
+
+import compiler.Scoping.Env;
 
 public class FuncDef extends ProgComp
 {

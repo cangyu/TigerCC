@@ -1,6 +1,6 @@
 package compiler.AST;
 
-import compiler.SymTbl.Env;
+import compiler.Scoping.Env;
 import compiler.Typing.*;
 import java.util.*;
 

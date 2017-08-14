@@ -1,8 +1,7 @@
 package compiler.AST;
 
 import java.util.*;
-
-import compiler.SymTbl.Symbol;
+import compiler.Scoping.Symbol;
 import compiler.Typing.*;
 import compiler.Typing.Void;
 
