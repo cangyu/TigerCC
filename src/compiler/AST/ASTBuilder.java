@@ -62,7 +62,7 @@ public class ASTBuilder
 				if (st.field.isEmpty())
 				{
 					Symbol ss = Symbol.getSymbol(st.tag);
-					tenv.put(ss, new TypeEntry(def_type));
+					tenv.put(ss, new Entry(def_type));
 				}
 			}
 			else
@@ -100,7 +100,7 @@ public class ASTBuilder
 				z.add_dec(var_dec);
 
 				// Environment
-				VarEntry var_entry = new VarEntry(var_type, offset, hasInitialized, true, false);
+				Entry var_entry = new Entry(var_dec);
 				offset += var_type.width;
 				y.put(var_sym, var_entry);
 			}
@@ -129,12 +129,14 @@ public class ASTBuilder
 			String param_name = pdn.dlr.plain_declarator.name;
 			Symbol param_sym = Symbol.getSymbol(param_name);
 
+			// parameters
 			if (func_dec.scope.get(param_sym) == null)
 			{
 				Type param_type = parsePlainDeclaration(pdn, func_dec.scope);
 				func_dec.add_param(param_name, param_type);
 
-				VarEntry param_entry = new VarEntry(param_type, offset, false, true, false);
+				VarDec param_dec = new VarDec(param_type, param_name, null);
+				Entry param_entry = new Entry(param_dec);
 				func_dec.scope.put(param_sym, param_entry);
 
 				offset += param_type.width;
@@ -155,7 +157,7 @@ public class ASTBuilder
 			Type ct = lit.previous().type;
 			func_type = new Function(ct, func_type);
 		}
-		FuncEntry func_entry = new FuncEntry(func_type);
+		Entry func_entry = new Entry(func_type, func_dec);
 		y.put(func_sym, func_entry);
 	}
 
@@ -180,15 +182,15 @@ public class ASTBuilder
 
 				// get symbol from tag-environment
 				Symbol ss = Symbol.getSymbol(tag);
-				TypeEntry ste = (TypeEntry) tenv.get(ss);
+				Entry ste = tenv.get(ss);
 
 				if (ste != null)
 				{
 					// has been declared, just check type
-					if (!(ste.type instanceof Struct))
+					if (!(ste.actual instanceof Struct))
 						panic(tag + " is not declared as struct!");
 
-					return ste.type;
+					return ste.actual;
 				}
 				else
 				{
@@ -205,14 +207,14 @@ public class ASTBuilder
 				if (tag != null) // type-specifier ::= 'struct' identifier { ... }
 				{
 					Symbol tag_sym = Symbol.getSymbol(tag);
-					TypeEntry ce = (TypeEntry) tenv.get(tag_sym);
+					Entry ce = tenv.get(tag_sym);
 
 					if (ce != null)// Has been declared before
 					{
-						if (!(ce.type instanceof Struct))
+						if (!(ce.actual instanceof Struct))
 							panic(tag + " is not declared as struct!");
 
-						ret = (Struct) ce.type;
+						ret = (Struct) ce.actual;
 						if (ret.field.size() == 0)
 							panic("struct " + tag + " has been defined before!");
 					}
@@ -220,7 +222,7 @@ public class ASTBuilder
 					{
 						ret = new Struct();
 						ret.set_tag(tag);
-						tenv.put(tag_sym, new TypeEntry(ret));
+						tenv.put(tag_sym, new Entry(ret));
 					}
 				}
 
@@ -254,15 +256,15 @@ public class ASTBuilder
 
 				// get symbol from tag-environment
 				Symbol ss = Symbol.getSymbol(tag);
-				TypeEntry ste = (TypeEntry) tenv.get(ss);
+				Entry ste = tenv.get(ss);
 
 				if (ste != null)
 				{
 					// has been declared, just check type
-					if (!(ste.type instanceof Union))
+					if (!(ste.actual instanceof Union))
 						panic(tag + " is not declared as union!");
 
-					return ste.type;
+					return ste.actual;
 				}
 				else
 				{
@@ -279,14 +281,14 @@ public class ASTBuilder
 				if (tag != null) // type-specifier ::= 'union' identifier { ... }
 				{
 					Symbol tag_sym = Symbol.getSymbol(tag);
-					TypeEntry ce = (TypeEntry) tenv.get(tag_sym);
+					Entry ce = tenv.get(tag_sym);
 
 					if (ce != null)// Has been declared before
 					{
-						if (!(ce.type instanceof Union))
+						if (!(ce.actual instanceof Union))
 							panic(tag + " is not declared as union!");
 
-						ret = (Union) ce.type;
+						ret = (Union) ce.actual;
 						if (ret.field.size() == 0)
 							panic("union " + tag + " has been defined before!");
 					}
@@ -294,7 +296,7 @@ public class ASTBuilder
 					{
 						ret = new Union();
 						ret.set_tag(tag);
-						tenv.put(tag_sym, new TypeEntry(ret));
+						tenv.put(tag_sym, new Entry(ret));
 					}
 				}
 
@@ -439,7 +441,7 @@ public class ASTBuilder
 				Init var_it = hasInit ? parseInitializer(idr.initializer, y) : null;
 				VarDec var_dec = new VarDec(var_type, var_name, var_it);
 				ret.add_var(var_dec);
-				Entry var_entry = new Entry(Entry.ety_var, var_dec);
+				Entry var_entry = new Entry(Entry.entry_var, var_dec);
 				ret.scope.put(var_sym, var_entry);
 				offset += var_type.width;
 			}
@@ -551,21 +553,26 @@ public class ASTBuilder
 	{
 		AssignExp ret = new AssignExp();
 
-		// Check right-hand-side
+		// defensive check
 		if (x.rexpr == null)
 			panic("Internal Error.");
 
-		// Build right expression first
+		// build right expression first
 		ret.right = parseLogicalOrExpr(x.rexpr, y);
 
-		// Check left-hand-side
+		// decorate
+		ret.decorate(ret.right.type, ret.right.isConst, ret.right.hasInitialized, ret.right.isLvalue);
+		if (ret.isConst)
+			ret.set_value(ret.right.value);
+
+		// defensive check
 		if (x.op_list.size() != x.lexpr_list.size())
 			panic("Internal Error.");
 
 		ListIterator<Integer> alit = x.op_list.listIterator(x.op_list.size());
 		ListIterator<UnaryExpr> ulit = x.lexpr_list.listIterator(x.lexpr_list.size());
 
-		// Build left side iteratively
+		// build left side iteratively
 		while (alit.hasPrevious())
 		{
 			ret.assign_type = alit.previous().intValue();
@@ -583,12 +590,6 @@ public class ASTBuilder
 		// C11: An assignment expression has the value of the left operand after the assignment.
 		if (ret.left != null)
 			ret.decorate(ret.left.type, false, true, false);
-		else
-		{
-			ret.decorate(ret.right.type, ret.right.isConst, ret.right.hasInitialized, false);
-			if (ret.isConst)
-				ret.set_value(ret.right.value);
-		}
 
 		return ret;
 	}
@@ -616,6 +617,13 @@ public class ASTBuilder
 		// first expression
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseLogicalAndExpr(clit.next(), y);
+
+		// semantic check
+		// the operands to the logical OR operator need not be of the same type,
+		// but they must be of integral or pointer type.
+		if (!Type.integer(ret.left.type) || !(ret.left.type instanceof Pointer))
+			panic("Invalid operand.");
+
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -625,12 +633,22 @@ public class ASTBuilder
 		{
 			ret.op = BinaryExp.OR;
 			ret.right = parseLogicalAndExpr(clit.next(), y);
-			if (ret.left.isConst && ret.right.isConst)
-			{
-				ret.decorate(Int.instance, true, true, false);
-				ret.calc_const_val();
-			}
 
+			// semantic check
+			if (!Type.integer(ret.right.type) || !(ret.right.type instanceof Pointer))
+				panic("Invalid operand.");
+
+			// decorate
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+
+			// actually the type of the expression should be of 'bool',
+			// but we use 'int' instead for simplicity
+			ret.decorate(Int.instance, icons, hinit, false);
+			if (ret.isConst)
+				ret.calc_const_val();
+
+			// build tree
 			if (clit.hasNext())
 			{
 				BinaryExp nrt = new BinaryExp();
@@ -653,6 +671,13 @@ public class ASTBuilder
 		// first expression
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseInclusiveOrExpr(clit.next(), y);
+
+		// semantic check
+		// the operands to the logical AND operator need not be of the same type,
+		// but they must be of integral or pointer type.
+		if (!Type.integer(ret.left.type) || !(ret.left.type instanceof Pointer))
+			panic("Invalid operand.");
+
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -662,11 +687,20 @@ public class ASTBuilder
 		{
 			ret.op = BinaryExp.AND;
 			ret.right = parseInclusiveOrExpr(clit.next(), y);
-			if (ret.left.isConst && ret.right.isConst)
-			{
-				ret.decorate(Int.instance, true, true, false);
+
+			// semantic check
+			if (!Type.integer(ret.right.type) || !(ret.right.type instanceof Pointer))
+				panic("Invalid operand.");
+
+			// decorate
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+
+			// actually the type of the expression should be of 'bool',
+			// but we use 'int' instead for simplicity
+			ret.decorate(Int.instance, icons, hinit, false);
+			if (ret.isConst)
 				ret.calc_const_val();
-			}
 
 			if (clit.hasNext())
 			{
@@ -699,11 +733,20 @@ public class ASTBuilder
 		{
 			ret.op = BinaryExp.BIT_OR;
 			ret.right = parseExclusiveOrExpr(clit.next(), y);
-			if (ret.left.isConst && ret.right.isConst)
-			{
-				ret.decorate(Int.instance, true, true, false);
+
+			// the operands of bitwise operators must have integral types
+			if (!Type.numeric(ret.left.type) || !Type.numeric(ret.right.type))
+				panic("Invalid operand.");
+
+			// decorate
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+
+			// actually the type of the expression should be of 'bool',
+			// but we use 'int' instead for simplicity
+			ret.decorate(Int.instance, icons, hinit, false);
+			if (ret.isConst)
 				ret.calc_const_val();
-			}
 
 			if (clit.hasNext())
 			{
@@ -736,6 +779,21 @@ public class ASTBuilder
 		{
 			ret.op = BinaryExp.BIT_XOR;
 			ret.right = parseAndExpr(clit.next(), y);
+
+			// the operands of bitwise operators must have integral types
+			if (!Type.numeric(ret.left.type) || !Type.numeric(ret.right.type))
+				panic("Invalid operand.");
+
+			// decorate
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+
+			// actually the type of the expression should be of 'bool',
+			// but we use 'int' instead for simplicity
+			ret.decorate(Int.instance, icons, hinit, false);
+			if (ret.isConst)
+				ret.calc_const_val();
+
 			if (clit.hasNext())
 			{
 				BinaryExp nrt = new BinaryExp();
@@ -767,11 +825,20 @@ public class ASTBuilder
 		{
 			ret.op = BinaryExp.BIT_AND;
 			ret.right = parseEqualityExpr(clit.next(), y);
-			if (ret.left.isConst && ret.right.isConst)
-			{
-				ret.decorate(Int.instance, true, true, false);
+
+			// the operands of bitwise operators must have integral types
+			if (!Type.numeric(ret.left.type) || !Type.numeric(ret.right.type))
+				panic("Invalid operand.");
+
+			// decorate
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+
+			// actually the type of the expression should be of 'bool',
+			// but we use 'int' instead for simplicity
+			ret.decorate(Int.instance, icons, hinit, false);
+			if (ret.isConst)
 				ret.calc_const_val();
-			}
 
 			if (clit.hasNext())
 			{
@@ -803,13 +870,26 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (plit.hasNext())
 		{
+			// left semantic check
+			if (!Type.numeric(ret.left.type) || !(ret.left.type instanceof Pointer) || !(ret.left.type instanceof Array))
+				panic("Invalid operand.");
+
 			ret.op = plit.next().intValue();
 			ret.right = parseRelationalExpr(clit.next(), y);
-			if (ret.left.isConst && ret.right.isConst)
-			{
-				ret.decorate(Int.instance, true, true, false);
+
+			// right semantic check
+			if (!Type.numeric(ret.right.type) || !(ret.right.type instanceof Pointer) || !(ret.right.type instanceof Array))
+				panic("Invalid operand.");
+
+			// decorate
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+
+			// actually the type of the expression should be of 'bool',
+			// but we use 'int' instead for simplicity
+			ret.decorate(Int.instance, icons, hinit, false);
+			if (ret.isConst)
 				ret.calc_const_val();
-			}
 
 			if (plit.hasNext())
 			{
@@ -1423,20 +1503,20 @@ public class ASTBuilder
 			if (entry == null)
 				panic("Symbol \'" + var_name + "\' is undefined.");
 
-			if (entry.type == Entry.ety_var)
+			if (entry.type == Entry.entry_var)
 			{
 				VarDec vd = (VarDec) entry.mirror;
 				ret.decorate(vd.type, vd.isConst, vd.isInitialized(), vd.isLval);
 				if (ret.isConst)
 					ret.set_value(vd.val);
 			}
-			else if (entry.type == Entry.ety_func)
+			else if (entry.type == Entry.entry_func)
 			{
 				FuncDec fd = (FuncDec) entry.mirror;
 				ret.decorate(fd.func_type, true, true, false);
 				ret.set_value(fd);
 			}
-			else if (entry.type == Entry.ety_type)
+			else if (entry.type == Entry.entry_type)
 				panic("Can not use a type as identifier!");
 			else
 				panic("Internal Error.");
