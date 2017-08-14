@@ -618,12 +618,7 @@ public class ASTBuilder
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseLogicalAndExpr(clit.next(), y);
 
-		// semantic check
-		// the operands to the logical OR operator need not be of the same type,
-		// but they must be of integral or pointer type.
-		if (!Type.integer(ret.left.type) || !(ret.left.type instanceof Pointer))
-			panic("Invalid operand.");
-
+		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -631,6 +626,12 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (clit.hasNext())
 		{
+			// semantic check
+			// the operands to the logical OR operator need not be of the same type,
+			// but they must be of integral or pointer type.
+			if (!Type.integer(ret.left.type) || !(ret.left.type instanceof Pointer))
+				panic("Invalid operand.");
+
 			ret.op = BinaryExp.OR;
 			ret.right = parseLogicalAndExpr(clit.next(), y);
 
@@ -672,12 +673,7 @@ public class ASTBuilder
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseInclusiveOrExpr(clit.next(), y);
 
-		// semantic check
-		// the operands to the logical AND operator need not be of the same type,
-		// but they must be of integral or pointer type.
-		if (!Type.integer(ret.left.type) || !(ret.left.type instanceof Pointer))
-			panic("Invalid operand.");
-
+		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -689,7 +685,9 @@ public class ASTBuilder
 			ret.right = parseInclusiveOrExpr(clit.next(), y);
 
 			// semantic check
-			if (!Type.integer(ret.right.type) || !(ret.right.type instanceof Pointer))
+			// the operands to the logical AND operator need not be of the same type,
+			// but they must be of integral or pointer type.
+			if (!Type.integer(ret.left.type) || !(ret.left.type instanceof Pointer))
 				panic("Invalid operand.");
 
 			// decorate

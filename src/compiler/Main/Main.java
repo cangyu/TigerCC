@@ -14,7 +14,7 @@ public class Main
 		inp.close();
 	}
 
-	private static void compile(InputStream ips) throws IOException
+	private static void compile(InputStream ips) throws Exception
 	{
 		Lexer lex = new Lexer(ips);
 		Parser psr = new Parser(lex);
@@ -24,7 +24,12 @@ public class Main
 		else
 			System.out.println("WTF?");
 
-		// ASTBuilder bdr = new ASTBuilder(cst);
-		// Prog ast = bdr.get_ast();
+		ASTBuilder ast_bdr = new ASTBuilder();
+		Prog ast = ast_bdr.build(cst);
+
+		if (ast != null)
+			System.out.println("OK!");
+		else
+			System.out.println("WTF?");
 	}
 }
