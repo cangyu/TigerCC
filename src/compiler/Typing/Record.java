@@ -1,7 +1,8 @@
 package compiler.Typing;
 
 import java.util.*;
-import compiler.SymbolTable.Symbol;
+
+import compiler.SymTbl.Symbol;
 
 public abstract class Record extends Type
 {

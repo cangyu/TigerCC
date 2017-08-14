@@ -1,6 +1,8 @@
 package compiler.AST;
 
 import java.util.*;
+
+import compiler.SymTbl.Symbol;
 import compiler.Typing.*;
 import compiler.Typing.Void;
 
@@ -93,7 +95,7 @@ public class Init extends ASTNode
 					return false;
 
 				ListIterator<Init> ilit = init_list.listIterator();
-				Iterator<Map.Entry<String, Type>> rlit = ((Struct) var_type).field.entrySet().iterator();
+				Iterator<Map.Entry<Symbol, Type>> rlit = ((Struct) var_type).field.entrySet().iterator();
 				while (ilit.hasNext())
 				{
 					Init cit = ilit.next();

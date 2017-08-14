@@ -1,7 +1,8 @@
 package compiler.AST;
 
-import compiler.SymbolTable.*;
 import java.util.*;
+
+import compiler.SymTbl.*;
 
 public class CompStmt extends Stmt
 {

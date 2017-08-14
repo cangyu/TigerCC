@@ -1,7 +1,8 @@
 package compiler.AST;
 
 import java.util.*;
-import compiler.SymbolTable.*;
+
+import compiler.SymTbl.*;
 
 public class Prog extends ASTNode
 {

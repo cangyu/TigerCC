@@ -1,6 +1,6 @@
 package compiler.AST;
 
-import compiler.SymbolTable.Env;
+import compiler.SymTbl.Env;
 import compiler.Typing.*;
 import java.util.*;
 
@@ -18,6 +18,7 @@ public class FuncDec extends Dec
 		}
 	}
 
+	public Type func_type;
 	public Type ret_type;
 	public String name;
 	public ArrayList<Parameter> param;

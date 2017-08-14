@@ -8,6 +8,13 @@ public class PostfixExp extends Exp
 {
 	public class PostfixElem
 	{
+		public static final int post_idx = 0;
+		public static final int post_call = 1;
+		public static final int post_dot = 2;
+		public static final int post_arrow = 3;
+		public static final int post_inc = 4;
+		public static final int post_dec = 5;
+
 		public int category;
 		public CommaExp exp;
 		public String id;

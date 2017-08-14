@@ -9,6 +9,11 @@ public class VarDec extends Dec
 	public Init init;
 	public boolean hasAssigned;
 
+	// if the variable is an array
+	public boolean isConst;
+	public boolean isLval;
+	public Object val;
+
 	public VarDec(Type t, String vn, Init it)
 	{
 		type = t;
@@ -21,6 +26,11 @@ public class VarDec extends Dec
 	public void set_pos(int p)
 	{
 		offset = p;
+	}
+
+	public boolean isInitialized()
+	{
+		return init != null || hasAssigned;
 	}
 
 	@Override

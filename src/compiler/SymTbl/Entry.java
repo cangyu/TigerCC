@@ -1,4 +1,4 @@
-package compiler.SymbolTable;
+package compiler.SymTbl;
 
 import compiler.AST.ASTNode;
 import compiler.Typing.*;
@@ -18,5 +18,10 @@ public class Entry
 		type = tp;
 		mirror = m;
 		actual = null;
+	}
+
+	public void set_actual_type(Type tp) // used for 'typedef'
+	{
+		actual = tp;
 	}
 }

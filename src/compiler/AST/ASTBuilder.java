@@ -2,34 +2,34 @@ package compiler.AST;
 
 import java.util.*;
 import compiler.AST.FuncDec.Parameter;
+import compiler.AST.PostfixExp.PostfixElem;
 import compiler.Parser.*;
 import compiler.Parser.PostfixExpr.Postfix;
-import compiler.SymbolTable.*;
+import compiler.SymTbl.*;
 import compiler.Typing.*;
 import compiler.Typing.Void;
 
 public class ASTBuilder
 {
-	private Program entrance;
-	private Prog ast;
 	private int offset;
-	private Env tenv, venv;
 	private int loop_cnt;
+	private Env tenv, venv;
 
-	public ASTBuilder(Program p)
+	public ASTBuilder()
 	{
-		entrance = p;
-		ast = new Prog();
 		offset = 0;
 		loop_cnt = 0;
-
-		tenv = ast.tenv;
-		venv = ast.venv;
+		tenv = null;
+		venv = null;
 	}
 
-	public Prog build() throws Exception
+	public Prog build(Program p) throws Exception
 	{
-		for (ProgComp pc : entrance.elem)
+		Prog ast = new Prog();
+		tenv = ast.tenv;
+		venv = ast.venv;
+
+		for (ProgComp pc : p.elem)
 		{
 			if (pc instanceof Declaration)
 			{
@@ -437,11 +437,11 @@ public class ASTBuilder
 				Type var_type = resolve_type(def_type, idr.declarator, y);
 				boolean hasInit = idr.initializer != null;
 				Init var_it = hasInit ? parseInitializer(idr.initializer, y) : null;
-				VarEntry var_entry = new VarEntry(var_type, offset, hasInit, true, false);
-				offset += var_type.width;
 				VarDec var_dec = new VarDec(var_type, var_name, var_it);
-				ret.scope.put(var_sym, var_entry);
 				ret.add_var(var_dec);
+				Entry var_entry = new Entry(Entry.ety_var, var_dec);
+				ret.scope.put(var_sym, var_entry);
+				offset += var_type.width;
 			}
 		}
 
@@ -834,6 +834,8 @@ public class ASTBuilder
 		// first expression
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseShiftExpr(clit.next(), y);
+
+		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -841,14 +843,28 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (plit.hasNext())
 		{
+			// left semantic check
+			if (!Type.numeric(ret.left.type) || !(ret.left.type instanceof Pointer) || !(ret.left.type instanceof Array))
+				panic("Invalid operand.");
+
 			ret.op = plit.next().intValue();
 			ret.right = parseShiftExpr(clit.next(), y);
-			if (ret.left.isConst && ret.right.isConst)
-			{
-				ret.decorate(Int.instance, true, true, false);
-				ret.calc_const_val();
-			}
 
+			// right semantic check
+			if (!Type.numeric(ret.right.type) || !(ret.right.type instanceof Pointer) || !(ret.right.type instanceof Array))
+				panic("Invalid operand.");
+
+			// decorate
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+
+			// actually the type of the expression should be of 'bool',
+			// but we use 'int' instead for simplicity
+			ret.decorate(Int.instance, icons, hinit, false);
+			if (ret.isConst)
+				ret.calc_const_val();
+
+			// build tree
 			if (plit.hasNext())
 			{
 				BinaryExp nrt = new BinaryExp();
@@ -872,6 +888,8 @@ public class ASTBuilder
 		// first expression
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseAdditiveExpr(clit.next(), y);
+
+		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -881,11 +899,19 @@ public class ASTBuilder
 		{
 			ret.op = plit.next().intValue();
 			ret.right = parseAdditiveExpr(clit.next(), y);
-			if (ret.left.isConst && ret.right.isConst)
-			{
-				ret.decorate(Int.instance, true, true, false);
+
+			// semantic check
+			// both operands must be integral values.
+			if (!Type.integer(ret.left.type) || !Type.integer(ret.right.type))
+				panic("Invalid operand.");
+
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+
+			// the type of the result is the type of the left operand after conversion
+			ret.decorate(ret.left.type, icons, hinit, false);
+			if (ret.isConst)
 				ret.calc_const_val();
-			}
 
 			if (plit.hasNext())
 			{
@@ -910,6 +936,12 @@ public class ASTBuilder
 		// first expression
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseMultiplicativeExpr(clit.next(), y);
+
+		// semantic check
+		if (!Type.numeric(ret.left.type) && !(ret.left.type instanceof Pointer) && !(ret.left.type instanceof Array))
+			panic("Invalid operand");
+
+		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -917,13 +949,20 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (plit.hasNext())
 		{
+			// build ast
 			ret.op = plit.next().intValue();
 			ret.right = parseMultiplicativeExpr(clit.next(), y);
-			if (ret.left.isConst && ret.right.isConst)
-			{
-				ret.decorate(Int.instance, true, true, false);
+
+			// semantic check
+			if (!Type.numeric(ret.right.type) && !(ret.right.type instanceof Pointer) && !(ret.right.type instanceof Array))
+				panic("Invalid operand");
+
+			// decorate
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+			ret.decorate(Type.max(ret.left.type, ret.right.type), icons, hinit, false);
+			if (ret.isConst)
 				ret.calc_const_val();
-			}
 
 			if (plit.hasNext())
 			{
@@ -948,6 +987,12 @@ public class ASTBuilder
 		// first cast-expression
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseCastExpr(clit.next(), y);
+
+		// semantic check
+		if (!Type.numeric(ret.left.type))
+			panic("Invalid operand.");
+
+		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -955,17 +1000,20 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (plit.hasNext())
 		{
-			int cop = plit.next().intValue();
-			ret.op = cop;
-			CastExpr rcer = clit.next();
-			CastExp rce = parseCastExpr(rcer, y);
-			ret.right = rce;
+			// build AST Node
+			ret.op = plit.next().intValue();
+			ret.right = parseCastExpr(clit.next(), y);
 
-			if (ret.left.isConst && ret.right.isConst)
-			{
-				ret.decorate(Int.instance, true, true, false);
+			// semantic check
+			if (!Type.numeric(ret.right.type))
+				panic("Invalid operand.");
+
+			// decorate
+			boolean icons = ret.left.isConst && ret.right.isConst;
+			boolean hinit = ret.left.hasInitialized && ret.right.hasInitialized;
+			ret.decorate(Type.max(ret.left.type, ret.right.type), icons, hinit, false);
+			if (ret.isConst)
 				ret.calc_const_val();
-			}
 
 			if (plit.hasNext())
 			{
@@ -1018,8 +1066,11 @@ public class ASTBuilder
 		{
 			UnaryExpr uer = (UnaryExpr) x.elem;
 			UnaryExp ue = parseUnaryExpr(uer, y);
+
+			// Semantic check
 			if (!ue.isLvalue)
 				panic("Not assignable.");
+
 			boolean operable = Type.numeric(ue.type) || ue.type instanceof Pointer;
 			if (!operable)
 				panic("Can not be incremented.");
@@ -1031,8 +1082,11 @@ public class ASTBuilder
 		{
 			UnaryExpr uer = (UnaryExpr) x.elem;
 			UnaryExp ue = parseUnaryExpr(uer, y);
+
+			// Semantic check
 			if (!ue.isLvalue)
 				panic("Not assignable.");
+
 			boolean operable = Type.numeric(ue.type) || ue.type instanceof Pointer;
 			if (!operable)
 				panic("Can not be decreased.");
@@ -1149,7 +1203,7 @@ public class ASTBuilder
 			if (cur_type instanceof Pointer || Type.numeric(cur_type))
 			{
 				ret = new UnaryExp(UnaryExpr.not, ce, null);
-				ret.decorate(new Int(), ce.isConst, ce.hasInitialized, false);
+				ret.decorate(Int.instance, ce.isConst, ce.hasInitialized, false);
 				if (ret.isConst)
 				{
 					if (cur_type instanceof Int)
@@ -1193,7 +1247,7 @@ public class ASTBuilder
 				UnaryExp ue = parseUnaryExpr(uer, y);
 
 				ret = new UnaryExp(UnaryExpr.sizeof, ue, null);
-				ret.decorate(new Int(), true, true, false);
+				ret.decorate(Int.instance, true, true, false);
 				ret.set_value(ue.type.width);
 			}
 			else if (x.elem instanceof TypeName)
@@ -1202,7 +1256,7 @@ public class ASTBuilder
 				Type t = parseTypeName(tpn, y);
 
 				ret = new UnaryExp(UnaryExpr.sizeof, null, t);
-				ret.decorate(new Int(), true, true, false);
+				ret.decorate(Int.instance, true, true, false);
 				ret.set_value(t.width);
 			}
 			else
@@ -1226,9 +1280,9 @@ public class ASTBuilder
 	private PostfixExp parsePostfixExpr(PostfixExpr x, Env y) throws Exception
 	{
 		PrimaryExp pe = parsePrimaryExpr(x.expr, y);
-
 		PostfixExp ret = new PostfixExp(pe);
 		Type cur_type = pe.type;
+		ret.decorate(cur_type, pe.isConst, pe.hasInitialized, pe.isLvalue);
 
 		ListIterator<Postfix> lit = x.elem.listIterator();
 		while (lit.hasNext())
@@ -1239,17 +1293,12 @@ public class ASTBuilder
 				CommaExp ce = parseExpression((Expression) pfx.content, y);
 				if (ce.type instanceof Char || ce.type instanceof Int)
 				{
+					// a[-2] is acceptable, no need to check range
 					boolean init_flag = pe.hasInitialized && ce.hasInitialized;
-					if (cur_type instanceof Pointer)
+					if (cur_type instanceof Pointer || cur_type instanceof Array)
 					{
-						cur_type = ((Pointer) cur_type).elem_type;
-						ret.add_elem(PostfixExpr.mparen, ce, null, cur_type);
-						ret.decorate(cur_type, false, init_flag, true);
-					}
-					else if (cur_type instanceof Array)
-					{
-						cur_type = ((Array) cur_type).elem_type;
-						ret.add_elem(PostfixExpr.mparen, ce, null, cur_type);
+						cur_type = cur_type instanceof Pointer ? ((Pointer) cur_type).elem_type : ((Array) cur_type).elem_type;
+						ret.add_elem(PostfixElem.post_idx, ce, null, cur_type);
 						ret.decorate(cur_type, false, init_flag, true);
 					}
 					else
@@ -1271,12 +1320,9 @@ public class ASTBuilder
 					if (ce.exp.size() != fdatp.size() - 1)
 						panic("Function arguments quantity doesn't match.");
 
-					// parameter list iterator
+					// Function Call parameters check
 					ListIterator<AssignExp> plit = ce.exp.listIterator();
-
-					// argument type list iterator
 					ListIterator<Type> atlit = fdatp.listIterator();
-
 					while (plit.hasNext())
 					{
 						Type cptp = plit.next().type;
@@ -1284,8 +1330,9 @@ public class ASTBuilder
 						if (!cptp.isConvertableTo(catp))
 							panic("Incompatible parameter type.");
 					}
+
 					cur_type = fdatp.getLast();
-					ret.add_elem(PostfixExpr.paren, ce, null, cur_type);
+					ret.add_elem(PostfixElem.post_call, ce, null, cur_type);
 					ret.decorate(cur_type, false, true, false);
 				}
 				else
@@ -1293,12 +1340,10 @@ public class ASTBuilder
 			}
 			else if (pfx.type == PostfixExpr.dot)
 			{
-				if (cur_type instanceof Struct)
+				if (cur_type instanceof Record)
 				{
-					// Cast
-					Struct pt = (Struct) cur_type;
-
 					// Get member type
+					Record pt = (Record) cur_type;
 					String member = (String) pfx.content;
 					cur_type = pt.get_member_type(member);
 
@@ -1307,40 +1352,26 @@ public class ASTBuilder
 						panic("Not a member.");
 
 					// Decorate the exp
-					ret.add_elem(PostfixExpr.dot, null, member, cur_type);
+					ret.add_elem(PostfixElem.post_dot, null, member, cur_type);
 					ret.decorate(cur_type, false, pe.hasInitialized, true);
-				}
-				else if (cur_type instanceof Union)
-				{
-					// Cast
-					Union pt = (Union) cur_type;
-
-					// Get member type
-					String member = (String) pfx.content;
-					cur_type = pt.get_member_type(member);
-
-					// Check
-					if (cur_type == null)
-						panic("Not a member.");
-
-					// Decorate the exp
-					ret.add_elem(PostfixExpr.dot, null, member, cur_type);
-					ret.decorate(cur_type, false, pe.hasInitialized, true);
+					if (cur_type instanceof Array)
+					{
+						ret.isLvalue = false;
+						ret.isConst = true;
+					}
 				}
 				else
-					panic("Not a structure or union.");
+					panic("Not a struct or union.");
 			}
 			else if (pfx.type == PostfixExpr.ptr)
 			{
 				if (cur_type instanceof Pointer)
 				{
 					Type pt = ((Pointer) cur_type).elem_type;
-					if (pt instanceof Struct || pt instanceof Union)
+					if (pt instanceof Record)
 					{
-						// Cast
-						Record cpt = (Record) pt;
-
 						// Get member type
+						Record cpt = (Record) pt;
 						String member = (String) pfx.content;
 						cur_type = cpt.get_member_type(member);
 
@@ -1349,8 +1380,13 @@ public class ASTBuilder
 							panic("Not a member.");
 
 						// Decorate the exp
-						ret.add_elem(PostfixExpr.ptr, null, member, cur_type);
+						ret.add_elem(PostfixElem.post_arrow, null, member, cur_type);
 						ret.decorate(cur_type, false, pe.hasInitialized, true);
+						if (cur_type instanceof Array)
+						{
+							ret.isLvalue = false;
+							ret.isConst = true;
+						}
 					}
 					else
 						panic("Not a pointer to record.");
@@ -1358,21 +1394,15 @@ public class ASTBuilder
 				else
 					panic("Not a pointer.");
 			}
-			else if (pfx.type == PostfixExpr.inc)
+			else if (pfx.type == PostfixExpr.inc || pfx.type == PostfixExpr.dec)
 			{
 				boolean operable = Type.numeric(cur_type) || cur_type instanceof Pointer;
-				if (!operable)
+				if (!operable || !ret.isLvalue)
 					panic("Can not be incremented.");
 
-				ret.add_elem(PostfixExpr.inc, null, null, cur_type);
-			}
-			else if (pfx.type == PostfixExpr.dec)
-			{
-				boolean operable = Type.numeric(cur_type) || cur_type instanceof Pointer;
-				if (!operable)
-					panic("Can not be decreased.");
-
-				ret.add_elem(PostfixExpr.dec, null, null, cur_type);
+				int cat = pfx.type == PostfixExpr.inc ? PostfixElem.post_inc : PostfixElem.post_dec;
+				ret.add_elem(cat, null, null, cur_type);
+				ret.decorate(cur_type, false, pe.hasInitialized, false);
 			}
 			else
 				panic("Internal Error.");
@@ -1393,18 +1423,23 @@ public class ASTBuilder
 			if (entry == null)
 				panic("Symbol \'" + var_name + "\' is undefined.");
 
-			if (entry instanceof VarEntry)
+			if (entry.type == Entry.ety_var)
 			{
-				VarEntry var_entry = (VarEntry) entry;
-				ret.decorate(var_entry.type, var_entry.isConst, var_entry.hasInitialized, var_entry.isLval);
+				VarDec vd = (VarDec) entry.mirror;
+				ret.decorate(vd.type, vd.isConst, vd.isInitialized(), vd.isLval);
+				if (ret.isConst)
+					ret.set_value(vd.val);
 			}
-			else if (entry instanceof FuncEntry)
+			else if (entry.type == Entry.ety_func)
 			{
-				FuncEntry func_entry = (FuncEntry) entry;
-				ret.decorate(func_entry.type, true, true, false);
+				FuncDec fd = (FuncDec) entry.mirror;
+				ret.decorate(fd.func_type, true, true, false);
+				ret.set_value(fd);
 			}
-			else
+			else if (entry.type == Entry.ety_type)
 				panic("Can not use a type as identifier!");
+			else
+				panic("Internal Error.");
 		}
 		else if (x.type == PrimaryExpr.integer_constant)
 		{
@@ -1423,7 +1458,7 @@ public class ASTBuilder
 		}
 		else if (x.type == PrimaryExpr.string)
 		{
-			// As gcc doesn't consider "abcd"[2] as a constant,
+			// As GCC doesn't consider "abcd"[2] as a constant,
 			// I set this expression's 'isCosnt' flag to false
 			ret.decorate(new Pointer(Char.instance), false, true, false);
 			ret.set_value(x.elem);
