@@ -8,6 +8,7 @@ public class ASTPrinter implements ASTNodeVisitor
 	private static final String separator = "    |".intern();
 
 	/* prog */
+
 	public void visit(Prog x) throws Exception
 	{
 		// construct sub-nodes
@@ -53,7 +54,7 @@ public class ASTPrinter implements ASTNodeVisitor
 
 		// initialize format
 		decl.ast_rep = new String[lc];
-		decl.ast_rep[0] = leading + "Declaration";
+		decl.ast_rep[0] = leading + "Declaration".intern();
 		for (int i = 1; i < lc; i++)
 			decl.ast_rep[i] = separator;
 
@@ -191,16 +192,14 @@ public class ASTPrinter implements ASTNodeVisitor
 	{
 		// construct sub-nodes
 		// and count lines
-		int lc = 1;
-		ce.target_type.accept(this);
-		lc += ce.target_type.ast_rep.length;
+		int lc = 2;
 		ce.exp.accept(this);
 		lc += ce.exp.ast_rep.length;
 
 		// initialize format
 		ce.ast_rep = new String[lc];
 		ce.ast_rep[0] = leading + "CastExp".intern();
-		for (int i = 1; i < lc; i++)
+		for (int i = 2; i < lc; i++)
 			ce.ast_rep[i] = separator;
 
 		// add sub-nodes' content
@@ -368,43 +367,6 @@ public class ASTPrinter implements ASTNodeVisitor
 	}
 
 	/* Stmt */
-	public void visit(StmtList sl) throws Exception
-	{
-		// construct sub-nodes
-		StmtList s = sl;
-		while (s != null)
-		{
-			s.head.accept(this);
-			s = s.next;
-		}
-
-		// count lines
-		int lc = 1;
-		s = sl;
-		while (s != null)
-		{
-			lc += s.head.ast_rep.length;
-			s = s.next;
-		}
-
-		// initialize format
-		sl.ast_rep = new String[lc];
-		sl.ast_rep[0] = leading + "StmtList";
-		for (int i = 1; i < lc; i++)
-			sl.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-		s = sl;
-		while (s != null)
-		{
-			for (String str : s.head.ast_rep)
-				sl.ast_rep[cl++] += str;
-
-			s = s.next;
-		}
-	}
-
 	public void visit(ExpressionStatement es) throws Exception
 	{
 		if (es.e != null)

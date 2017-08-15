@@ -32,4 +32,21 @@ public abstract class Record extends Type
 		Symbol csym = Symbol.getSymbol(m);
 		return field.get(csym);
 	}
+	
+	public String[] field_str()
+	{
+	    int lc = 2 + field.size();
+	    String [] ret = new String[lc];
+	    ret[0] = "{".intern();
+	    ret[lc-1] = "}".intern();
+	    
+	    int cl = 1;
+	    for(Symbol csym : field.keySet())
+	    {
+	        Type ct = field.get(csym);
+	        ret[cl++] = String.format("  %s -> %s ", csym.name, ct.toString());
+	    }
+	    
+	    return ret;
+	}
 }

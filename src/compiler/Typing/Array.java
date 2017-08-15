@@ -25,4 +25,10 @@ public final class Array extends Type
 	{
 		return false;
 	}
+
+    @Override
+    public String toString()
+    {
+        return String.format("array of %d %s ", elem_num, elem_type.toString());
+    }
 }

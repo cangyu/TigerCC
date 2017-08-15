@@ -21,8 +21,9 @@ public final class Function extends Type
 		return tps.getLast();
 	}
 
-	public static LinkedList<Type> get_param_type(Function func)// 返回的结果中最后一个元素是return_type
+	public static LinkedList<Type> get_param_type(Function func)
 	{
+	    //the last element in returned value is the 'return_type'
 		LinkedList<Type> ans = new LinkedList<Type>();
 		Function f = func;
 		for (;;)
@@ -74,4 +75,25 @@ public final class Function extends Type
 	{
 		return equals(rhs);
 	}
+
+    @Override
+    public String toString()
+    {
+        String ret = "Function: (".intern();
+        LinkedList<Type> tps = get_param_type(this);
+        ListIterator<Type> lit = tps.listIterator();
+        
+        ret += lit.next().toString();
+        if(tps.size()>2)
+        {
+            while(lit.nextIndex()<tps.size()-2)
+                ret += ", ".intern() +  lit.next().toString();
+            
+            //skip the last void
+            lit.next();
+        }
+        
+        ret += ") -> ".intern() + lit.next().toString();
+        return ret;
+    }
 }

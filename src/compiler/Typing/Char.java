@@ -1,5 +1,7 @@
 package compiler.Typing;
 
+import compiler.Lexer.Token;
+
 public final class Char extends Type
 {
 	public Char()
@@ -21,4 +23,10 @@ public final class Char extends Type
 	{
 		return rhs instanceof Char || rhs instanceof Int || rhs instanceof FP;
 	}
+	
+    @Override
+    public String toString()
+    {
+        return Token.raw_rep(Token.CHAR);
+    }
 }

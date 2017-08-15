@@ -1,5 +1,7 @@
 package compiler.Typing;
 
+import compiler.Lexer.Token;
+
 public final class Int extends Type
 {
 	public Int()
@@ -21,4 +23,10 @@ public final class Int extends Type
 	{
 		return rhs instanceof Int || rhs instanceof Char || rhs instanceof FP || rhs instanceof Pointer;
 	}
+	
+    @Override
+    public String toString()
+    {
+        return Token.raw_rep(Token.INT);
+    }
 }

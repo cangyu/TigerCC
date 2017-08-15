@@ -1,5 +1,7 @@
 package compiler.Typing;
 
+import compiler.Lexer.*;
+
 public final class Void extends Type
 {
 	public Void()
@@ -21,4 +23,10 @@ public final class Void extends Type
 	{
 		return rhs instanceof Void;
 	}
+
+    @Override
+    public String toString()
+    {
+        return Token.raw_rep(Token.VOID);
+    }
 }

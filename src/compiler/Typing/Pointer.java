@@ -22,4 +22,10 @@ public class Pointer extends Type
 	{
 		return rhs instanceof Pointer || rhs instanceof Int;
 	}
+
+    @Override
+    public String toString()
+    {
+        return String.format("ptr to %s ", elem_type.toString());
+    }
 }

@@ -47,4 +47,6 @@ public abstract class Type
 		else
 			return Char.instance;
 	}
+	
+	public abstract String toString();
 }

@@ -24,4 +24,11 @@ public final class Struct extends Record
 	{
 		return equals(rhs);
 	}
+
+    
+	@Override
+    public String toString()
+    {
+	    return String.format("struct %s ", tag);
+    }
 }

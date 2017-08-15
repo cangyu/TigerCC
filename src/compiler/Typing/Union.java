@@ -26,4 +26,11 @@ public final class Union extends Record
 	{
 		return false;
 	}
+
+    
+	@Override
+    public String toString()
+    {
+        return String.format("union %s ", tag);
+    }
 }
