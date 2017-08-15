@@ -1,5 +1,7 @@
 package compiler.AST;
 
+import compiler.Lexer.Token;
+
 public class AssignExp extends Exp
 {
 	public static final int ASSIGN = 0;
@@ -24,6 +26,37 @@ public class AssignExp extends Exp
 		assign_type = -1;
 		left = null;
 		right = null;
+	}
+
+	public String assign_symbol()
+	{
+		switch (assign_type)
+		{
+		case ASSIGN:
+			return Token.raw_rep(Token.ASSIGN);
+		case MUL_ASSIGN:
+			return Token.raw_rep(Token.MUL_ASSIGN);
+		case DIV_ASSIGN:
+			return Token.raw_rep(Token.DIV_ASSIGN);
+		case MOD_ASSIGN:
+			return Token.raw_rep(Token.MOD_ASSIGN);
+		case ADD_ASSIGN:
+			return Token.raw_rep(Token.ADD_ASSIGN);
+		case SUB_ASSIGN:
+			return Token.raw_rep(Token.SUB_ASSIGN);
+		case SHL_ASSIGN:
+			return Token.raw_rep(Token.SHL_ASSIGN);
+		case SHR_ASSIGN:
+			return Token.raw_rep(Token.SHR_ASSIGN);
+		case AND_ASSIGN:
+			return Token.raw_rep(Token.AND_ASSIGN);
+		case XOR_ASSIGN:
+			return Token.raw_rep(Token.XOR_ASSIGN);
+		case OR_ASSIGN:
+			return Token.raw_rep(Token.OR_ASSIGN);
+		default:
+			return "".intern();
+		}
 	}
 
 	@Override

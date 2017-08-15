@@ -1,5 +1,6 @@
 package compiler.AST;
 
+import compiler.Lexer.Token;
 import compiler.Typing.Type;
 
 public class BinaryExp extends Exp
@@ -269,5 +270,50 @@ public class BinaryExp extends Exp
 		}
 		else
 			throw new Exception("Internal Error.");
+	}
+
+	public String bin_symbol()
+	{
+		switch (op)
+		{
+		case BIT_AND:
+			return Token.raw_rep(Token.BIT_AND);
+		case BIT_XOR:
+			return Token.raw_rep(Token.BIT_XOR);
+		case BIT_OR:
+			return Token.raw_rep(Token.BIT_OR);
+		case AND:
+			return Token.raw_rep(Token.AND);
+		case OR:
+			return Token.raw_rep(Token.OR);
+		case EQ:
+			return Token.raw_rep(Token.EQ);
+		case NE:
+			return Token.raw_rep(Token.NE);
+		case LT:
+			return Token.raw_rep(Token.LT);
+		case GT:
+			return Token.raw_rep(Token.GT);
+		case LE:
+			return Token.raw_rep(Token.LE);
+		case GE:
+			return Token.raw_rep(Token.GE);
+		case SHL:
+			return Token.raw_rep(Token.SHL);
+		case SHR:
+			return Token.raw_rep(Token.SHR);
+		case PLUS:
+			return Token.raw_rep(Token.PLUS);
+		case MINUS:
+			return Token.raw_rep(Token.MINUS);
+		case TIMES:
+			return Token.raw_rep(Token.TIMES);
+		case DIVIDE:
+			return Token.raw_rep(Token.DIVIDE);
+		case MODULE:
+			return Token.raw_rep(Token.MODULE);
+		default:
+			return "".intern();
+		}
 	}
 }

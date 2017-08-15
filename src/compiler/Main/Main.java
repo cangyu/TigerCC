@@ -1,6 +1,7 @@
 package compiler.Main;
 
 import java.io.*;
+import java.util.*;
 import compiler.Lexer.*;
 import compiler.Parser.*;
 import compiler.AST.*;
@@ -26,10 +27,6 @@ public class Main
 
 		ASTBuilder ast_bdr = new ASTBuilder();
 		Prog ast = ast_bdr.build(cst);
-
-		if (ast != null)
-			System.out.println("OK!");
-		else
-			System.out.println("WTF?");
+		System.out.println(ast != null ? "OK!" : "WTF?");
 	}
 }
