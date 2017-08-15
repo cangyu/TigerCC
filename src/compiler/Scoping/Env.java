@@ -18,20 +18,25 @@ public class Env
 		tbl.put(s, e);
 	}
 
-	public Entry get(Symbol s)
+	public Entry get_global(Symbol s)
 	{
 		Env e = this;
 		while (e != null)
 		{
-			if (tbl.containsKey(s))
+			if (e.tbl.containsKey(s))
 				return e.tbl.get(s);
 			else
 				e = e.prev;
 		}
 		return null;
 	}
-	
-	public Enumeration<Symbol> keys() 
+
+	public Entry get_local(Symbol s)
+	{
+		return tbl.get(s);
+	}
+
+	public Enumeration<Symbol> keys()
 	{
 		return tbl.keys();
 	}

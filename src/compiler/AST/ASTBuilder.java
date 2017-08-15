@@ -51,7 +51,7 @@ public class ASTBuilder
 		while (e.hasMoreElements())
 		{
 			Symbol csym = e.nextElement();
-			Type ct = tenv.get(csym).actual;
+			Type ct = tenv.get_local(csym).actual;
 
 			// defensive check
 			if (ct == null || !(ct instanceof Record))
@@ -93,7 +93,7 @@ public class ASTBuilder
 				Symbol var_sym = Symbol.getSymbol(var_name);
 
 				// Check if has been declared
-				if (y.get(var_sym) != null)
+				if (y.get_local(var_sym) != null)
 					panic("Variable: " + var_name + " has been declared in this scope!");
 
 				// Variable type
@@ -130,7 +130,7 @@ public class ASTBuilder
 		Symbol func_sym = Symbol.getSymbol(func_name);
 
 		// Check if the function has been declared
-		if (y.get(func_sym) != null)
+		if (y.get_local(func_sym) != null)
 			panic("Function: " + func_name + " has already been declared!");
 
 		// Return type
@@ -147,26 +147,68 @@ public class ASTBuilder
 			String param_name = pdn.dlr.plain_declarator.name;
 			Symbol param_sym = Symbol.getSymbol(param_name);
 
-			if (func_dec.scope.get(param_sym) == null)
+			if (func_dec.scope.get_local(param_sym) == null)
 			{
 				Type param_type = parsePlainDeclaration(pdn, func_dec.scope);
 				func_dec.add_param(param_name, param_type);
 
 				VarDec param_dec = new VarDec(param_type, param_name, null, offset);
+				offset += param_type.width;
 				param_dec.hasAssigned = true;
+				func_dec.add_var(param_dec);
 
 				Entry param_entry = new Entry(param_dec);
 				func_dec.scope.put(param_sym, param_entry);
-
-				offset += param_type.width;
 			}
 			else
 				panic("Variable \'" + param_name + "\' has been declared.");
 		}
 
 		// function body
-		CompStmt cpst = parseCompoundStmt(x.cst, func_dec.scope);
-		func_dec.set_body(cpst);
+		CompoundStatement tcst = x.cst;
+		for (Declaration decl : tcst.decls)
+		{
+			Type tdtp = parseTypeSpecifier(decl.ts, y);
+			for (InitDeclarator idr : decl.elem)
+			{
+				String var_name = idr.declarator.plain_declarator.name;
+				Symbol var_sym = Symbol.getSymbol(var_name);
+
+				// check duplication
+				if (func_dec.scope.get_local(var_sym) != null)
+					panic("Variable " + var_name + " has been declared in this scope.");
+
+				Type tvtp = resolve_type(tdtp, idr.declarator, func_dec.scope);
+				boolean hasInit = idr.initializer != null;
+				Init var_it = hasInit ? parseInitializer(idr.initializer, func_dec.scope) : null;
+				VarDec var_dec = new VarDec(tvtp, var_name, var_it, offset);
+				offset += tvtp.width;
+				func_dec.add_var(var_dec);
+				Entry var_entry = new Entry(Entry.entry_var, var_dec);
+				func_dec.scope.put(var_sym, var_entry);
+			}
+		}
+
+		for (Statement st : tcst.stmts)
+		{
+			Stmt s = parseStatement(st, func_dec.scope);
+
+			// check return type
+			if (s instanceof JumpStmt)
+			{
+				JumpStmt jst = (JumpStmt) s;
+				if (jst.category == JumpStmt.jp_ret && jst.expr != null)
+				{
+					CommaExp frt = jst.expr;
+					if (!frt.type.isConvertableTo(ret_type))
+						panic("Invalid return type.");
+				}
+			}
+
+			func_dec.add_stmt(s);
+		}
+
+		// AST hierarchy
 		z.add_dec(func_dec);
 
 		// Environment
@@ -202,7 +244,7 @@ public class ASTBuilder
 
 				// get symbol from tag-environment
 				Symbol ss = Symbol.getSymbol(tag);
-				Entry ste = tenv.get(ss);
+				Entry ste = tenv.get_local(ss);
 
 				if (ste != null)
 				{
@@ -226,7 +268,7 @@ public class ASTBuilder
 				if (tag != null) // type-specifier ::= 'struct' identifier { ... }
 				{
 					Symbol tag_sym = Symbol.getSymbol(tag);
-					Entry ce = tenv.get(tag_sym);
+					Entry ce = tenv.get_local(tag_sym);
 
 					if (ce != null)// Has been declared before
 					{
@@ -275,7 +317,7 @@ public class ASTBuilder
 
 				// get symbol from tag-environment
 				Symbol ss = Symbol.getSymbol(tag);
-				Entry ste = tenv.get(ss);
+				Entry ste = tenv.get_local(ss);
 
 				if (ste != null)
 				{
@@ -300,7 +342,7 @@ public class ASTBuilder
 				if (tag != null) // type-specifier ::= 'union' identifier { ... }
 				{
 					Symbol tag_sym = Symbol.getSymbol(tag);
-					Entry ce = tenv.get(tag_sym);
+					Entry ce = tenv.get_local(tag_sym);
 
 					if (ce != null)// Has been declared before
 					{
@@ -459,7 +501,7 @@ public class ASTBuilder
 			{
 				String var_name = idr.declarator.plain_declarator.name;
 				Symbol var_sym = Symbol.getSymbol(var_name);
-				if (ret.scope.get(var_sym) != null)
+				if (ret.scope.get_local(var_sym) != null)
 					panic("Variable " + var_name + " has been declared in this scope.");
 
 				Type var_type = resolve_type(def_type, idr.declarator, y);
@@ -1524,7 +1566,7 @@ public class ASTBuilder
 		{
 			String var_name = (String) x.elem;
 			Symbol var_sym = Symbol.getSymbol(var_name);
-			Entry entry = y.get(var_sym);
+			Entry entry = y.get_global(var_sym);
 
 			if (entry == null)
 				panic("Symbol \'" + var_name + "\' is undefined.");

@@ -1,8 +1,8 @@
 package compiler.AST;
 
-import compiler.Scoping.Env;
-import compiler.Typing.*;
 import java.util.*;
+import compiler.Typing.*;
+import compiler.Scoping.Env;
 
 public class FuncDec extends Dec
 {
@@ -22,7 +22,8 @@ public class FuncDec extends Dec
 	public String name;
 	public ArrayList<Parameter> param;
 	public Env scope;
-	public CompStmt body;
+	public LinkedList<VarDec> var;
+	public LinkedList<Stmt> st;
 
 	public FuncDec(Type t, String fn, int off)
 	{
@@ -30,6 +31,8 @@ public class FuncDec extends Dec
 		ret_type = t;
 		name = fn;
 		param = new ArrayList<Parameter>();
+		var = new LinkedList<VarDec>();
+		st = new LinkedList<Stmt>();
 	}
 
 	public void add_param(String vn, Type t)
@@ -37,9 +40,14 @@ public class FuncDec extends Dec
 		param.add(new Parameter(vn, t));
 	}
 
-	public void set_body(CompStmt cs)
+	public void add_var(VarDec vd)
 	{
-		body = cs;
+		var.add(vd);
+	}
+
+	public void add_stmt(Stmt s)
+	{
+		st.add(s);
 	}
 
 	@Override
