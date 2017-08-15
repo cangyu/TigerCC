@@ -418,7 +418,11 @@ public class ASTBuilder
 		if (st instanceof ExpressionStatement)
 			ret = parseExpressionStatement((ExpressionStatement) st, y);
 		else if (st instanceof CompoundStatement)
+		{
+			Env.beginScope(y);
 			ret = parseCompoundStmt((CompoundStatement) st, y);
+			Env.endScope(y);
+		}
 		else if (st instanceof SelectionStatement)
 			ret = parseSelectionStatement((SelectionStatement) st, y);
 		else if (st instanceof IterationStatement)
@@ -481,7 +485,6 @@ public class ASTBuilder
 	private SelectStmt parseSelectionStatement(SelectionStatement x, Env y) throws Exception
 	{
 		CommaExp ce = parseExpression(x.cond, y);
-
 		Stmt stt = parseStatement(x.if_clause, y);
 		Stmt stf = null;
 		if (x.else_clause != null)
@@ -493,19 +496,22 @@ public class ASTBuilder
 	private IterStmt parseIterationStatement(IterationStatement x, Env y) throws Exception
 	{
 		IterStmt ret = null;
-		++loop_cnt;
 		if (x.type == IterationStatement.WHILE)
 		{
+			++loop_cnt;
 			CommaExp ce = parseExpression(x.judge, y);
 			Stmt st = parseStatement(x.stmt, y);
+			--loop_cnt;
 			ret = new IterStmt(ce, st);
 		}
 		else if (x.type == IterationStatement.FOR)
 		{
+			++loop_cnt;
 			CommaExp ce1 = parseExpression(x.init, y);
 			CommaExp ce2 = parseExpression(x.judge, y);
 			CommaExp ce3 = parseExpression(x.next, y);
 			Stmt st = parseStatement(x.stmt, y);
+			--loop_cnt;
 			ret = new IterStmt(ce1, ce2, ce3, st);
 		}
 		else
@@ -519,17 +525,17 @@ public class ASTBuilder
 		JumpStmt ret = null;
 		if (x.type == JumpStatement.CTNU)
 		{
-			if (--loop_cnt < 0)
+			if (loop_cnt > 0)
+				ret = new JumpStmt(JumpStmt.jp_ctn);
+			else
 				panic("Continue statement not within a loop!");
-
-			ret = new JumpStmt(JumpStmt.jp_ctn);
 		}
 		else if (x.type == JumpStatement.BRK)
 		{
-			if (--loop_cnt < 0)
+			if (loop_cnt > 0)
+				ret = new JumpStmt(JumpStmt.jp_brk);
+			else
 				panic("Break statement not within a loop!");
-
-			ret = new JumpStmt(JumpStmt.jp_brk);
 		}
 		else if (x.type == JumpStatement.RET)
 		{
