@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 	double v5 = 2.718; // real
 
 	if (v4 >= v5)
-		printf("Hello!\n");
+		v5 = v4;
 
 	return 0;
 }

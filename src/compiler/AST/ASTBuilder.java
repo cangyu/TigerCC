@@ -528,10 +528,7 @@ public class ASTBuilder
 	{
 		CommaExp ce = parseExpression(x.cond, y);
 		Stmt stt = parseStatement(x.if_clause, y);
-		Stmt stf = null;
-		if (x.else_clause != null)
-			stf = parseStatement(x.else_clause, y);
-
+		Stmt stf = x.else_clause != null ? parseStatement(x.else_clause, y) : null;
 		return new SelectStmt(ce, stt, stf);
 	}
 
