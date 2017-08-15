@@ -5,6 +5,7 @@ public class FP extends Type
 	public FP()
 	{
 		super(8);
+		complete = true;
 	}
 
 	public static FP instance = new FP();

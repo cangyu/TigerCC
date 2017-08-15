@@ -30,6 +30,11 @@ public class Env
 		}
 		return null;
 	}
+	
+	public Enumeration<Symbol> keys() 
+	{
+		return tbl.keys();
+	}
 
 	public static void beginScope(Env e)
 	{

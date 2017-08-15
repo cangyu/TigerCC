@@ -14,6 +14,7 @@ public abstract class Record extends Type
 		super(0);
 		tag = null;
 		field = new LinkedHashMap<Symbol, Type>();
+		complete = false;
 	}
 
 	public void set_tag(String tg)

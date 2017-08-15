@@ -29,6 +29,7 @@ public class ASTBuilder
 		tenv = ast.tenv;
 		venv = ast.venv;
 
+		// build the structure of AST
 		for (ProgComp pc : p.elem)
 		{
 			if (pc instanceof Declaration)
@@ -45,6 +46,21 @@ public class ASTBuilder
 				panic("Internal Error.");
 		}
 
+		// check if there exists incomplete types
+		Enumeration<Symbol> e = tenv.keys();
+		while (e.hasMoreElements())
+		{
+			Symbol csym = e.nextElement();
+			Type ct = tenv.get(csym).actual;
+
+			// defensive check
+			if (ct == null || !(ct instanceof Record))
+				panic("Internal Error.");
+
+			if (!check_complete(ct))
+				panic("Incomplete type detected.");
+		}
+
 		return ast;
 	}
 
@@ -53,7 +69,7 @@ public class ASTBuilder
 		Type def_type = parseTypeSpecifier(x.ts, y);
 		if (x.elem.isEmpty())
 		{
-			if (def_type instanceof Void || def_type instanceof Char || def_type instanceof Int || def_type instanceof FP)
+			if (def_type instanceof Void || Type.numeric(def_type))
 				panic("Meaningless declaration of intrinsic type!");
 
 			if (def_type instanceof Record)
@@ -88,20 +104,20 @@ public class ASTBuilder
 					panic("Variable has incomplete type \'void\'.");
 
 				// Initializer
-				boolean hasInitialized = idr.initializer != null;
-				Init initializer = hasInitialized ? parseInitializer(idr.initializer, y) : null;
+				boolean hasInit = idr.initializer != null;
+				Init initializer = hasInit ? parseInitializer(idr.initializer, y) : null;
 
 				// Check if the initialization is proper
-				if (hasInitialized && !initializer.check_init(var_type))
+				if (hasInit && !initializer.check_init(var_type))
 					panic("Invalid initialization.");
 
 				// ASTNode
-				VarDec var_dec = new VarDec(var_type, var_name, initializer);
+				VarDec var_dec = new VarDec(var_type, var_name, initializer, offset);
+				offset += var_type.width;
 				z.add_dec(var_dec);
 
 				// Environment
 				Entry var_entry = new Entry(var_dec);
-				offset += var_type.width;
 				y.put(var_sym, var_entry);
 			}
 		}
@@ -122,20 +138,23 @@ public class ASTBuilder
 		Type ret_type = resolve_plain_type(def_type, x.pd);
 
 		// ASTNode
-		FuncDec func_dec = new FuncDec(ret_type, func_name);
+		FuncDec func_dec = new FuncDec(ret_type, func_name, offset);
 		func_dec.scope = new Env(y);
+
+		// handle parameters
 		for (PlainDeclaration pdn : x.pm)
 		{
 			String param_name = pdn.dlr.plain_declarator.name;
 			Symbol param_sym = Symbol.getSymbol(param_name);
 
-			// parameters
 			if (func_dec.scope.get(param_sym) == null)
 			{
 				Type param_type = parsePlainDeclaration(pdn, func_dec.scope);
 				func_dec.add_param(param_name, param_type);
 
-				VarDec param_dec = new VarDec(param_type, param_name, null);
+				VarDec param_dec = new VarDec(param_type, param_name, null, offset);
+				param_dec.hasAssigned = true;
+
 				Entry param_entry = new Entry(param_dec);
 				func_dec.scope.put(param_sym, param_entry);
 
@@ -145,6 +164,7 @@ public class ASTBuilder
 				panic("Variable \'" + param_name + "\' has been declared.");
 		}
 
+		// function body
 		CompStmt cpst = parseCompoundStmt(x.cst, func_dec.scope);
 		func_dec.set_body(cpst);
 		z.add_dec(func_dec);
@@ -157,7 +177,7 @@ public class ASTBuilder
 			Type ct = lit.previous().type;
 			func_type = new Function(ct, func_type);
 		}
-		Entry func_entry = new Entry(func_type, func_dec);
+		Entry func_entry = new Entry(func_dec, func_type);
 		y.put(func_sym, func_entry);
 	}
 
@@ -203,7 +223,6 @@ public class ASTBuilder
 			else
 			{
 				Struct ret = null;
-
 				if (tag != null) // type-specifier ::= 'struct' identifier { ... }
 				{
 					Symbol tag_sym = Symbol.getSymbol(tag);
@@ -340,6 +359,9 @@ public class ASTBuilder
 			if (val instanceof Integer)
 			{
 				int cnt = ((Integer) val).intValue();
+				if (cnt < 0)
+					panic("Dimension must be non-negative!");
+
 				ret = new Array(cnt, ret);
 			}
 			else
@@ -439,11 +461,11 @@ public class ASTBuilder
 				Type var_type = resolve_type(def_type, idr.declarator, y);
 				boolean hasInit = idr.initializer != null;
 				Init var_it = hasInit ? parseInitializer(idr.initializer, y) : null;
-				VarDec var_dec = new VarDec(var_type, var_name, var_it);
+				VarDec var_dec = new VarDec(var_type, var_name, var_it, offset);
+				offset += var_type.width;
 				ret.add_var(var_dec);
 				Entry var_entry = new Entry(Entry.entry_var, var_dec);
 				ret.scope.put(var_sym, var_entry);
-				offset += var_type.width;
 			}
 		}
 
@@ -1511,7 +1533,7 @@ public class ASTBuilder
 			else if (entry.type == Entry.entry_func)
 			{
 				FuncDec fd = (FuncDec) entry.mirror;
-				ret.decorate(fd.func_type, true, true, false);
+				ret.decorate(entry.actual, true, true, false);
 				ret.set_value(fd);
 			}
 			else if (entry.type == Entry.entry_type)
@@ -1555,6 +1577,35 @@ public class ASTBuilder
 			panic("Internal Error.");
 
 		return ret;
+	}
+
+	private boolean check_complete(Type tp)
+	{
+		if (tp.complete || !(tp instanceof Record))
+			return true;
+
+		// check if there's circular definition using BFS
+		if (tp.visited)
+		{
+			tp.complete = false;
+			return false;
+		}
+
+		tp.visited = true;
+		Record rd = (Record) tp;
+
+		for (Symbol csym : rd.field.keySet())
+		{
+			Type cem = rd.field.get(csym);
+			if (!check_complete(cem))
+			{
+				cem.complete = false;
+				return false;
+			}
+		}
+
+		tp.complete = true;
+		return true;
 	}
 
 	private void panic(String msg) throws Exception

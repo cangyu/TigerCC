@@ -5,8 +5,9 @@ public final class Int extends Type
 	public Int()
 	{
 		super(4);
+		complete = true;
 	}
-	
+
 	public static final Int instance = new Int();
 
 	@Override

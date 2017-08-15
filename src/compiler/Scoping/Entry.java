@@ -34,10 +34,10 @@ public class Entry
 		actual = tp;
 	}
 
-	public Entry(Function func, FuncDec fd)
+	public Entry(FuncDec fd, Function ft)
 	{
 		type = entry_func;
-		actual = func;
+		actual = ft;
 		mirror = fd;
 	}
 

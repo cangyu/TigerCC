@@ -12,6 +12,7 @@ public final class Function extends Type
 		super(1);
 		returnType = ret;
 		argumentType = arg;
+		complete = true;
 	}
 
 	public static Type get_ret_type(Function func)

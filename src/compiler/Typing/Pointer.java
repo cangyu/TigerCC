@@ -8,6 +8,7 @@ public class Pointer extends Type
 	{
 		super(4);
 		elem_type = t;
+		complete = true;
 	}
 
 	@Override

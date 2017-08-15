@@ -5,6 +5,7 @@ public final class Char extends Type
 	public Char()
 	{
 		super(1);
+		complete = true;
 	}
 
 	public static Char instance = new Char();

@@ -3,13 +3,14 @@ package compiler.Typing;
 public abstract class Type
 {
 	public int width;
-	public boolean complete;
+	public boolean complete, visited;
 
 	public Type(int n)
 	{
 		width = n;
+		visited = false;
 	}
-	
+
 	public abstract boolean equals(Type rhs);
 
 	public abstract boolean isConvertableTo(Type rhs);

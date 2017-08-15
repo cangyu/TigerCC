@@ -18,15 +18,15 @@ public class FuncDec extends Dec
 		}
 	}
 
-	public Type func_type;
 	public Type ret_type;
 	public String name;
 	public ArrayList<Parameter> param;
 	public Env scope;
 	public CompStmt body;
 
-	public FuncDec(Type t, String fn)
+	public FuncDec(Type t, String fn, int off)
 	{
+		super(off);
 		ret_type = t;
 		name = fn;
 		param = new ArrayList<Parameter>();

@@ -5,6 +5,7 @@ public final class Void extends Type
 	public Void()
 	{
 		super(1);
+		complete = true;
 	}
 
 	public static Void instance = new Void();

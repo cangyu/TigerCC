@@ -7,19 +7,19 @@ public class VarDec extends Dec
 	public Type type;
 	public String name;
 	public Init init;
-	public boolean hasAssigned;
+	public boolean hasAssigned; // for marking later assignment
 
 	// if the variable is an array
 	public boolean isConst;
 	public boolean isLval;
 	public Object val;
 
-	public VarDec(Type t, String vn, Init it)
+	public VarDec(Type t, String vn, Init it, int off)
 	{
+		super(off);
 		type = t;
 		name = vn;
 		init = it;
-		offset = 0;
 		hasAssigned = false;
 	}
 
