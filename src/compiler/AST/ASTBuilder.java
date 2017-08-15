@@ -696,17 +696,13 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (clit.hasNext())
 		{
-			// semantic check
-			// the operands to the logical OR operator need not be of the same type,
-			// but they must be of integral or pointer type.
-			if (!Type.integer(ret.left.type) || !(ret.left.type instanceof Pointer))
-				panic("Invalid operand.");
-
 			ret.op = BinaryExp.OR;
 			ret.right = parseLogicalAndExpr(clit.next(), y);
 
 			// semantic check
-			if (!Type.integer(ret.right.type) || !(ret.right.type instanceof Pointer))
+			// the operands to the logical OR operator need not be of the same type,
+			// but they must be of integral or pointer type.
+			if (!Type.logic(ret.left.type) || !Type.logic(ret.right.type))
 				panic("Invalid operand.");
 
 			// decorate
@@ -757,7 +753,7 @@ public class ASTBuilder
 			// semantic check
 			// the operands to the logical AND operator need not be of the same type,
 			// but they must be of integral or pointer type.
-			if (!Type.integer(ret.left.type) || !(ret.left.type instanceof Pointer))
+			if (!Type.logic(ret.left.type) || !Type.logic(ret.right.type))
 				panic("Invalid operand.");
 
 			// decorate
@@ -792,6 +788,8 @@ public class ASTBuilder
 		// first expression
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseExclusiveOrExpr(clit.next(), y);
+
+		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -838,6 +836,8 @@ public class ASTBuilder
 		// first expression
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseAndExpr(clit.next(), y);
+
+		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -884,6 +884,8 @@ public class ASTBuilder
 		// first expression
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseEqualityExpr(clit.next(), y);
+
+		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -938,15 +940,11 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (plit.hasNext())
 		{
-			// left semantic check
-			if (!Type.numeric(ret.left.type) || !(ret.left.type instanceof Pointer) || !(ret.left.type instanceof Array))
-				panic("Invalid operand.");
-
 			ret.op = plit.next().intValue();
 			ret.right = parseRelationalExpr(clit.next(), y);
 
-			// right semantic check
-			if (!Type.numeric(ret.right.type) || !(ret.right.type instanceof Pointer) || !(ret.right.type instanceof Array))
+			// semantic check
+			if (!Type.arith(ret.left.type) || !Type.arith(ret.right.type))
 				panic("Invalid operand.");
 
 			// decorate
@@ -991,15 +989,11 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (plit.hasNext())
 		{
-			// left semantic check
-			if (!Type.numeric(ret.left.type) || !(ret.left.type instanceof Pointer) || !(ret.left.type instanceof Array))
-				panic("Invalid operand.");
-
 			ret.op = plit.next().intValue();
 			ret.right = parseShiftExpr(clit.next(), y);
 
-			// right semantic check
-			if (!Type.numeric(ret.right.type) || !(ret.right.type instanceof Pointer) || !(ret.right.type instanceof Array))
+			// semantic check
+			if (!Type.arith(ret.left.type) || !Type.arith(ret.right.type))
 				panic("Invalid operand.");
 
 			// decorate
@@ -1085,10 +1079,6 @@ public class ASTBuilder
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseMultiplicativeExpr(clit.next(), y);
 
-		// semantic check
-		if (!Type.numeric(ret.left.type) && !(ret.left.type instanceof Pointer) && !(ret.left.type instanceof Array))
-			panic("Invalid operand");
-
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
@@ -1102,7 +1092,7 @@ public class ASTBuilder
 			ret.right = parseMultiplicativeExpr(clit.next(), y);
 
 			// semantic check
-			if (!Type.numeric(ret.right.type) && !(ret.right.type instanceof Pointer) && !(ret.right.type instanceof Array))
+			if (!Type.arith(ret.left.type) || !Type.arith(ret.right.type))
 				panic("Invalid operand");
 
 			// decorate
@@ -1136,10 +1126,6 @@ public class ASTBuilder
 		BinaryExp ret = new BinaryExp();
 		ret.left = parseCastExpr(clit.next(), y);
 
-		// semantic check
-		if (!Type.numeric(ret.left.type))
-			panic("Invalid operand.");
-
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
@@ -1153,7 +1139,7 @@ public class ASTBuilder
 			ret.right = parseCastExpr(clit.next(), y);
 
 			// semantic check
-			if (!Type.numeric(ret.right.type))
+			if (!Type.numeric(ret.left.type) || !Type.numeric(ret.right.type))
 				panic("Invalid operand.");
 
 			// decorate

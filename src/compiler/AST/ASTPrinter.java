@@ -4,8 +4,8 @@ import java.util.*;
 
 public class ASTPrinter implements ASTNodeVisitor
 {
-	final private static String leading = "--";
-	final private static String separator = "    |";
+	private static final String leading = "--";
+	private static final String separator = "    |";
 
 	/* prog */
 	public void visit(Prog x) throws Exception
@@ -1296,76 +1296,76 @@ public class ASTPrinter implements ASTNodeVisitor
 	public void visit(CastExp x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(UnaryExp x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(PostfixExp x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(PrimaryExp x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(ExprStmt x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(CompStmt x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(SelectStmt x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(IterStmt x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(VarDec x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(FuncDec x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void visit(Init x) throws Exception
 	{
 		// TODO Auto-generated method stub
-		
+
 	}
 }

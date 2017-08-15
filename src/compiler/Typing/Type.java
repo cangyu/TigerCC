@@ -25,6 +25,16 @@ public abstract class Type
 		return p instanceof Char || p instanceof Int;
 	}
 
+	public static boolean arith(Type p)
+	{
+		return Type.numeric(p) || p instanceof Pointer || p instanceof Array;
+	}
+
+	public static boolean logic(Type p)
+	{
+		return Type.integer(p) || p instanceof Pointer;
+	}
+
 	public static Type max(Type p1, Type p2)
 	{
 		if (!numeric(p1) || !numeric(p2))
