@@ -212,7 +212,7 @@ public class ASTBuilder
 		z.add_dec(func_dec);
 
 		// Environment
-		Function func_type = new Function(Void.instance, ret_type);
+		Function func_type = new Function(Void.getInstance(), ret_type);
 		ListIterator<Parameter> lit = func_dec.param.listIterator(func_dec.param.size());
 		while (lit.hasPrevious())
 		{
@@ -226,13 +226,13 @@ public class ASTBuilder
 	private Type parseTypeSpecifier(TypeSpecifier t, Env y) throws Exception
 	{
 		if (t.ts_type == TypeSpecifier.ts_void)
-			return Void.instance;
+			return Void.getInstance();
 		else if (t.ts_type == TypeSpecifier.ts_int)
 			return Int.getInstance();
 		else if (t.ts_type == TypeSpecifier.ts_char)
-			return Char.instance;
+			return Char.getInstance();
 		else if (t.ts_type == TypeSpecifier.ts_float || t.ts_type == TypeSpecifier.ts_double)
-			return FP.instance;
+			return FP.getInstance();
 		else if (t.ts_type == TypeSpecifier.ts_struct)
 		{
 			String tag = t.name;
@@ -1579,19 +1579,19 @@ public class ASTBuilder
 		}
 		else if (x.type == PrimaryExpr.character_constant)
 		{
-			ret.decorate(Char.instance, true, true, false);
+			ret.decorate(Char.getInstance(), true, true, false);
 			ret.set_value(x.elem);
 		}
 		else if (x.type == PrimaryExpr.real_constant)
 		{
-			ret.decorate(FP.instance, true, true, false);
+			ret.decorate(FP.getInstance(), true, true, false);
 			ret.set_value(x.elem);
 		}
 		else if (x.type == PrimaryExpr.string)
 		{
 			// As GCC doesn't consider "abcd"[2] as a constant,
 			// I set this expression's 'isCosnt' flag to false
-			ret.decorate(new Pointer(Char.instance), false, true, false);
+			ret.decorate(new Pointer(Char.getInstance()), false, true, false);
 			ret.set_value(x.elem);
 		}
 		else if (x.type == PrimaryExpr.paren_expr)

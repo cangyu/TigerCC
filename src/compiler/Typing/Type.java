@@ -41,11 +41,11 @@ public abstract class Type
 			return null;
 
 		if (p1 instanceof FP || p2 instanceof FP)
-			return FP.instance;
+			return FP.getInstance();
 		else if (p1 instanceof Int || p2 instanceof Int)
-			return Int.instance;
+			return Int.getInstance();
 		else
-			return Char.instance;
+			return Char.getInstance();
 	}
 	
 	public abstract String toString();

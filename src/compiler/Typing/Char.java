@@ -4,13 +4,21 @@ import compiler.Lexer.Token;
 
 public final class Char extends Type
 {
-	public Char()
+	private Char()
 	{
 		super(1);
 		complete = true;
 	}
 
-	public static Char instance = new Char();
+	private static Char instance;
+
+	public static Char getInstance()
+	{
+		if (instance == null)
+			instance = new Char();
+
+		return instance;
+	}
 
 	@Override
 	public boolean equals(Type rhs)
@@ -23,10 +31,10 @@ public final class Char extends Type
 	{
 		return rhs instanceof Char || rhs instanceof Int || rhs instanceof FP;
 	}
-	
-    @Override
-    public String toString()
-    {
-        return Token.raw_rep(Token.CHAR);
-    }
+
+	@Override
+	public String toString()
+	{
+		return Token.raw_rep(Token.CHAR);
+	}
 }

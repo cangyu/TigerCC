@@ -4,13 +4,21 @@ import compiler.Lexer.Token;
 
 public class FP extends Type
 {
-	public FP()
+	private FP()
 	{
 		super(4);
 		complete = true;
 	}
 
-	public static FP instance = new FP();
+	private static FP instance;
+
+	public static FP getInstance()
+	{
+		if (instance == null)
+			instance = new FP();
+
+		return instance;
+	}
 
 	@Override
 	public boolean equals(Type rhs)

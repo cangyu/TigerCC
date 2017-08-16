@@ -4,13 +4,21 @@ import compiler.Lexer.*;
 
 public final class Void extends Type
 {
-	public Void()
+	private Void()
 	{
 		super(1);
 		complete = true;
 	}
 
-	public static Void instance = new Void();
+	private static Void instance;
+
+	public static Void getInstance()
+	{
+		if (instance == null)
+			instance = new Void();
+
+		return instance;
+	}
 
 	@Override
 	public boolean equals(Type rhs)
@@ -24,9 +32,9 @@ public final class Void extends Type
 		return rhs instanceof Void;
 	}
 
-    @Override
-    public String toString()
-    {
-        return Token.raw_rep(Token.VOID);
-    }
+	@Override
+	public String toString()
+	{
+		return Token.raw_rep(Token.VOID);
+	}
 }
