@@ -1,6 +1,9 @@
 package compiler.AST;
 
 import java.util.*;
+import compiler.AST.FuncDec.Parameter;
+import compiler.Lexer.Token;
+import compiler.Typing.*;
 
 public class ASTPrinter implements ASTNodeVisitor
 {
@@ -8,11 +11,10 @@ public class ASTPrinter implements ASTNodeVisitor
 	private static final String separator = "    |".intern();
 
 	/* prog */
-
 	public void visit(Prog x) throws Exception
 	{
 		// construct sub-nodes
-		// and count lines
+		// count lines
 		int lc = 1;
 		ListIterator<Dec> lit = x.global_decl.listIterator();
 		while (lit.hasNext())
@@ -38,79 +40,85 @@ public class ASTPrinter implements ASTNodeVisitor
 		}
 	}
 
+	/* Dec */
 	public void visit(VarDec x) throws Exception
 	{
-		// construct components and count lines
-		int lc = 1;
+		// construct components
+		boolean hasInit = x.init != null;
+		if (hasInit)
+			x.init.accept(this);
 
-		decl.ts.accept(this);
-		lc += decl.ts.ast_rep.length;
-
-		if (decl.init_declarator_list != null)
-		{
-			decl.init_declarator_list.accept(this);
-			lc += decl.init_declarator_list.ast_rep.length;
-		}
+		// count lines
+		int lc = hasInit ? 2 : 1;
 
 		// initialize format
-		decl.ast_rep = new String[lc];
-		decl.ast_rep[0] = leading + "Declaration".intern();
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "Var: ".intern() + x.name + " -> ".intern() + x.type.toString();
 		for (int i = 1; i < lc; i++)
-			decl.ast_rep[i] = separator;
+			x.ast_rep[i] = separator;
 
 		// add contents
 		int cl = 1;
-		for (String str : decl.ts.ast_rep)
-			decl.ast_rep[cl++] += str;
-
-		if (decl.init_declarator_list != null)
-			for (String str : decl.init_declarator_list.ast_rep)
-				decl.ast_rep[cl++] += str;
+		if (hasInit)
+			x.ast_rep[cl++] += "InitVal: ".intern() + x.init.ast_rep[0];
 	}
 
 	public void visit(FuncDec x) throws Exception
 	{
 		// construct sub-nodes
-		func.ts.accept(this);
-
-		func.pd.accept(this);
-
-		if (func.pm != null)
-			func.pm.accept(this);
-
-		func.cst.accept(this);
-
-		// count length and initialize format
+		// count length
 		int lc = 1;
-		lc += func.ts.ast_rep.length;
-		lc += func.pd.ast_rep.length;
-		if (func.pm != null)
-			lc += func.pm.ast_rep.length;
-		lc += func.cst.ast_rep.length;
+		ListIterator<VarDec> vlit = x.var.listIterator();
+		ListIterator<Stmt> slit = x.st.listIterator();
+		while (vlit.hasNext())
+		{
+			VarDec cvd = vlit.next();
+			cvd.accept(this);
+			lc += cvd.ast_rep.length;
+		}
+		while (slit.hasNext())
+		{
+			Stmt cst = slit.next();
+			cst.accept(this);
+			lc += cst.ast_rep.length;
+		}
 
-		func.ast_rep = new String[lc];
-		func.ast_rep[0] = leading + "FuncDef";
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "Func: ".intern() + x.name + " (".intern();
+		if (x.param.isEmpty())
+			x.ast_rep[0] += Token.raw_rep(Token.VOID) + ")".intern();
+		else
+		{
+			ListIterator<Parameter> plit = x.param.listIterator();
+			x.ast_rep[0] += plit.next().type.toString();
+			while (plit.hasNext())
+				x.ast_rep[0] += ", ".intern() + plit.next().type.toString();
+		}
+		x.ast_rep[0] += ") -> ".intern() + x.ret_type.toString();
 
 		for (int i = 1; i < lc; i++)
-			func.ast_rep[i] = separator;
+			x.ast_rep[i] = separator;
 
 		// add nodes' content
 		int cl = 1;
-		for (String str : func.ts.ast_rep)
-			func.ast_rep[cl++] += str;
-
-		for (String str : func.pd.ast_rep)
-			func.ast_rep[cl++] += str;
-
-		if (func.pm != null)
-			for (String str : func.pm.ast_rep)
-				func.ast_rep[cl++] += str;
-
-		for (String str : func.cst.ast_rep)
-			func.ast_rep[cl++] += str;
+		vlit = x.var.listIterator();
+		slit = x.st.listIterator();
+		while (vlit.hasNext())
+		{
+			VarDec cvd = vlit.next();
+			for (String str : cvd.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
+		while (slit.hasNext())
+		{
+			Stmt cst = slit.next();
+			for (String str : cst.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
 	}
 
-	/* Expr */
+	/* Exp */
 	public void visit(CommaExp x) throws Exception
 	{
 		// construct nodes and count lines
@@ -164,86 +172,77 @@ public class ASTPrinter implements ASTNodeVisitor
 			x.ast_rep[cl++] += str;
 	}
 
-	public void visit(BinaryExp be) throws Exception
+	public void visit(BinaryExp x) throws Exception
 	{
 		// construct sub-nodes and count lines
 		int lc = 2;
-		be.left.accept(this);
-		lc += be.left.ast_rep.length;
-		be.right.accept(this);
-		lc += be.right.ast_rep.length;
+		x.left.accept(this);
+		lc += x.left.ast_rep.length;
+		x.right.accept(this);
+		lc += x.right.ast_rep.length;
 
 		// initialize format
-		be.ast_rep = new String[lc];
-		be.ast_rep[0] = leading + "BinaryExp".intern();
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "BinaryExp".intern();
 		for (int i = 1; i < lc; i++)
-			be.ast_rep[i] = separator;
+			x.ast_rep[i] = separator;
 
 		// add sub-nodes' content
 		int cl = 2;
-		be.ast_rep[1] += leading + "Operator: ".intern() + be.bin_symbol();
-		for (String str : be.left.ast_rep)
-			be.ast_rep[cl++] += str;
-		for (String str : be.right.ast_rep)
-			be.ast_rep[cl++] += str;
+		x.ast_rep[1] += leading + "Operator: ".intern() + x.bin_symbol();
+		for (String str : x.left.ast_rep)
+			x.ast_rep[cl++] += str;
+		for (String str : x.right.ast_rep)
+			x.ast_rep[cl++] += str;
 	}
 
-	public void visit(CastExp ce) throws Exception
+	public void visit(CastExp x) throws Exception
 	{
 		// construct sub-nodes
 		// and count lines
 		int lc = 2;
-		ce.exp.accept(this);
-		lc += ce.exp.ast_rep.length;
+		x.exp.accept(this);
+		lc += x.exp.ast_rep.length;
 
 		// initialize format
-		ce.ast_rep = new String[lc];
-		ce.ast_rep[0] = leading + "CastExp".intern();
-		for (int i = 2; i < lc; i++)
-			ce.ast_rep[i] = separator;
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "CastExp: ".intern();
+		ListIterator<Type> lit = x.tp_seq.listIterator();
+		while (lit.hasNext())
+			x.ast_rep[0] += "-> ".intern() + lit.next().toString();
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
 
 		// add sub-nodes' content
 		int cl = 1;
-		for (String str : ce.target_type.ast_rep)
-			ce.ast_rep[cl++] += str;
-		for (String str : ce.exp.ast_rep)
-			ce.ast_rep[cl++] += str;
+		for (String str : x.exp.ast_rep)
+			x.ast_rep[cl++] += str;
 	}
 
-	public void visit(UnaryExp ue) throws Exception
+	public void visit(UnaryExp x) throws Exception
 	{
 		// construct sub-nodes
-		// and count lines
+		// count lines
 		int lc = 2;
-		if (ue.exp != null)
+		if (x.exp != null)
 		{
-			ue.exp.accept(this);
-			lc += ue.exp.ast_rep.length;
-		}
-
-		if (ue.type_name != null)
-		{
-			ue.type_name.accept(this);
-			lc += ue.type_name.ast_rep.length;
+			x.exp.accept(this);
+			lc += x.exp.ast_rep.length;
 		}
 
 		// initialize format
-		ue.ast_rep = new String[lc];
-		ue.ast_rep[0] = leading + "UnaryExp".intern();
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "UnaryExp".intern();
 		for (int i = 1; i < lc; i++)
-			ue.ast_rep[i] = separator;
+			x.ast_rep[i] = separator;
 
 		// add sub-nodes' content
-		ue.ast_rep[1] += leading + "Operator: ".intern();
+		x.ast_rep[1] += leading + "Operator: ".intern();
 
 		int cl = 2;
-		if (ue.exp != null)
-			for (String str : ue.exp.ast_rep)
-				ue.ast_rep[cl++] += str;
-
-		if (ue.type_name != null)
-			for (String str : ue.type_name.ast_rep)
-				ue.ast_rep[cl++] += str;
+		if (x.exp != null)
+			for (String str : x.exp.ast_rep)
+				x.ast_rep[cl++] += str;
 	}
 
 	public void visit(PostfixExp pe) throws Exception
@@ -949,152 +948,6 @@ public class ASTPrinter implements ASTNodeVisitor
 				x.ast_rep[cl++] += str;
 
 		x.ast_rep[cl++] += leading + "Identifier: " + x.name;
-	}
-
-	public void visit(Arguments x) throws Exception
-	{
-		// construct components
-		Arguments y = x;
-		while (y != null)
-		{
-			y.head.accept(this);
-			y = y.next;
-		}
-
-		// count lines
-		int lc = 1;
-		y = x;
-		while (y != null)
-		{
-			lc += y.head.ast_rep.length;
-			y = y.next;
-		}
-
-		// initialize format
-		x.ast_rep = new String[lc];
-		x.ast_rep[0] = leading + "ArgumentList";
-		for (int i = 1; i < lc; i++)
-			x.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-		y = x;
-		while (y != null)
-		{
-			for (String str : y.head.ast_rep)
-				x.ast_rep[cl++] += str;
-
-			y = y.next;
-		}
-	}
-
-	public void visit(ParameterList x) throws Exception
-	{
-		// construct components
-		ParameterList y = x;
-		while (y != null)
-		{
-			y.head.accept(this);
-			y = y.next;
-		}
-
-		// count lines
-		int lc = 1;
-		y = x;
-		while (y != null)
-		{
-			lc += y.head.ast_rep.length;
-			y = y.next;
-		}
-
-		// initialize format
-		x.ast_rep = new String[lc];
-		x.ast_rep[0] = leading + "ParameterList";
-		for (int i = 1; i < lc; i++)
-			x.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-		y = x;
-		while (y != null)
-		{
-			for (String str : y.head.ast_rep)
-				x.ast_rep[cl++] += str;
-
-			y = y.next;
-		}
-	}
-
-	/* Type */
-	public void visit(TypeName x) throws Exception
-	{
-		// construct components and count lines
-		int lc = 1;
-		x.type_specifier.accept(this);
-		lc += x.type_specifier.ast_rep.length;
-
-		x.star_list.accept(this);
-		lc += x.star_list.ast_rep.length;
-
-		// initialize format
-		x.ast_rep = new String[lc];
-		x.ast_rep[0] = leading + "TypeName";
-		for (int i = 1; i < lc; i++)
-			x.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-		for (String str : x.type_specifier.ast_rep)
-			x.ast_rep[cl++] += str;
-
-		for (String str : x.star_list.ast_rep)
-			x.ast_rep[cl++] += str;
-	}
-
-	public void visit(TypeSpecifier ts) throws Exception
-	{
-		// construct sub-nodes
-		if (ts.comp != null)
-			ts.comp.accept(this);
-
-		// count lines
-		int lc = 2;
-		if (ts.comp != null)
-			lc += ts.comp.ast_rep.length;
-
-		// initialize format
-		ts.ast_rep = new String[lc];
-		ts.ast_rep[0] = leading + "TypeSpecifier";
-		for (int i = 1; i < lc; i++)
-			ts.ast_rep[i] = separator;
-
-		// add contents
-		ts.ast_rep[1] += leading + "Type: ";
-		switch (ts.type_detail)
-		{
-		case VOID:
-			ts.ast_rep[1] += "void";
-			break;
-		case INT:
-			ts.ast_rep[1] += "int";
-			break;
-		case CHAR:
-			ts.ast_rep[1] += "char";
-			break;
-		case STRUCT:
-			ts.ast_rep[1] += "struct ";
-			break;
-		case UNION:
-			ts.ast_rep[1] += "union ";
-			break;
-		}
-		if (ts.tag != null)
-			ts.ast_rep[1] += ts.tag;
-
-		int cl = 2;
-		if (ts.comp != null)
-			for (String str : ts.comp.ast_rep)
-				ts.ast_rep[cl++] += str;
 	}
 
 	@Override
