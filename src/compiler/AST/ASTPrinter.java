@@ -16,7 +16,7 @@ public class ASTPrinter implements ASTNodeVisitor
 		// construct sub-nodes
 		// count lines
 		int lc = 1;
-		ListIterator<Dec> lit = x.global_decl.listIterator();
+		ListIterator<Dec> lit = x.general_decl.listIterator();
 		while (lit.hasNext())
 			lit.next().accept(this);
 		while (lit.hasPrevious())

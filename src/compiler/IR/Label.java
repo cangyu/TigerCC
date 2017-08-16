@@ -13,7 +13,7 @@ public class Label extends Operand
 
 	public Label()
 	{
-		name = "l" + cnt;
+		name = "l".intern() + cnt;
 		++cnt;
 	}
 }

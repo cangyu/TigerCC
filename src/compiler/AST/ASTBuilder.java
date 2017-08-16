@@ -228,7 +228,7 @@ public class ASTBuilder
 		if (t.ts_type == TypeSpecifier.ts_void)
 			return Void.instance;
 		else if (t.ts_type == TypeSpecifier.ts_int)
-			return Int.instance;
+			return Int.getInstance();
 		else if (t.ts_type == TypeSpecifier.ts_char)
 			return Char.instance;
 		else if (t.ts_type == TypeSpecifier.ts_float || t.ts_type == TypeSpecifier.ts_double)
@@ -708,7 +708,7 @@ public class ASTBuilder
 
 			// actually the type of the expression should be of 'bool',
 			// but we use 'int' instead for simplicity
-			ret.decorate(Int.instance, icons, hinit, false);
+			ret.decorate(Int.getInstance(), icons, hinit, false);
 			if (ret.isConst)
 				ret.calc_const_val();
 
@@ -759,7 +759,7 @@ public class ASTBuilder
 
 			// actually the type of the expression should be of 'bool',
 			// but we use 'int' instead for simplicity
-			ret.decorate(Int.instance, icons, hinit, false);
+			ret.decorate(Int.getInstance(), icons, hinit, false);
 			if (ret.isConst)
 				ret.calc_const_val();
 
@@ -807,7 +807,7 @@ public class ASTBuilder
 
 			// actually the type of the expression should be of 'bool',
 			// but we use 'int' instead for simplicity
-			ret.decorate(Int.instance, icons, hinit, false);
+			ret.decorate(Int.getInstance(), icons, hinit, false);
 			if (ret.isConst)
 				ret.calc_const_val();
 
@@ -855,7 +855,7 @@ public class ASTBuilder
 
 			// actually the type of the expression should be of 'bool',
 			// but we use 'int' instead for simplicity
-			ret.decorate(Int.instance, icons, hinit, false);
+			ret.decorate(Int.getInstance(), icons, hinit, false);
 			if (ret.isConst)
 				ret.calc_const_val();
 
@@ -903,7 +903,7 @@ public class ASTBuilder
 
 			// actually the type of the expression should be of 'bool',
 			// but we use 'int' instead for simplicity
-			ret.decorate(Int.instance, icons, hinit, false);
+			ret.decorate(Int.getInstance(), icons, hinit, false);
 			if (ret.isConst)
 				ret.calc_const_val();
 
@@ -950,7 +950,7 @@ public class ASTBuilder
 
 			// actually the type of the expression should be of 'bool',
 			// but we use 'int' instead for simplicity
-			ret.decorate(Int.instance, icons, hinit, false);
+			ret.decorate(Int.getInstance(), icons, hinit, false);
 			if (ret.isConst)
 				ret.calc_const_val();
 
@@ -999,7 +999,7 @@ public class ASTBuilder
 
 			// actually the type of the expression should be of 'bool',
 			// but we use 'int' instead for simplicity
-			ret.decorate(Int.instance, icons, hinit, false);
+			ret.decorate(Int.getInstance(), icons, hinit, false);
 			if (ret.isConst)
 				ret.calc_const_val();
 
@@ -1334,7 +1334,7 @@ public class ASTBuilder
 			if (cur_type instanceof Pointer || Type.numeric(cur_type))
 			{
 				ret = new UnaryExp(UnaryExpr.not, ce, null);
-				ret.decorate(Int.instance, ce.isConst, ce.hasInitialized, false);
+				ret.decorate(Int.getInstance(), ce.isConst, ce.hasInitialized, false);
 				if (ret.isConst)
 				{
 					if (cur_type instanceof Int)
@@ -1378,7 +1378,7 @@ public class ASTBuilder
 				UnaryExp ue = parseUnaryExpr(uer, y);
 
 				ret = new UnaryExp(UnaryExpr.sizeof, ue, null);
-				ret.decorate(Int.instance, true, true, false);
+				ret.decorate(Int.getInstance(), true, true, false);
 				ret.set_value(ue.type.width);
 			}
 			else if (x.elem instanceof TypeName)
@@ -1387,7 +1387,7 @@ public class ASTBuilder
 				Type t = parseTypeName(tpn, y);
 
 				ret = new UnaryExp(UnaryExpr.sizeof, null, t);
-				ret.decorate(Int.instance, true, true, false);
+				ret.decorate(Int.getInstance(), true, true, false);
 				ret.set_value(t.width);
 			}
 			else
@@ -1574,7 +1574,7 @@ public class ASTBuilder
 		}
 		else if (x.type == PrimaryExpr.integer_constant)
 		{
-			ret.decorate(Int.instance, true, true, false);
+			ret.decorate(Int.getInstance(), true, true, false);
 			ret.set_value(x.elem);
 		}
 		else if (x.type == PrimaryExpr.character_constant)

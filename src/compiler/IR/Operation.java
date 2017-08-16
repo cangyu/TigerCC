@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class Operation extends Instruction
+public class Operation
 {
 	public Opcode op;
 	public OperandList src_list;

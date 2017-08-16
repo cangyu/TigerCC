@@ -6,7 +6,7 @@ public class FP extends Type
 {
 	public FP()
 	{
-		super(8);
+		super(4);
 		complete = true;
 	}
 
@@ -23,10 +23,10 @@ public class FP extends Type
 	{
 		return rhs instanceof FP || rhs instanceof Char || rhs instanceof Int;
 	}
-	
-    @Override
-    public String toString()
-    {
-        return Token.raw_rep(Token.DOUBLE);
-    }
+
+	@Override
+	public String toString()
+	{
+		return Token.raw_rep(Token.FLOAT);
+	}
 }

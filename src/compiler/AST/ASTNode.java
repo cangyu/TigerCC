@@ -1,26 +1,23 @@
 package compiler.AST;
 
+import java.util.LinkedList;
+import compiler.IR.Operand;
+
 public abstract class ASTNode
 {
 	public String[] ast_rep;
-	public String[] code_rep;
+	public LinkedList<Operand> operand_list;
 
 	public abstract void accept(ASTNodeVisitor v) throws Exception;
 
 	public String toString()
 	{
-		String ans = "";
+		String ret = "".intern();
 
 		if (ast_rep != null)
-		{
-			int n = ast_rep.length;
-			for (int i = 0; i < n; i++)
-			{
-				ans += ast_rep[i];
-				ans += "\n";
-			}
-		}
+			for (int i = 0; i < ast_rep.length; i++)
+				ret += ast_rep[i] + "\n".intern();
 
-		return ans;
+		return ret;
 	}
 }
