@@ -7,9 +7,9 @@ public class JumpStatement extends Statement
 	public static final int RET = 2;
 
 	public int type;
-	public Expression expr;
+	public Expr expr;
 
-	public JumpStatement(int jt, Expression e)
+	public JumpStatement(int jt, Expr e)
 	{
 		type = jt;
 		expr = e;

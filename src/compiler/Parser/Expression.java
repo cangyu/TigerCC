@@ -2,16 +2,16 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class Expression
+public class Expression extends Expr
 {
-	public LinkedList<AssignmentExpr> elem;
+	public LinkedList<Expr> elem;
 
 	public Expression()
 	{
-		elem = new LinkedList<AssignmentExpr>();
+		elem = new LinkedList<Expr>();
 	}
 
-	public void add_expr(AssignmentExpr x)
+	public void add_expr(Expr x)
 	{
 		elem.add(x);
 	}

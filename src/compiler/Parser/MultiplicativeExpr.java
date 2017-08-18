@@ -2,23 +2,23 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class MultiplicativeExpr
+public class MultiplicativeExpr extends Expr
 {
-	public LinkedList<CastExpr> expr_list;
+	public LinkedList<Expr> expr_list;
 	public LinkedList<Integer> op_list;
 
 	public MultiplicativeExpr()
 	{
-		expr_list = new LinkedList<CastExpr>();
+		expr_list = new LinkedList<Expr>();
 		op_list = new LinkedList<Integer>();
 	}
 
-	public void add_expr(CastExpr x)
+	public void add_expr(Expr x)
 	{
 		expr_list.add(x);
 	}
 
-	public void add_expr(CastExpr x, int op)
+	public void add_expr(Expr x, int op)
 	{
 		expr_list.add(x);
 		op_list.add(op);

@@ -2,16 +2,16 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class InclusiveOrExpr
+public class InclusiveOrExpr extends Expr
 {
-	public LinkedList<ExclusiveOrExpr> expr_list;
+	public LinkedList<Expr> expr_list;
 
 	public InclusiveOrExpr()
 	{
-		expr_list = new LinkedList<ExclusiveOrExpr>();
+		expr_list = new LinkedList<Expr>();
 	}
 
-	public void add_expr(ExclusiveOrExpr x)
+	public void add_expr(Expr x)
 	{
 		expr_list.add(x);
 	}

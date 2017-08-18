@@ -6,10 +6,10 @@ public class IterationStatement extends Statement
 	public static final int FOR = 0;
 
 	public int type;
-	public Expression init, judge, next;
+	public Expr init, judge, next;
 	public Statement stmt;
 
-	public IterationStatement(Expression cond, Statement st)
+	public IterationStatement(Expr cond, Statement st)
 	{
 		type = WHILE;
 		init = null;
@@ -18,7 +18,7 @@ public class IterationStatement extends Statement
 		stmt = st;
 	}
 
-	public IterationStatement(Expression t1, Expression t2, Expression t3, Statement st)
+	public IterationStatement(Expr t1, Expr t2, Expr t3, Statement st)
 	{
 		type = FOR;
 		init = t1;

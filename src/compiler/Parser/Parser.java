@@ -29,11 +29,6 @@ public class Parser
 		}
 	}
 
-	public boolean exit_status()
-	{
-		return start_pos.empty();
-	}
-
 	private void advance()
 	{
 		++look;
@@ -41,7 +36,12 @@ public class Parser
 
 	private boolean match(int t)
 	{
-		return token_buf.get(look).tag == t;
+		return peek().tag == t;
+	}
+
+	private Token peek()
+	{
+		return token_buf.get(look);
 	}
 
 	public Program parse()
@@ -310,7 +310,7 @@ public class Parser
 		}
 		else
 		{
-			AssignmentExpr ae = assignment_expr();
+			Expr ae = assignment_expr();
 			if (ae == null)
 			{
 				look = start_pos.pop();
@@ -588,7 +588,7 @@ public class Parser
 		while (match(Token.LMPAREN))
 		{
 			advance();
-			ConstantExpr e = const_expr();
+			Expr e = const_expr();
 			if (e == null)
 			{
 				look = start_pos.pop();
@@ -728,7 +728,7 @@ public class Parser
 		}
 		else
 		{
-			Expression x = expression();
+			Expr x = expression();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -827,7 +827,7 @@ public class Parser
 			return null;
 		}
 
-		Expression cond = expression();
+		Expr cond = expression();
 		if (cond == null)
 		{
 			look = start_pos.pop();
@@ -890,7 +890,7 @@ public class Parser
 				return null;
 			}
 
-			Expression x = expression();
+			Expr x = expression();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -931,7 +931,7 @@ public class Parser
 				return null;
 			}
 
-			Expression init = null, judge = null, next = null;
+			Expr init = null, judge = null, next = null;
 			if (!match(Token.SEMI)) // init-expr
 			{
 				init = expression();
@@ -1035,7 +1035,7 @@ public class Parser
 				ret = new JumpStatement(JumpStatement.RET, null); // check SEMI later
 			else
 			{
-				Expression x = expression();
+				Expr x = expression();
 				if (x == null)
 				{
 					look = start_pos.pop();
@@ -1067,7 +1067,7 @@ public class Parser
 		}
 	}
 
-	private Expression expression()
+	private Expr expression()
 	{
 		start_pos.push(look);
 		Expression ret = new Expression();
@@ -1075,7 +1075,7 @@ public class Parser
 
 		for (;;)
 		{
-			AssignmentExpr x = assignment_expr();
+			Expr x = assignment_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1095,10 +1095,13 @@ public class Parser
 				break;
 		}
 
-		return ret;
+		if (ret.elem.size() == 1)
+			return ret.elem.getFirst();
+		else
+			return ret;
 	}
 
-	private AssignmentExpr assignment_expr()
+	private Expr assignment_expr()
 	{
 		start_pos.push(look);
 		AssignmentExpr ret = new AssignmentExpr();
@@ -1106,20 +1109,19 @@ public class Parser
 		for (;;)
 		{
 			int loe_end = -1;
-			LogicalOrExpr loe = logical_or_expr();
+			Expr loe = logical_or_expr();
 			if (loe == null)
 			{
 				look = start_pos.pop();
 				panic("Unable to match the 1st expr when parsing assignment-expr.");
 				return null;
 			}
-			else
-			{
-				loe_end = look;
-				look = start_pos.pop(); // mark and backtrack to test another possibility
-			}
 
-			UnaryExpr ue = unary_expr();
+			// mark and backtrack to test another possibility
+			loe_end = look;
+			look = start_pos.pop();
+
+			Expr ue = unary_expr();
 			if (ue == null)
 			{
 				start_pos.pop();
@@ -1193,13 +1195,16 @@ public class Parser
 			}
 		}
 
-		return ret;
+		if (ret.lexpr_list.isEmpty())
+			return ret.rexpr;
+		else
+			return ret;
 	}
 
-	private ConstantExpr const_expr()
+	private Expr const_expr()
 	{
 		start_pos.push(look);
-		LogicalOrExpr x = logical_or_expr();
+		Expr x = logical_or_expr();
 		if (x == null)
 		{
 			look = start_pos.pop();
@@ -1209,11 +1214,11 @@ public class Parser
 		else
 		{
 			start_pos.pop();
-			return new ConstantExpr(x);
+			return x;
 		}
 	}
 
-	private LogicalOrExpr logical_or_expr()
+	private Expr logical_or_expr()
 	{
 		start_pos.push(look);
 		LogicalOrExpr ret = new LogicalOrExpr();
@@ -1221,7 +1226,7 @@ public class Parser
 
 		for (;;)
 		{
-			LogicalAndExpr x = logical_and_expr();
+			Expr x = logical_and_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1241,10 +1246,14 @@ public class Parser
 				break;
 		}
 
-		return ret;
+		// separate
+		if (ret.expr_list.size() == 1)
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private LogicalAndExpr logical_and_expr()
+	private Expr logical_and_expr()
 	{
 		start_pos.push(look);
 		LogicalAndExpr ret = new LogicalAndExpr();
@@ -1252,7 +1261,7 @@ public class Parser
 
 		for (;;)
 		{
-			InclusiveOrExpr x = inclusive_or_expr();
+			Expr x = inclusive_or_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1272,10 +1281,14 @@ public class Parser
 				break;
 		}
 
-		return ret;
+		// separate
+		if (ret.expr_list.size() == 1)
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private InclusiveOrExpr inclusive_or_expr()
+	private Expr inclusive_or_expr()
 	{
 		start_pos.push(look);
 		InclusiveOrExpr ret = new InclusiveOrExpr();
@@ -1283,7 +1296,7 @@ public class Parser
 
 		for (;;)
 		{
-			ExclusiveOrExpr x = exclusive_or_expr();
+			Expr x = exclusive_or_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1303,10 +1316,14 @@ public class Parser
 				break;
 		}
 
-		return ret;
+		// separate
+		if (ret.expr_list.size() == 1)
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private ExclusiveOrExpr exclusive_or_expr()
+	private Expr exclusive_or_expr()
 	{
 		start_pos.push(look);
 		ExclusiveOrExpr ret = new ExclusiveOrExpr();
@@ -1314,7 +1331,7 @@ public class Parser
 
 		for (;;)
 		{
-			AndExpr x = and_expr();
+			Expr x = and_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1334,10 +1351,14 @@ public class Parser
 				break;
 		}
 
-		return ret;
+		// separate
+		if (ret.expr_list.size() == 1)
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private AndExpr and_expr()
+	private Expr and_expr()
 	{
 		start_pos.push(look);
 		AndExpr ret = new AndExpr();
@@ -1345,7 +1366,7 @@ public class Parser
 
 		for (;;)
 		{
-			EqualityExpr x = equality_expr();
+			Expr x = equality_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1365,10 +1386,14 @@ public class Parser
 				break;
 		}
 
-		return ret;
+		// separate
+		if (ret.expr_list.size() == 1)
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private EqualityExpr equality_expr()
+	private Expr equality_expr()
 	{
 		start_pos.push(look);
 		EqualityExpr ret = new EqualityExpr();
@@ -1376,7 +1401,7 @@ public class Parser
 
 		for (;;)
 		{
-			RelationalExpr x = relational_expr();
+			Expr x = relational_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1405,10 +1430,14 @@ public class Parser
 			}
 		}
 
-		return ret;
+		// separate
+		if (ret.op_list.isEmpty())
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private RelationalExpr relational_expr()
+	private Expr relational_expr()
 	{
 		start_pos.push(look);
 		RelationalExpr ret = new RelationalExpr();
@@ -1416,7 +1445,7 @@ public class Parser
 
 		for (;;)
 		{
-			ShiftExpr x = shift_expr();
+			Expr x = shift_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1455,10 +1484,14 @@ public class Parser
 			}
 		}
 
-		return ret;
+		// separate
+		if (ret.op_list.isEmpty())
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private ShiftExpr shift_expr()
+	private Expr shift_expr()
 	{
 		start_pos.push(look);
 		ShiftExpr ret = new ShiftExpr();
@@ -1466,7 +1499,7 @@ public class Parser
 
 		for (;;)
 		{
-			AdditiveExpr x = additive_expr();
+			Expr x = additive_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1495,10 +1528,14 @@ public class Parser
 			}
 		}
 
-		return ret;
+		// separate
+		if (ret.op_list.isEmpty())
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private AdditiveExpr additive_expr()
+	private Expr additive_expr()
 	{
 		start_pos.push(look);
 		AdditiveExpr ret = new AdditiveExpr();
@@ -1506,7 +1543,7 @@ public class Parser
 
 		for (;;)
 		{
-			MultiplicativeExpr x = multiplicative_expr();
+			Expr x = multiplicative_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1535,10 +1572,14 @@ public class Parser
 			}
 		}
 
-		return ret;
+		// separate
+		if (ret.op_list.isEmpty())
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private MultiplicativeExpr multiplicative_expr()
+	private Expr multiplicative_expr()
 	{
 		start_pos.push(look);
 		MultiplicativeExpr ret = new MultiplicativeExpr();
@@ -1546,7 +1587,7 @@ public class Parser
 
 		for (;;)
 		{
-			CastExpr x = cast_expr();
+			Expr x = cast_expr();
 			++cnt;
 			if (x == null)
 			{
@@ -1580,16 +1621,20 @@ public class Parser
 			}
 		}
 
-		return ret;
+		// separate
+		if (ret.op_list.isEmpty())
+			return ret.expr_list.getFirst();
+		else
+			return ret;
 	}
 
-	private CastExpr cast_expr()
+	private Expr cast_expr()
 	{
 		start_pos.push(look);
 		CastExpr ret = new CastExpr();
 		for (;;)
 		{
-			UnaryExpr ue = unary_expr();
+			Expr ue = unary_expr();
 			if (ue == null)
 			{
 				look = start_pos.pop(); // backtrack
@@ -1631,7 +1676,11 @@ public class Parser
 			}
 		}
 
-		return ret;
+		// separate different cases
+		if (ret.type_list.isEmpty())
+			return ret.expr;
+		else
+			return ret;
 	}
 
 	private TypeName type_name()
@@ -1657,14 +1706,14 @@ public class Parser
 		return new TypeName(x, cnt);
 	}
 
-	private UnaryExpr unary_expr()
+	private Expr unary_expr()
 	{
 		start_pos.push(look);
-		UnaryExpr ret = null;
+
 		if (match(Token.BIT_AND))
 		{
 			advance();
-			CastExpr x = cast_expr();
+			Expr x = cast_expr();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -1674,13 +1723,13 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				ret = new UnaryExpr(UnaryExpr.address, x);
+				return new UnaryExpr(UnaryExpr.address, x);
 			}
 		}
 		else if (match(Token.TIMES))
 		{
 			advance();
-			CastExpr x = cast_expr();
+			Expr x = cast_expr();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -1690,13 +1739,13 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				ret = new UnaryExpr(UnaryExpr.dereference, x);
+				return new UnaryExpr(UnaryExpr.dereference, x);
 			}
 		}
 		else if (match(Token.PLUS))
 		{
 			advance();
-			CastExpr x = cast_expr();
+			Expr x = cast_expr();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -1706,13 +1755,13 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				ret = new UnaryExpr(UnaryExpr.positive, x);
+				return new UnaryExpr(UnaryExpr.positive, x);
 			}
 		}
 		else if (match(Token.MINUS))
 		{
 			advance();
-			CastExpr x = cast_expr();
+			Expr x = cast_expr();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -1722,13 +1771,13 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				ret = new UnaryExpr(UnaryExpr.negative, x);
+				return new UnaryExpr(UnaryExpr.negative, x);
 			}
 		}
 		else if (match(Token.BIT_NOT))
 		{
 			advance();
-			CastExpr x = cast_expr();
+			Expr x = cast_expr();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -1738,13 +1787,13 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				ret = new UnaryExpr(UnaryExpr.bit_not, x);
+				return new UnaryExpr(UnaryExpr.bit_not, x);
 			}
 		}
 		else if (match(Token.NOT))
 		{
 			advance();
-			CastExpr x = cast_expr();
+			Expr x = cast_expr();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -1754,13 +1803,13 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				ret = new UnaryExpr(UnaryExpr.not, x);
+				return new UnaryExpr(UnaryExpr.not, x);
 			}
 		}
 		else if (match(Token.INC))
 		{
 			advance();
-			UnaryExpr x = unary_expr();
+			Expr x = unary_expr();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -1770,13 +1819,13 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				ret = new UnaryExpr(UnaryExpr.inc, x);
+				return new UnaryExpr(UnaryExpr.inc, x);
 			}
 		}
 		else if (match(Token.DEC))
 		{
 			advance();
-			UnaryExpr x = unary_expr();
+			Expr x = unary_expr();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -1786,13 +1835,13 @@ public class Parser
 			else
 			{
 				start_pos.pop();
-				ret = new UnaryExpr(UnaryExpr.dec, x);
+				return new UnaryExpr(UnaryExpr.dec, x);
 			}
 		}
 		else if (match(Token.SIZEOF))
 		{
 			advance();
-			UnaryExpr ue = unary_expr();// firstly, try unary-expr ::= sizeof unary-expr
+			Expr ue = unary_expr();// firstly, try unary-expr ::= sizeof unary-expr
 			if (ue == null)
 				look = start_pos.pop(); // if fail, backtrack
 			else
@@ -1832,7 +1881,7 @@ public class Parser
 		}
 		else
 		{
-			PostfixExpr x = postfix_expr();
+			Expr x = postfix_expr();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -1840,15 +1889,14 @@ public class Parser
 				return null;
 			}
 			else
+			{
 				start_pos.pop();
-
-			ret = new UnaryExpr(UnaryExpr.postfix, x);
+				return x;
+			}
 		}
-
-		return ret;
 	}
 
-	private PostfixExpr postfix_expr()
+	private Expr postfix_expr()
 	{
 		start_pos.push(look);
 		PrimaryExpr pe = primary_expr();
@@ -1861,13 +1909,16 @@ public class Parser
 		else
 			start_pos.pop();
 
+		if (!PostfixExpr.has_postfix_heading(peek()))
+			return pe;
+
 		PostfixExpr ret = new PostfixExpr(pe);
 		for (;;)
 		{
 			if (match(Token.LMPAREN))
 			{
 				advance();
-				Expression x = expression();
+				Expr x = expression();
 				if (x == null)
 				{
 					look = start_pos.pop();
@@ -1898,29 +1949,15 @@ public class Parser
 				}
 				else
 				{
-					Expression arg = new Expression();// arguments
-					int cnt = 0;
-					for (;;)
+					Expr arg = expression();// arguments
+					if (arg == null)
 					{
-						AssignmentExpr x = assignment_expr();
-						++cnt;
-						if (x == null)
-						{
-							look = start_pos.pop();
-							panic("Unable to match the " + num2idx(cnt) + " asssignment-expr when parsing arguments.");
-							return null;
-						}
-						else
-						{
-							start_pos.pop();
-							arg.add_expr(x);
-						}
-
-						if (match(Token.COMMA))
-							advance();
-						else
-							break;
+						look = start_pos.pop();
+						panic("Unable to match the arguments when parsing postfix.");
+						return null;
 					}
+					else
+						start_pos.pop();
 
 					if (match(Token.RPAREN))
 					{
@@ -1939,7 +1976,7 @@ public class Parser
 				advance();
 				if (match(Token.ID))
 				{
-					String name = (String) token_buf.get(look).content;
+					String name = (String) peek().content;
 					advance();
 					ret.add_elem(PostfixExpr.dot, name);
 				}
@@ -1954,7 +1991,7 @@ public class Parser
 				advance();
 				if (match(Token.ID))
 				{
-					String name = (String) token_buf.get(look).content;
+					String name = (String) peek().content;
 					advance();
 					ret.add_elem(PostfixExpr.ptr, name);
 				}
@@ -1986,7 +2023,7 @@ public class Parser
 		start_pos.push(look);
 		if (match(Token.ID) || match(Token.CH) || match(Token.NUM) || match(Token.REAL) || match(Token.STR))
 		{
-			PrimaryExpr ret = new PrimaryExpr(token_buf.get(look));
+			PrimaryExpr ret = new PrimaryExpr(peek());
 			advance();
 			return ret;
 		}
@@ -2000,7 +2037,7 @@ public class Parser
 				return null;
 			}
 
-			Expression x = expression();
+			Expr x = expression();
 			if (x == null)
 			{
 				look = start_pos.pop();
@@ -2044,6 +2081,11 @@ public class Parser
 
 	private void panic_missing(Character ch)
 	{
-		panic("Missing \'" + ch + "\'.");
+		panic("Missing \'".intern() + ch + "\'.");
+	}
+
+	public boolean exit_status()
+	{
+		return start_pos.empty();
 	}
 }

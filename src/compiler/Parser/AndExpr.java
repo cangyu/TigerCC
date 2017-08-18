@@ -2,16 +2,16 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class AndExpr
+public class AndExpr extends Expr
 {
-	public LinkedList<EqualityExpr> expr_list;
+	public LinkedList<Expr> expr_list;
 
 	public AndExpr()
 	{
-		expr_list = new LinkedList<EqualityExpr>();
+		expr_list = new LinkedList<Expr>();
 	}
 
-	public void add_expr(EqualityExpr x)
+	public void add_expr(Expr x)
 	{
 		expr_list.add(x);
 	}

@@ -8,10 +8,10 @@ public class Initializer
 	public static final int list = 1;
 
 	public int type;
-	public AssignmentExpr ae;
+	public Expr ae;
 	public LinkedList<Initializer> comp;
 
-	public Initializer(AssignmentExpr x)
+	public Initializer(Expr x)
 	{
 		type = assign;
 		ae = x;

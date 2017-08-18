@@ -2,7 +2,7 @@ package compiler.Parser;
 
 import java.util.*;
 
-public class AssignmentExpr
+public class AssignmentExpr extends Expr
 {
 	public static final int ASSIGN = 0;
 	public static final int MUL_ASSIGN = 1;
@@ -17,22 +17,22 @@ public class AssignmentExpr
 	public static final int OR_ASSIGN = 10;
 
 	public LinkedList<Integer> op_list;
-	public LinkedList<UnaryExpr> lexpr_list;
-	public LogicalOrExpr rexpr;
+	public LinkedList<Expr> lexpr_list;
+	public Expr rexpr;
 
 	public AssignmentExpr()
 	{
 		op_list = new LinkedList<Integer>();
-		lexpr_list = new LinkedList<UnaryExpr>();
+		lexpr_list = new LinkedList<Expr>();
 	}
 
-	public void add_left_expr(UnaryExpr x, int op)
+	public void add_left_expr(Expr x, int op)
 	{
 		lexpr_list.add(x);
 		op_list.add(new Integer(op));
 	}
 
-	public void set_origin(LogicalOrExpr y)
+	public void set_origin(Expr y)
 	{
 		rexpr = y;
 	}

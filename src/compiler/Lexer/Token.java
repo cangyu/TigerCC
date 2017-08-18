@@ -99,7 +99,7 @@ public class Token
 	public static Token from_real(double x, int l, int c)
 	{
 		Token ret = new Token(REAL, l, c);
-		ret.content = new Double(x);
+		ret.content = new Float(x);
 		return ret;
 	}
 

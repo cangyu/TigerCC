@@ -2,16 +2,16 @@ package compiler.Parser;
 
 import java.util.LinkedList;
 
-public class LogicalAndExpr
+public class LogicalAndExpr extends Expr
 {
-	public LinkedList<InclusiveOrExpr> expr_list;
+	public LinkedList<Expr> expr_list;
 
 	public LogicalAndExpr()
 	{
-		expr_list = new LinkedList<InclusiveOrExpr>();
+		expr_list = new LinkedList<Expr>();
 	}
 
-	public void add_expr(InclusiveOrExpr x)
+	public void add_expr(Expr x)
 	{
 		expr_list.add(x);
 	}

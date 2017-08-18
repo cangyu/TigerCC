@@ -2,7 +2,7 @@ package compiler.Parser;
 
 import compiler.Lexer.*;
 
-public class PrimaryExpr
+public class PrimaryExpr extends Expr
 {
 	public static final int identifier = 0;
 	public static final int integer_constant = 1;
@@ -14,47 +14,43 @@ public class PrimaryExpr
 	public int type;
 	public Object elem;
 
-	public PrimaryExpr(Object e)
+	public PrimaryExpr(Token tk)
 	{
-		if (e instanceof Token)
+		if (tk.tag == Token.ID)
 		{
-			Token tk = (Token) e;
-			if (tk.tag == Token.ID)
-			{
-				type = identifier;
-				elem = tk.content;
-			}
-			else if (tk.tag == Token.CH)
-			{
-				type = character_constant;
-				elem = tk.content;
-			}
-			else if (tk.tag == Token.NUM)
-			{
-				type = integer_constant;
-				elem = tk.content;
-			}
-			else if (tk.tag == Token.REAL)
-			{
-				type = real_constant;
-				elem = tk.content;
-			}
-			else if (tk.tag == Token.STR)
-			{
-				type = string;
-				elem = tk.content;
-			}
-			else
-			{
-				type = -1;
-				elem = null;
-			}
+			type = identifier;
+			elem = tk.content; // String
+		}
+		else if (tk.tag == Token.CH)
+		{
+			type = character_constant;
+			elem = tk.content; // Character
+		}
+		else if (tk.tag == Token.NUM)
+		{
+			type = integer_constant;
+			elem = tk.content; // Integer
+		}
+		else if (tk.tag == Token.REAL)
+		{
+			type = real_constant;
+			elem = tk.content; // Float
+		}
+		else if (tk.tag == Token.STR)
+		{
+			type = string;
+			elem = tk.content; // String
 		}
 		else
 		{
-			// primary-expression ::= '(' expression ')'
-			type = paren_expr;
-			elem = e;
+			type = -1;
+			elem = null;
 		}
+	}
+
+	public PrimaryExpr(Expr e) // primary-expression ::= '(' expression ')'
+	{
+		type = paren_expr;
+		elem = e;
 	}
 }

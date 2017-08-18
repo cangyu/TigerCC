@@ -2,9 +2,9 @@ package compiler.Parser;
 
 public class ExpressionStatement extends Statement
 {
-	public Expression elem;
+	public Expr elem;
 
-	public ExpressionStatement(Expression x)
+	public ExpressionStatement(Expr x)
 	{
 		elem = x;
 	}
