@@ -5,10 +5,10 @@ import compiler.Typing.Type;
 
 public class CastExp extends Exp
 {
-	public UnaryExp exp;
+	public Exp exp;
 	public LinkedList<Type> tp_seq; // here the order is reversed
 
-	public CastExp(UnaryExp e)
+	public CastExp(Exp e)
 	{
 		super();
 		exp = e;

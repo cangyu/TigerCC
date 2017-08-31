@@ -2,6 +2,7 @@ package compiler.AST;
 
 import java.util.*;
 import compiler.AST.FuncDec.Parameter;
+import compiler.AST.PostfixExp.PostfixElem;
 import compiler.Lexer.Token;
 import compiler.Typing.*;
 
@@ -115,253 +116,6 @@ public class ASTPrinter implements ASTNodeVisitor
 			Stmt cst = slit.next();
 			for (String str : cst.ast_rep)
 				x.ast_rep[cl++] += str;
-		}
-	}
-
-	/* Exp */
-	public void visit(CommaExp x) throws Exception
-	{
-		// construct nodes and count lines
-		int lc = 1;
-		ListIterator<AssignExp> lit = x.exp.listIterator();
-		while (lit.hasNext())
-		{
-			AssignExp ae = lit.next();
-			ae.accept(this);
-			lc += ae.ast_rep.length;
-		}
-
-		// initialize format
-		x.ast_rep = new String[lc];
-		x.ast_rep[0] = leading + "Expression".intern();
-		for (int i = 1; i < lc; i++)
-			x.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-		lit = x.exp.listIterator();
-		while (lit.hasNext())
-		{
-			AssignExp ae = lit.next();
-			for (String str : ae.ast_rep)
-				x.ast_rep[cl++] += str;
-		}
-	}
-
-	public void visit(AssignExp x) throws Exception
-	{
-		// construct nodes and count lines
-		int lc = 2;
-		x.left.accept(this);
-		lc += x.left.ast_rep.length;
-		x.right.accept(this);
-		lc += x.right.ast_rep.length;
-
-		// initialize format
-		x.ast_rep = new String[lc];
-		x.ast_rep[0] = leading + "AssignExp";
-		for (int i = 1; i < lc; i++)
-			x.ast_rep[i] = separator;
-
-		// add sub-nodes' content
-		int cl = 2;
-		x.ast_rep[1] += leading + "Operator: ".intern() + x.assign_symbol();
-		for (String str : x.left.ast_rep)
-			x.ast_rep[cl++] += str;
-		for (String str : x.right.ast_rep)
-			x.ast_rep[cl++] += str;
-	}
-
-	public void visit(BinaryExp x) throws Exception
-	{
-		// construct sub-nodes and count lines
-		int lc = 2;
-		x.left.accept(this);
-		lc += x.left.ast_rep.length;
-		x.right.accept(this);
-		lc += x.right.ast_rep.length;
-
-		// initialize format
-		x.ast_rep = new String[lc];
-		x.ast_rep[0] = leading + "BinaryExp".intern();
-		for (int i = 1; i < lc; i++)
-			x.ast_rep[i] = separator;
-
-		// add sub-nodes' content
-		int cl = 2;
-		x.ast_rep[1] += leading + "Operator: ".intern() + x.bin_symbol();
-		for (String str : x.left.ast_rep)
-			x.ast_rep[cl++] += str;
-		for (String str : x.right.ast_rep)
-			x.ast_rep[cl++] += str;
-	}
-
-	public void visit(CastExp x) throws Exception
-	{
-		// construct sub-nodes
-		// and count lines
-		int lc = 2;
-		x.exp.accept(this);
-		lc += x.exp.ast_rep.length;
-
-		// initialize format
-		x.ast_rep = new String[lc];
-		x.ast_rep[0] = leading + "CastExp: ".intern();
-		ListIterator<Type> lit = x.tp_seq.listIterator();
-		while (lit.hasNext())
-			x.ast_rep[0] += "-> ".intern() + lit.next().toString();
-		for (int i = 1; i < lc; i++)
-			x.ast_rep[i] = separator;
-
-		// add sub-nodes' content
-		int cl = 1;
-		for (String str : x.exp.ast_rep)
-			x.ast_rep[cl++] += str;
-	}
-
-	public void visit(UnaryExp x) throws Exception
-	{
-		// construct sub-nodes
-		// count lines
-		int lc = 2;
-		if (x.exp != null)
-		{
-			x.exp.accept(this);
-			lc += x.exp.ast_rep.length;
-		}
-
-		// initialize format
-		x.ast_rep = new String[lc];
-		x.ast_rep[0] = leading + "UnaryExp".intern();
-		for (int i = 1; i < lc; i++)
-			x.ast_rep[i] = separator;
-
-		// add sub-nodes' content
-		x.ast_rep[1] += leading + "Operator: ".intern();
-
-		int cl = 2;
-		if (x.exp != null)
-			for (String str : x.exp.ast_rep)
-				x.ast_rep[cl++] += str;
-	}
-
-	public void visit(PostfixExp pe) throws Exception
-	{
-		// construct and count
-		int lc = 2;
-		pe.expr.accept(this);
-		lc += pe.expr.ast_rep.length;
-
-		if (pe.param != null)
-		{
-			if (pe.op == PostfixExpr.Operator.MPAREN)
-			{
-				Expression es = (Expression) pe.param;
-				es.accept(this);
-				lc += es.ast_rep.length;
-			}
-			else if (pe.op == PostfixExpr.Operator.PAREN)
-			{
-				Arguments al = (Arguments) pe.param;
-				al.accept(this);
-				lc += al.ast_rep.length;
-			}
-			else
-				lc += 1;
-		}
-
-		// initialize format
-		pe.ast_rep = new String[lc];
-		pe.ast_rep[0] = leading + "PostfixExp".intern();
-		for (int i = 1; i < lc; i++)
-			pe.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-		for (String str : pe.expr.ast_rep)
-			pe.ast_rep[cl++] += str;
-
-		pe.ast_rep[cl] += leading + "Operator: ";
-		switch (pe.op)
-		{
-		case MPAREN:
-			pe.ast_rep[cl++] += "[]";
-			break;
-		case PAREN:
-			pe.ast_rep[cl++] += "()";
-			break;
-		case DOT:
-			pe.ast_rep[cl++] += ".";
-			break;
-		case PTR:
-			pe.ast_rep[cl++] += "->";
-			break;
-		case INC:
-			pe.ast_rep[cl++] += "++";
-			break;
-		case DEC:
-			pe.ast_rep[1] += "--";
-			break;
-		default:
-			pe.ast_rep[1] += "";
-			break;
-		}
-
-		if (pe.param != null)
-		{
-			if (pe.op == PostfixExpr.Operator.MPAREN)
-			{
-				Expression es = (Expression) pe.param;
-				for (String str : es.ast_rep)
-					pe.ast_rep[cl++] += str;
-			}
-			else if (pe.op == PostfixExpr.Operator.PAREN)
-			{
-				Arguments al = (Arguments) pe.param;
-				for (String str : al.ast_rep)
-					pe.ast_rep[cl++] += str;
-			}
-			else
-			{
-				String str = (String) pe.param;
-				pe.ast_rep[cl] += leading + "Identifier: ";
-				pe.ast_rep[cl++] += str;
-			}
-		}
-	}
-
-	public void visit(PrimaryExp pe) throws Exception
-	{
-		switch (pe.elem_type)
-		{
-		case ID:
-			pe.ast_rep = new String[1];
-			pe.ast_rep[0] = leading;
-			pe.ast_rep[0] += "Identifier: " + (String) pe.elem;
-			break;
-		case STRING:
-			pe.ast_rep = new String[1];
-			pe.ast_rep[0] = leading;
-			pe.ast_rep[0] += "String: " + '\"' + (String) pe.elem + '\"';
-			break;
-		case INT:
-			pe.ast_rep = new String[1];
-			pe.ast_rep[0] = leading;
-			pe.ast_rep[0] += "Integer-Constant: " + ((Integer) pe.elem).toString();
-			break;
-		case CHAR:
-			pe.ast_rep = new String[1];
-			pe.ast_rep[0] = leading;
-			pe.ast_rep[0] += "Character-Constant: " + '\'' + (Character) pe.elem + '\'';
-			break;
-		case PAREN:
-			Expression e = (Expression) pe.elem;
-			e.accept(this);
-			pe.ast_rep = new String[e.ast_rep.length];
-			int cl = 0;
-			for (String str : e.ast_rep)
-				pe.ast_rep[cl++] = str;
-			break;
 		}
 	}
 
@@ -951,37 +705,320 @@ public class ASTPrinter implements ASTNodeVisitor
 	}
 
 	@Override
+	public void visit(Init x) throws Exception
+	{
+
+	}
+
+	@Override
 	public void visit(ExprStmt x) throws Exception
 	{
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void visit(CompStmt x) throws Exception
 	{
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void visit(SelectStmt x) throws Exception
 	{
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void visit(IterStmt x) throws Exception
 	{
-		// TODO Auto-generated method stub
 
 	}
 
-	@Override
-	public void visit(Init x) throws Exception
+	/* Exp */
+	public void visit(CommaExp x) throws Exception
 	{
-		// TODO Auto-generated method stub
+		// construct nodes and count lines
+		int lc = 1;
+		ListIterator<Exp> lit = x.exp.listIterator();
+		while (lit.hasNext())
+		{
+			Exp ae = lit.next();
+			ae.accept(this);
+			lc += ae.ast_rep.length;
+		}
 
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "Expression".intern();
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		// add contents
+		int cl = 1;
+		lit = x.exp.listIterator();
+		while (lit.hasNext())
+		{
+			Exp ae = lit.next();
+			for (String str : ae.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
+	}
+
+	@Override
+	public void visit(AssignExp x) throws Exception
+	{
+		// construct nodes and count lines
+		int lc = 1;
+		x.left.accept(this);
+		lc += x.left.ast_rep.length;
+		x.right.accept(this);
+		lc += x.right.ast_rep.length;
+
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "AssignExp: ".intern() + x.get_op();
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		// add sub-nodes' content
+		int cl = 1;
+		for (String str : x.left.ast_rep)
+			x.ast_rep[cl++] += str;
+		for (String str : x.right.ast_rep)
+			x.ast_rep[cl++] += str;
+	}
+
+	@Override
+	public void visit(BinaryExp x) throws Exception
+	{
+		// construct sub-nodes and count lines
+		int lc = 1;
+		x.left.accept(this);
+		lc += x.left.ast_rep.length;
+		x.right.accept(this);
+		lc += x.right.ast_rep.length;
+
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "BinaryExp: ".intern() + x.get_op();
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		// add sub-nodes' content
+		int cl = 1;
+		for (String str : x.left.ast_rep)
+			x.ast_rep[cl++] += str;
+		for (String str : x.right.ast_rep)
+			x.ast_rep[cl++] += str;
+	}
+
+	public void visit(CastExp x) throws Exception
+	{
+		// construct sub-nodes
+		// and count lines
+		int lc = 2;
+		x.exp.accept(this);
+		lc += x.exp.ast_rep.length;
+
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "CastExp: ".intern();
+
+		ListIterator<Type> lit = x.tp_seq.listIterator();
+		while (lit.hasNext())
+			x.ast_rep[0] += " -> ".intern() + lit.next().toString();
+
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		// add sub-nodes' content
+		int cl = 1;
+		for (String str : x.exp.ast_rep)
+			x.ast_rep[cl++] += str;
+	}
+
+	public void visit(UnaryExp x) throws Exception
+	{
+		// construct sub-nodes
+		// count lines
+		int lc = 2;
+		if (x.exp != null)
+		{
+			x.exp.accept(this);
+			lc += x.exp.ast_rep.length;
+		}
+		else
+			lc += 1;
+
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "UnaryExp".intern();
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		// add sub-nodes' content
+		switch (x.category)
+		{
+		case UnaryExp.address_of:
+			x.ast_rep[1] += leading + "Address of ";
+			break;
+		case UnaryExp.indirection:
+			x.ast_rep[1] += leading + "Indirection ";
+			break;
+		case UnaryExp.unary_plus:
+			x.ast_rep[1] += leading + "Unary plus ";
+			break;
+		case UnaryExp.unary_minus:
+			x.ast_rep[1] += leading + "Unary minus ";
+			break;
+		case UnaryExp.bitwise_not:
+			x.ast_rep[1] += leading + "Bitwise not ";
+			break;
+		case UnaryExp.logical_negation:
+			x.ast_rep[1] += leading + "Logical negation ";
+			break;
+		case UnaryExp.inc:
+			x.ast_rep[1] += leading + "Prefix inc ";
+			break;
+		case UnaryExp.dec:
+			x.ast_rep[1] += leading + "Prefix dec ";
+			break;
+		case UnaryExp.size_of:
+			x.ast_rep[1] += leading + "Size_of ";
+			break;
+		default:
+			break;
+		}
+
+		int cl = 2;
+		if (x.exp != null)
+			for (String str : x.exp.ast_rep)
+				x.ast_rep[cl++] += str;
+		else
+			x.ast_rep[cl++] += x.stp.toString();
+	}
+
+	public void visit(PostfixExp x) throws Exception
+	{
+		// construct and count
+		int lc = 1;
+		x.pe.accept(this);
+		lc += x.pe.ast_rep.length;
+
+		ListIterator<PostfixElem> lit = x.elem.listIterator();
+		while (lit.hasNext())
+		{
+			PostfixElem pfx = lit.next();
+			switch (pfx.category)
+			{
+			case PostfixExp.PostfixElem.post_idx:
+				pfx.exp.accept(this);
+				lc += pfx.exp.ast_rep.length + 1;
+				break;
+			case PostfixExp.PostfixElem.post_call:
+				lc += 1;
+				if (pfx.exp != null)
+				{
+					pfx.exp.accept(this);
+					lc += pfx.exp.ast_rep.length;
+				}
+				break;
+			case PostfixExp.PostfixElem.post_arrow:
+			case PostfixExp.PostfixElem.post_dot:
+				lc += 2;
+				break;
+			case PostfixExp.PostfixElem.post_inc:
+			case PostfixExp.PostfixElem.post_dec:
+				lc += 1;
+				break;
+			default:
+				break;
+			}
+		}
+
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "PostfixExp".intern();
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		// add contents
+		int cl = 1;
+		for (String str : x.pe.ast_rep)
+			x.ast_rep[cl++] += str;
+
+		lit = x.elem.listIterator();
+		while (lit.hasNext())
+		{
+			PostfixElem pfx = lit.next();
+			switch (pfx.category)
+			{
+			case PostfixExp.PostfixElem.post_idx:
+				x.ast_rep[cl++] += "Index";
+				for (String str : pfx.exp.ast_rep)
+					x.ast_rep[cl++] += str;
+				break;
+			case PostfixExp.PostfixElem.post_call:
+				x.ast_rep[cl++] += pfx.exp == null ? "Call" : "Call with parameters";
+				if (pfx.exp != null)
+					for (String str : pfx.exp.ast_rep)
+						x.ast_rep[cl++] += str;
+				break;
+			case PostfixExp.PostfixElem.post_arrow:
+				x.ast_rep[cl++] += "Structure dereference";
+				x.ast_rep[cl++] += pfx.id;
+				break;
+			case PostfixExp.PostfixElem.post_dot:
+				x.ast_rep[cl++] += "Structure reference";
+				x.ast_rep[cl++] += pfx.id;
+				break;
+			case PostfixExp.PostfixElem.post_inc:
+				x.ast_rep[cl++] += "Post increment";
+				break;
+			case PostfixExp.PostfixElem.post_dec:
+				x.ast_rep[cl++] += "Post decrement";
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	public void visit(PrimaryExp x) throws Exception
+	{
+		switch (x.category)
+		{
+		case PrimaryExp.pe_id:
+
+			x.ast_rep = new String[1];
+			x.ast_rep[0] = leading + "Id: ".intern() + ((Dec) x.value).name;
+			break;
+		case PrimaryExp.pe_str:
+			x.ast_rep = new String[1];
+			x.ast_rep[0] = leading + "Str: \'".intern() + (String) x.value + '\'';
+			break;
+		case PrimaryExp.pe_int:
+			x.ast_rep = new String[1];
+			x.ast_rep[0] = leading + "Int-Const: " + ((Integer) x.value).toString();
+			break;
+		case PrimaryExp.pe_ch:
+			x.ast_rep = new String[1];
+			x.ast_rep[0] = leading + "Char-Const: \'".intern() + ((Character) x.value).toString() + '\'';
+			break;
+		case PrimaryExp.pe_fp:
+			x.ast_rep = new String[1];
+			x.ast_rep[0] = leading + "FP-Const: ".intern() + ((Float) x.value).toString() + '\'';
+			break;
+		case PrimaryExp.pe_paren:
+			Exp e = (Exp) x.value;
+			e.accept(this);
+			x.ast_rep = new String[e.ast_rep.length];
+			int cl = 0;
+			for (String str : e.ast_rep)
+				x.ast_rep[cl++] = str;
+			break;
+		default:
+			break;
+		}
 	}
 }

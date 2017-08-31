@@ -1717,7 +1717,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match a cast expr when parsing unary-expr.");
+				panic("Unable to match a cast-expr when parsing unary-expr.");
 				return null;
 			}
 			else
@@ -1733,7 +1733,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match a cast expr when parsing unary-expr.");
+				panic("Unable to match a cast-expr when parsing unary-expr.");
 				return null;
 			}
 			else
@@ -1749,7 +1749,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match a cast expr when parsing unary-expr.");
+				panic("Unable to match a cast-expr when parsing unary-expr.");
 				return null;
 			}
 			else
@@ -1765,7 +1765,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match a cast expr when parsing unary-expr.");
+				panic("Unable to match a cast-expr when parsing unary-expr.");
 				return null;
 			}
 			else
@@ -1781,7 +1781,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match a cast expr when parsing unary-expr.");
+				panic("Unable to match a cast-expr when parsing unary-expr.");
 				return null;
 			}
 			else
@@ -1797,7 +1797,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match a cast expr when parsing unary-expr.");
+				panic("Unable to match a cast-expr when parsing unary-expr.");
 				return null;
 			}
 			else
@@ -1813,7 +1813,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match an unary expr when parsing unary-expr");
+				panic("Unable to match an unary-expr when parsing unary-expr");
 				return null;
 			}
 			else
@@ -1829,7 +1829,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match an unary expr when parsing unary-expr");
+				panic("Unable to match an unary-expr when parsing unary-expr");
 				return null;
 			}
 			else
@@ -1862,7 +1862,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match a type-name when parsing \"\".");
+				panic("Unable to match a type-name when parsing unary-expr.");
 				return null;
 			}
 			else
@@ -1871,7 +1871,7 @@ public class Parser
 			if (match(Token.RPAREN))
 			{
 				advance();
-				return new UnaryExpr(UnaryExpr.sizeof, x);
+				return new UnaryExpr(x);
 			}
 			else
 			{
@@ -1885,7 +1885,7 @@ public class Parser
 			if (x == null)
 			{
 				look = start_pos.pop();
-				panic("Unable to match a postfix expr when parsing unary-expr.");
+				panic("Unable to match a postfix-expr when parsing unary-expr.");
 				return null;
 			}
 			else
@@ -1903,7 +1903,7 @@ public class Parser
 		if (pe == null)
 		{
 			look = start_pos.pop();
-			panic("Unable to match a primary expr when parsing postfix expr.");
+			panic("Unable to match a primary-expr when parsing postfix-expr.");
 			return null;
 		}
 		else
@@ -1922,7 +1922,7 @@ public class Parser
 				if (x == null)
 				{
 					look = start_pos.pop();
-					panic("Unable to match an expression when parsing postfix in postfix expr.");
+					panic("Unable to match an expression when parsing postfix in postfix-expr.");
 					return null;
 				}
 				else

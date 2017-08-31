@@ -51,10 +51,10 @@ public class PostfixExpr extends Expr
 
 	public void add_elem(int t, Object c)
 	{
-		// Type of 'c'
-		// mparen, paren : Expr
-		// dot, ptr: String
-		// inc, dec: null
+		// Type of 'c':
+		// mparen, paren -> Expr
+		// dot, ptr -> String
+		// inc, dec -> null
 		elem.add(new Postfix(t, c));
 	}
 }

@@ -2,6 +2,25 @@ package compiler.AST;
 
 public interface ASTNodeVisitor
 {
+	/* prog */
+	public abstract void visit(Prog x) throws Exception;
+
+	/* dec */
+	public abstract void visit(VarDec x) throws Exception;
+
+	public abstract void visit(FuncDec x) throws Exception;
+
+	/* stmt */
+	public abstract void visit(ExprStmt x) throws Exception;
+
+	public abstract void visit(CompStmt x) throws Exception;
+
+	public abstract void visit(SelectStmt x) throws Exception;
+
+	public abstract void visit(JumpStmt x) throws Exception;
+
+	public abstract void visit(IterStmt x) throws Exception;
+
 	/* exp */
 	public abstract void visit(CommaExp x) throws Exception;
 
@@ -17,25 +36,7 @@ public interface ASTNodeVisitor
 
 	public abstract void visit(PrimaryExp x) throws Exception;
 
-	/* stmt */
-	public abstract void visit(ExprStmt x) throws Exception;
-
-	public abstract void visit(CompStmt x) throws Exception;
-
-	public abstract void visit(SelectStmt x) throws Exception;
-
-	public abstract void visit(JumpStmt x) throws Exception;
-
-	public abstract void visit(IterStmt x) throws Exception;
-
-	/* dec */
-	public abstract void visit(VarDec x) throws Exception;
-
-	public abstract void visit(FuncDec x) throws Exception;
-
 	/* init */
 	public abstract void visit(Init x) throws Exception;
 
-	/* prog */
-	public abstract void visit(Prog x) throws Exception;
 }

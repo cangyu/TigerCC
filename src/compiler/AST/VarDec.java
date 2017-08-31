@@ -5,7 +5,6 @@ import compiler.Typing.*;
 public class VarDec extends Dec
 {
 	public Type type;
-	public String name;
 	public Init init;
 	public boolean hasAssigned; // for marking later assignment
 
@@ -16,9 +15,8 @@ public class VarDec extends Dec
 
 	public VarDec(Type t, String vn, Init it, int off)
 	{
-		super(off);
+		super(off, vn);
 		type = t;
-		name = vn;
 		init = it;
 		hasAssigned = false;
 	}

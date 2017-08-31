@@ -6,7 +6,7 @@ public abstract class Exp extends ASTNode
 {
 	public Type type;
 	public boolean isConst;
-	public Object value;
+	public Object value; // valid only when 'isConst' == true
 	public boolean hasInitialized;
 	public boolean isLvalue;
 

@@ -19,7 +19,6 @@ public class FuncDec extends Dec
 	}
 
 	public Type ret_type;
-	public String name;
 	public ArrayList<Parameter> param;
 	public Env scope;
 	public LinkedList<VarDec> var;
@@ -27,9 +26,8 @@ public class FuncDec extends Dec
 
 	public FuncDec(Type t, String fn, int off)
 	{
-		super(off);
+		super(off, fn);
 		ret_type = t;
-		name = fn;
 		param = new ArrayList<Parameter>();
 		var = new LinkedList<VarDec>();
 		st = new LinkedList<Stmt>();

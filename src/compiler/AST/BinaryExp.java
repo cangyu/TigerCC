@@ -1,29 +1,9 @@
 package compiler.AST;
 
 import compiler.Lexer.Token;
-import compiler.Typing.Type;
 
 public class BinaryExp extends Exp
 {
-	public static final int BIT_AND = 0;
-	public static final int BIT_XOR = 1;
-	public static final int BIT_OR = 2;
-	public static final int AND = 3;
-	public static final int OR = 4;
-	public static final int EQ = 5;
-	public static final int NE = 6;
-	public static final int LT = 7;
-	public static final int GT = 8;
-	public static final int LE = 9;
-	public static final int GE = 10;
-	public static final int SHL = 11;
-	public static final int SHR = 12;
-	public static final int PLUS = 13;
-	public static final int MINUS = 14;
-	public static final int TIMES = 15;
-	public static final int DIVIDE = 16;
-	public static final int MODULE = 17;
-
 	public int op;
 	public Exp left, right;
 
@@ -40,26 +20,14 @@ public class BinaryExp extends Exp
 		v.visit(this);
 	}
 
-	public static boolean equals_zero(Object x) throws Exception
-	{
-		if (x instanceof Character)
-			return (int) ((Character) x).charValue() == 0;
-		else if (x instanceof Integer)
-			return ((Integer) x).intValue() == 0;
-		else if (x instanceof Double)
-			return ((Double) x).doubleValue() == 0.0;
-		else
-			return false;
-	}
-
 	public void calc_const_val() throws Exception
 	{
 		Object lhs = left.value;
 		Object rhs = right.value;
 
-		if (!(lhs instanceof Character || lhs instanceof Integer || lhs instanceof Double))
+		if (!(lhs instanceof Character || lhs instanceof Integer || lhs instanceof Float))
 			throw new Exception("Invalid left operand.");
-		if (!(rhs instanceof Character || rhs instanceof Integer || rhs instanceof Double))
+		if (!(rhs instanceof Character || rhs instanceof Integer || rhs instanceof Float))
 			throw new Exception("Invalid right operand.");
 
 		if (op == BIT_AND || op == BIT_XOR || op == BIT_OR)
@@ -272,7 +240,7 @@ public class BinaryExp extends Exp
 			throw new Exception("Internal Error.");
 	}
 
-	public String bin_symbol()
+	public String get_op()
 	{
 		switch (op)
 		{
@@ -315,5 +283,36 @@ public class BinaryExp extends Exp
 		default:
 			return "".intern();
 		}
+	}
+
+	public static final int BIT_AND = 0;
+	public static final int BIT_XOR = 1;
+	public static final int BIT_OR = 2;
+	public static final int AND = 3;
+	public static final int OR = 4;
+	public static final int EQ = 5;
+	public static final int NE = 6;
+	public static final int LT = 7;
+	public static final int GT = 8;
+	public static final int LE = 9;
+	public static final int GE = 10;
+	public static final int SHL = 11;
+	public static final int SHR = 12;
+	public static final int PLUS = 13;
+	public static final int MINUS = 14;
+	public static final int TIMES = 15;
+	public static final int DIVIDE = 16;
+	public static final int MODULE = 17;
+
+	public static boolean equals_zero(Object x) throws Exception
+	{
+		if (x instanceof Character)
+			return (int) ((Character) x).charValue() == 0;
+		else if (x instanceof Integer)
+			return ((Integer) x).intValue() == 0;
+		else if (x instanceof Double)
+			return ((Double) x).doubleValue() == 0.0;
+		else
+			return false;
 	}
 }

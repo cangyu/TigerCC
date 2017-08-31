@@ -5,24 +5,21 @@ import compiler.Typing.Type;
 
 public class UnaryExp extends Exp
 {
-	public static final int address_of = 0;
-	public static final int indirection = 1;
-	public static final int unary_plus = 2;
-	public static final int unary_minus = 3;
-	public static final int bitwise_not = 4;
-	public static final int logical_negation = 5;
-	public static final int size_of = 6;
-	public static final int inc = 7;
-	public static final int dec = 8;
-
 	public int category;
 	public Exp exp;
 	public Type stp; // for sizeof '(' type-name ')'
 
-	public UnaryExp(int c, Exp e, Type tp)
+	public UnaryExp(int c, Exp e)
 	{
 		category = c;
 		exp = e;
+		stp = null;
+	}
+
+	public UnaryExp(Type tp)
+	{
+		category = size_of;
+		exp = null;
 		stp = tp;
 	}
 
@@ -32,7 +29,7 @@ public class UnaryExp extends Exp
 		v.visit(this);
 	}
 
-	public String op_symbol()
+	public String get_op()
 	{
 		switch (category)
 		{
@@ -58,4 +55,14 @@ public class UnaryExp extends Exp
 			return "".intern();
 		}
 	}
+
+	public static final int address_of = 0;
+	public static final int indirection = 1;
+	public static final int unary_plus = 2;
+	public static final int unary_minus = 3;
+	public static final int bitwise_not = 4;
+	public static final int logical_negation = 5;
+	public static final int size_of = 6;
+	public static final int inc = 7;
+	public static final int dec = 8;
 }

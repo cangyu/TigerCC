@@ -7,18 +7,18 @@ public class JumpStmt extends Stmt
 	public static final int jp_ret = 2;
 
 	public int category;
-	public CommaExp expr;
+	public Exp exp;
 
 	public JumpStmt(int c)
 	{
 		category = c;
-		expr = null;
+		exp = null;
 	}
 
-	public JumpStmt(CommaExp e)
+	public JumpStmt(Exp e)
 	{
 		category = jp_ret;
-		expr = e;
+		exp = e;
 	}
 
 	@Override

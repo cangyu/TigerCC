@@ -5,8 +5,9 @@ import compiler.IR.Operand;
 
 public abstract class ASTNode
 {
-	public String[] ast_rep;
-	public LinkedList<Operand> operand_list;
+	public String[] ast_rep; // for AST printer
+	public String[] code_rep; // for pretty-printer
+	public LinkedList<Operand> operand_list; // for IR
 
 	public abstract void accept(ASTNodeVisitor v) throws Exception;
 

@@ -2,9 +2,9 @@ package compiler.AST;
 
 public class ExprStmt extends Stmt
 {
-	public CommaExp expr;
+	public Exp expr;
 
-	public ExprStmt(CommaExp ce)
+	public ExprStmt(Exp ce)
 	{
 		expr = ce;
 	}

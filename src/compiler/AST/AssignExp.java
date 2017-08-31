@@ -4,21 +4,8 @@ import compiler.Lexer.Token;
 
 public class AssignExp extends Exp
 {
-	public static final int ASSIGN = 0;
-	public static final int MUL_ASSIGN = 1;
-	public static final int DIV_ASSIGN = 2;
-	public static final int MOD_ASSIGN = 3;
-	public static final int ADD_ASSIGN = 4;
-	public static final int SUB_ASSIGN = 5;
-	public static final int SHL_ASSIGN = 6;
-	public static final int SHR_ASSIGN = 7;
-	public static final int AND_ASSIGN = 8;
-	public static final int XOR_ASSIGN = 9;
-	public static final int OR_ASSIGN = 10;
-
 	public int assign_type;
-	public UnaryExp left;
-	public Exp right;
+	public Exp left, right;
 
 	public AssignExp()
 	{
@@ -28,31 +15,31 @@ public class AssignExp extends Exp
 		right = null;
 	}
 
-	public String assign_symbol()
+	public String get_op()
 	{
 		switch (assign_type)
 		{
-		case ASSIGN:
+		case plain:
 			return Token.raw_rep(Token.ASSIGN);
-		case MUL_ASSIGN:
+		case multi:
 			return Token.raw_rep(Token.MUL_ASSIGN);
-		case DIV_ASSIGN:
+		case divide:
 			return Token.raw_rep(Token.DIV_ASSIGN);
-		case MOD_ASSIGN:
+		case module:
 			return Token.raw_rep(Token.MOD_ASSIGN);
-		case ADD_ASSIGN:
+		case add:
 			return Token.raw_rep(Token.ADD_ASSIGN);
-		case SUB_ASSIGN:
+		case sub:
 			return Token.raw_rep(Token.SUB_ASSIGN);
-		case SHL_ASSIGN:
+		case left_shift:
 			return Token.raw_rep(Token.SHL_ASSIGN);
-		case SHR_ASSIGN:
+		case right_shift:
 			return Token.raw_rep(Token.SHR_ASSIGN);
-		case AND_ASSIGN:
+		case bit_and:
 			return Token.raw_rep(Token.AND_ASSIGN);
-		case XOR_ASSIGN:
+		case bit_xor:
 			return Token.raw_rep(Token.XOR_ASSIGN);
-		case OR_ASSIGN:
+		case bit_or:
 			return Token.raw_rep(Token.OR_ASSIGN);
 		default:
 			return "".intern();
@@ -64,4 +51,16 @@ public class AssignExp extends Exp
 	{
 		v.visit(this);
 	}
+
+	public static final int plain = 0;
+	public static final int multi = 1;
+	public static final int divide = 2;
+	public static final int module = 3;
+	public static final int add = 4;
+	public static final int sub = 5;
+	public static final int left_shift = 6;
+	public static final int right_shift = 7;
+	public static final int bit_and = 8;
+	public static final int bit_xor = 9;
+	public static final int bit_or = 10;
 }

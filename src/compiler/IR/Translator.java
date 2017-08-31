@@ -18,6 +18,11 @@ public class Translator implements ASTNodeVisitor
 		continueLabels = new Stack<Label>();
 	}
 
+	private void panic(String msg) throws Exception
+	{
+		throw new Exception(msg);
+	}
+
 	public ILOCProg translate(Prog x) throws Exception
 	{
 		prog = new ILOCProg();
@@ -156,8 +161,4 @@ public class Translator implements ASTNodeVisitor
 
 	}
 
-	private void panic(String msg) throws Exception
-	{
-		throw new Exception(msg);
-	}
 }

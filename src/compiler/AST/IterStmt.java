@@ -6,10 +6,10 @@ public class IterStmt extends Stmt
 	public static final int iter_for = 1;
 
 	public int category;
-	public CommaExp init, judge, next;
+	public Exp init, judge, next;
 	public Stmt stmt;
 
-	public IterStmt(CommaExp e, Stmt s)
+	public IterStmt(Exp e, Stmt s)
 	{
 		category = iter_while;
 		init = null;
@@ -18,7 +18,7 @@ public class IterStmt extends Stmt
 		stmt = s;
 	}
 
-	public IterStmt(CommaExp e1, CommaExp e2, CommaExp e3, Stmt s)
+	public IterStmt(Exp e1, Exp e2, Exp e3, Stmt s)
 	{
 		category = iter_for;
 		init = e1;

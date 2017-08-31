@@ -197,9 +197,9 @@ public class ASTBuilder
 			if (s instanceof JumpStmt)
 			{
 				JumpStmt jst = (JumpStmt) s;
-				if (jst.category == JumpStmt.jp_ret && jst.expr != null)
+				if (jst.category == JumpStmt.jp_ret && jst.exp != null)
 				{
-					CommaExp frt = jst.expr;
+					Exp frt = jst.exp;
 					if (!frt.type.isConvertableTo(ret_type))
 						panic("Invalid return type.");
 				}
@@ -393,14 +393,16 @@ public class ASTBuilder
 		Type ret = resolve_plain_type(base, dr.plain_declarator);
 
 		// Note that the order must be counted from tail to head
-		ListIterator<ConstantExpr> lit = dr.dimension.listIterator(dr.dimension.size());
+		ListIterator<Expr> lit = dr.dimension.listIterator(dr.dimension.size());
 		while (lit.hasPrevious())
 		{
-			ConstantExpr ce = lit.previous();
-			Object val = parseConstantExpr(ce, y);
-			if (val instanceof Integer)
+			Exp ce = parseExpr(lit.previous(), y);
+
+			// In this simplified grammar, constant-expression is used only in array index
+			// So, it should be an integer-constant, no need to decorate here
+			if (ce.isConst && ce.value instanceof Integer)
 			{
-				int cnt = ((Integer) val).intValue();
+				int cnt = ((Integer) ce.value).intValue();
 				if (cnt < 0)
 					panic("Dimension must be non-negative!");
 
@@ -426,7 +428,7 @@ public class ASTBuilder
 		Init ret = null;
 		if (x.type == Initializer.assign)// x = a;
 		{
-			AssignExp e = parseAssignmentExpr(x.ae, y);
+			Exp e = parseExpr(x.ae, y);
 			if (!e.hasInitialized)
 				panic("Unintialized assignment-expression can not be used as an intializer!");
 
@@ -483,7 +485,7 @@ public class ASTBuilder
 			ret = new ExprStmt(null);
 		else
 		{
-			CommaExp e = parseExpression(x.elem, y);
+			Exp e = parseExpr(x.elem, y);
 			ret = new ExprStmt(e);
 		}
 		return ret;
@@ -526,7 +528,7 @@ public class ASTBuilder
 
 	private SelectStmt parseSelectionStatement(SelectionStatement x, Env y) throws Exception
 	{
-		CommaExp ce = parseExpression(x.cond, y);
+		Exp ce = parseExpr(x.cond, y);
 		Stmt stt = parseStatement(x.if_clause, y);
 		Stmt stf = x.else_clause != null ? parseStatement(x.else_clause, y) : null;
 		return new SelectStmt(ce, stt, stf);
@@ -538,7 +540,7 @@ public class ASTBuilder
 		if (x.type == IterationStatement.WHILE)
 		{
 			++loop_cnt;
-			CommaExp ce = parseExpression(x.judge, y);
+			Exp ce = parseExpr(x.judge, y);
 			Stmt st = parseStatement(x.stmt, y);
 			--loop_cnt;
 			ret = new IterStmt(ce, st);
@@ -546,9 +548,9 @@ public class ASTBuilder
 		else if (x.type == IterationStatement.FOR)
 		{
 			++loop_cnt;
-			CommaExp ce1 = parseExpression(x.init, y);
-			CommaExp ce2 = parseExpression(x.judge, y);
-			CommaExp ce3 = parseExpression(x.next, y);
+			Exp ce1 = parseExpr(x.init, y);
+			Exp ce2 = parseExpr(x.judge, y);
+			Exp ce3 = parseExpr(x.next, y);
 			Stmt st = parseStatement(x.stmt, y);
 			--loop_cnt;
 			ret = new IterStmt(ce1, ce2, ce3, st);
@@ -582,10 +584,51 @@ public class ASTBuilder
 				ret = new JumpStmt(JumpStmt.jp_ret);
 			else
 			{
-				CommaExp ce = parseExpression(x.expr, y);
+				Exp ce = parseExpr(x.expr, y);
 				ret = new JumpStmt(ce);
 			}
 		}
+		else
+			panic("Internal Error.");
+
+		return ret;
+	}
+
+	private Exp parseExpr(Expr x, Env y) throws Exception
+	{
+		Exp ret = null;
+		if (x instanceof Expression)
+			ret = parseExpression((Expression) x, y);
+		else if (x instanceof AssignmentExpr)
+			ret = parseAssignmentExpr((AssignmentExpr) x, y);
+		else if (x instanceof LogicalOrExpr)
+			ret = parseLogicalOrExpr((LogicalOrExpr) x, y);
+		else if (x instanceof LogicalAndExpr)
+			ret = parseLogicalAndExpr((LogicalAndExpr) x, y);
+		else if (x instanceof InclusiveOrExpr)
+			ret = parseInclusiveOrExpr((InclusiveOrExpr) x, y);
+		else if (x instanceof ExclusiveOrExpr)
+			ret = parseExclusiveOrExpr((ExclusiveOrExpr) x, y);
+		else if (x instanceof AndExpr)
+			ret = parseAndExpr((AndExpr) x, y);
+		else if (x instanceof EqualityExpr)
+			ret = parseEqualityExpr((EqualityExpr) x, y);
+		else if (x instanceof RelationalExpr)
+			ret = parseRelationalExpr((RelationalExpr) x, y);
+		else if (x instanceof ShiftExpr)
+			ret = parseShiftExpr((ShiftExpr) x, y);
+		else if (x instanceof AdditiveExpr)
+			ret = parseAdditiveExpr((AdditiveExpr) x, y);
+		else if (x instanceof MultiplicativeExpr)
+			ret = parseMultiplicativeExpr((MultiplicativeExpr) x, y);
+		else if (x instanceof CastExpr)
+			ret = parseCastExpr((CastExpr) x, y);
+		else if (x instanceof UnaryExpr)
+			ret = parseUnaryExpr((UnaryExpr) x, y);
+		else if (x instanceof PostfixExpr)
+			ret = parsePostfixExpr((PostfixExpr) x, y);
+		else if (x instanceof PrimaryExpr)
+			ret = parsePrimaryExpr((PrimaryExpr) x, y);
 		else
 			panic("Internal Error.");
 
@@ -599,16 +642,15 @@ public class ASTBuilder
 
 		// build
 		CommaExp ret = new CommaExp();
-		ListIterator<AssignmentExpr> lit = x.elem.listIterator();
+		ListIterator<Expr> lit = x.elem.listIterator();
 		while (lit.hasNext())
 		{
-			AssignmentExpr aer = lit.next();
-			AssignExp ae = parseAssignmentExpr(aer, y);
+			Exp ae = parseExpr(lit.next(), y);
 			ret.add_exp(ae);
 		}
 
 		// decorate
-		AssignExp last = ret.exp.getLast();
+		Exp last = ret.exp.getLast();
 		ret.decorate(last.type, last.isConst, last.hasInitialized, false);
 		if (ret.isConst)
 			ret.set_value(last.value);
@@ -625,7 +667,7 @@ public class ASTBuilder
 			panic("Internal Error.");
 
 		// build right expression first
-		ret.right = parseLogicalOrExpr(x.rexpr, y);
+		ret.right = parseExpr(x.rexpr, y);
 
 		// decorate
 		ret.decorate(ret.right.type, ret.right.isConst, ret.right.hasInitialized, ret.right.isLvalue);
@@ -637,18 +679,18 @@ public class ASTBuilder
 			panic("Internal Error.");
 
 		ListIterator<Integer> alit = x.op_list.listIterator(x.op_list.size());
-		ListIterator<UnaryExpr> ulit = x.lexpr_list.listIterator(x.lexpr_list.size());
+		ListIterator<Expr> ulit = x.lexpr_list.listIterator(x.lexpr_list.size());
 
 		// build left side iteratively
 		while (alit.hasPrevious())
 		{
 			ret.assign_type = alit.previous().intValue();
-			ret.left = parseUnaryExpr(ulit.previous(), y);
+			ret.left = parseExpr(ulit.previous(), y);
 
 			if (alit.hasPrevious())
 			{
 				AssignExp nrt = new AssignExp();
-				nrt.right = ret;
+				nrt.right = ret; // Here is different from that in BinaryExp
 				ret = nrt;
 			}
 		}
@@ -661,29 +703,17 @@ public class ASTBuilder
 		return ret;
 	}
 
-	private Object parseConstantExpr(ConstantExpr x, Env y) throws Exception
-	{
-		BinaryExp ce = parseLogicalOrExpr(x.expr, y);
-
-		// In this simplified grammar, constant-expression is used only in array index
-		// So, it should be an integer-constant, no need to decorate here
-		if (ce.isConst)
-			return ce.value;
-		else
-			return null;
-	}
-
 	private BinaryExp parseLogicalOrExpr(LogicalOrExpr x, Env y) throws Exception
 	{
 		// defensive check
 		if (x.expr_list.isEmpty())
 			panic("Internal Error.");
 
-		ListIterator<LogicalAndExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 
 		// first expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseLogicalAndExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
@@ -694,7 +724,7 @@ public class ASTBuilder
 		while (clit.hasNext())
 		{
 			ret.op = BinaryExp.OR;
-			ret.right = parseLogicalAndExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
 			// the operands to the logical OR operator need not be of the same type,
@@ -730,11 +760,11 @@ public class ASTBuilder
 		if (x.expr_list.isEmpty())
 			panic("Internal Error.");
 
-		ListIterator<InclusiveOrExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 
 		// first expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseInclusiveOrExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
@@ -745,7 +775,7 @@ public class ASTBuilder
 		while (clit.hasNext())
 		{
 			ret.op = BinaryExp.AND;
-			ret.right = parseInclusiveOrExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
 			// the operands to the logical AND operator need not be of the same type,
@@ -780,11 +810,11 @@ public class ASTBuilder
 		if (x.expr_list.isEmpty())
 			panic("Internal Error.");
 
-		ListIterator<ExclusiveOrExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 
 		// first expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseExclusiveOrExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
@@ -795,7 +825,7 @@ public class ASTBuilder
 		while (clit.hasNext())
 		{
 			ret.op = BinaryExp.BIT_OR;
-			ret.right = parseExclusiveOrExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// the operands of bitwise operators must have integral types
 			if (!Type.numeric(ret.left.type) || !Type.numeric(ret.right.type))
@@ -828,11 +858,11 @@ public class ASTBuilder
 		if (x.expr_list.isEmpty())
 			panic("Internal Error.");
 
-		ListIterator<AndExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 
 		// first expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseAndExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
@@ -843,7 +873,7 @@ public class ASTBuilder
 		while (clit.hasNext())
 		{
 			ret.op = BinaryExp.BIT_XOR;
-			ret.right = parseAndExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// the operands of bitwise operators must have integral types
 			if (!Type.numeric(ret.left.type) || !Type.numeric(ret.right.type))
@@ -876,11 +906,11 @@ public class ASTBuilder
 		if (x.expr_list.isEmpty())
 			panic("Internal Error.");
 
-		ListIterator<EqualityExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 
 		// first expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseEqualityExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
@@ -891,7 +921,7 @@ public class ASTBuilder
 		while (clit.hasNext())
 		{
 			ret.op = BinaryExp.BIT_AND;
-			ret.right = parseEqualityExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// the operands of bitwise operators must have integral types
 			if (!Type.numeric(ret.left.type) || !Type.numeric(ret.right.type))
@@ -924,12 +954,12 @@ public class ASTBuilder
 		if (x.expr_list.size() != x.op_list.size() + 1)
 			panic("Internal Error.");
 
-		ListIterator<RelationalExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
 
 		// first expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseRelationalExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
 		if (ret.isConst)
 			ret.set_value(ret.left.value);
@@ -938,7 +968,7 @@ public class ASTBuilder
 		while (plit.hasNext())
 		{
 			ret.op = plit.next().intValue();
-			ret.right = parseRelationalExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
 			if (!Type.arith(ret.left.type) || !Type.arith(ret.right.type))
@@ -971,12 +1001,12 @@ public class ASTBuilder
 		if (x.expr_list.size() != x.op_list.size() + 1)
 			panic("Internal Error.");
 
-		ListIterator<ShiftExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
 
 		// first expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseShiftExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
@@ -987,7 +1017,7 @@ public class ASTBuilder
 		while (plit.hasNext())
 		{
 			ret.op = plit.next().intValue();
-			ret.right = parseShiftExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
 			if (!Type.arith(ret.left.type) || !Type.arith(ret.right.type))
@@ -1021,12 +1051,12 @@ public class ASTBuilder
 		if (x.expr_list.size() != x.op_list.size() + 1)
 			panic("Internal Error.");
 
-		ListIterator<AdditiveExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
 
 		// first expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseAdditiveExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
@@ -1037,7 +1067,7 @@ public class ASTBuilder
 		while (plit.hasNext())
 		{
 			ret.op = plit.next().intValue();
-			ret.right = parseAdditiveExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
 			// both operands must be integral values.
@@ -1069,12 +1099,12 @@ public class ASTBuilder
 		if (x.expr_list.size() != x.op_list.size() + 1)
 			panic("Internal Error.");
 
-		ListIterator<MultiplicativeExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
 
 		// first expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseMultiplicativeExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
@@ -1086,7 +1116,7 @@ public class ASTBuilder
 		{
 			// build ast
 			ret.op = plit.next().intValue();
-			ret.right = parseMultiplicativeExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
 			if (!Type.arith(ret.left.type) || !Type.arith(ret.right.type))
@@ -1116,12 +1146,12 @@ public class ASTBuilder
 		if (x.expr_list.size() != x.op_list.size() + 1)
 			panic("Internal Error.");
 
-		ListIterator<CastExpr> clit = x.expr_list.listIterator();
+		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
 
 		// first cast-expression
 		BinaryExp ret = new BinaryExp();
-		ret.left = parseCastExpr(clit.next(), y);
+		ret.left = parseExpr(clit.next(), y);
 
 		// decorate
 		ret.decorate(ret.left.type, ret.left.isConst, ret.left.hasInitialized, ret.left.isLvalue);
@@ -1133,7 +1163,7 @@ public class ASTBuilder
 		{
 			// build AST Node
 			ret.op = plit.next().intValue();
-			ret.right = parseCastExpr(clit.next(), y);
+			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
 			if (!Type.numeric(ret.left.type) || !Type.numeric(ret.right.type))
@@ -1159,7 +1189,7 @@ public class ASTBuilder
 
 	private CastExp parseCastExpr(CastExpr x, Env y) throws Exception
 	{
-		UnaryExp ue = parseUnaryExpr(x.expr, y);
+		Exp ue = parseExpr(x.expr, y);
 		CastExp ret = new CastExp(ue);
 
 		Type cur_type = ue.type;
@@ -1186,17 +1216,9 @@ public class ASTBuilder
 	private UnaryExp parseUnaryExpr(UnaryExpr x, Env y) throws Exception
 	{
 		UnaryExp ret = null;
-		if (x.type == UnaryExpr.postfix)
+		if (x.type == UnaryExpr.inc)
 		{
-			PostfixExpr per = (PostfixExpr) x.elem;
-			PostfixExp pe = parsePostfixExpr(per, y);
-			ret = new UnaryExp(UnaryExpr.postfix, pe, null);
-			ret.decorate(pe.type, pe.isConst, pe.hasInitialized, pe.isLvalue);
-		}
-		else if (x.type == UnaryExpr.inc)
-		{
-			UnaryExpr uer = (UnaryExpr) x.elem;
-			UnaryExp ue = parseUnaryExpr(uer, y);
+			Exp ue = parseExpr(x.expr, y);
 
 			// Semantic check
 			if (!ue.isLvalue)
@@ -1206,13 +1228,12 @@ public class ASTBuilder
 			if (!operable)
 				panic("Can not be incremented.");
 
-			ret = new UnaryExp(UnaryExpr.inc, ue, null);
+			ret = new UnaryExp(UnaryExp.inc, ue);
 			ret.decorate(ue.type, false, ue.hasInitialized, false);
 		}
 		else if (x.type == UnaryExpr.dec)
 		{
-			UnaryExpr uer = (UnaryExpr) x.elem;
-			UnaryExp ue = parseUnaryExpr(uer, y);
+			Exp ue = parseExpr(x.expr, y);
 
 			// Semantic check
 			if (!ue.isLvalue)
@@ -1222,31 +1243,29 @@ public class ASTBuilder
 			if (!operable)
 				panic("Can not be decreased.");
 
-			ret = new UnaryExp(UnaryExpr.dec, ue, null);
+			ret = new UnaryExp(UnaryExp.dec, ue);
 			ret.decorate(ue.type, false, ue.hasInitialized, false);
 		}
 		else if (x.type == UnaryExpr.address)
 		{
-			CastExpr cer = (CastExpr) x.elem;
-			CastExp ce = parseCastExpr(cer, y);
-			ret = new UnaryExp(UnaryExpr.address, ce, null);
+			Exp ce = parseExpr(x.expr, y);
+			ret = new UnaryExp(UnaryExp.address_of, ce);
 			ret.decorate(new Pointer(ce.type), true, true, false);
 		}
 		else if (x.type == UnaryExpr.dereference)
 		{
-			CastExpr cer = (CastExpr) x.elem;
-			CastExp ce = parseCastExpr(cer, y);
+			Exp ce = parseExpr(x.expr, y);
 			Type cur_type = ce.type;
 			if (cur_type instanceof Array)
 			{
 				Array ay = (Array) cur_type;
-				ret = new UnaryExp(UnaryExpr.dereference, ce, null);
+				ret = new UnaryExp(UnaryExp.indirection, ce);
 				ret.decorate(ay.elem_type, false, ce.hasInitialized, true);
 			}
 			else if (cur_type instanceof Pointer)
 			{
 				Pointer pr = (Pointer) cur_type;
-				ret = new UnaryExp(UnaryExpr.dereference, ce, null);
+				ret = new UnaryExp(UnaryExp.indirection, ce);
 				ret.decorate(pr.elem_type, false, ce.hasInitialized, true);
 			}
 			else
@@ -1254,28 +1273,24 @@ public class ASTBuilder
 		}
 		else if (x.type == UnaryExpr.positive)
 		{
-			CastExpr cer = (CastExpr) x.elem;
-			CastExp ce = parseCastExpr(cer, y);
-
+			Exp ce = parseExpr(x.expr, y);
 			Type cur_type = ce.type;
 			if (!Type.numeric(cur_type))
 				panic("Not an numeric type.");
 
-			ret = new UnaryExp(UnaryExpr.positive, ce, null);
+			ret = new UnaryExp(UnaryExp.unary_plus, ce);
 			ret.decorate(cur_type, ce.isConst, ce.hasInitialized, false);
 			if (ret.isConst)
 				ret.set_value(ce.value);
 		}
 		else if (x.type == UnaryExpr.negative)
 		{
-			CastExpr cer = (CastExpr) x.elem;
-			CastExp ce = parseCastExpr(cer, y);
-
+			Exp ce = parseExpr(x.expr, y);
 			Type cur_type = ce.type;
 			if (!Type.numeric(cur_type))
 				panic("Not an numeric type.");
 
-			ret = new UnaryExp(UnaryExpr.negative, ce, null);
+			ret = new UnaryExp(UnaryExp.unary_minus, ce);
 			ret.decorate(cur_type, ce.isConst, ce.hasInitialized, false);
 			if (ret.isConst)
 			{
@@ -1300,12 +1315,11 @@ public class ASTBuilder
 		}
 		else if (x.type == UnaryExpr.bit_not)
 		{
-			CastExpr cer = (CastExpr) x.elem;
-			CastExp ce = parseCastExpr(cer, y);
+			Exp ce = parseExpr(x.expr, y);
 			Type cur_type = ce.type;
 			if (cur_type instanceof Int)
 			{
-				ret = new UnaryExp(UnaryExpr.bit_not, ce, null);
+				ret = new UnaryExp(UnaryExp.bitwise_not, ce);
 				ret.decorate(cur_type, ce.isConst, ce.hasInitialized, false);
 				if (ret.isConst)
 				{
@@ -1315,7 +1329,7 @@ public class ASTBuilder
 			}
 			else if (cur_type instanceof Char)
 			{
-				ret = new UnaryExp(UnaryExpr.bit_not, ce, null);
+				ret = new UnaryExp(UnaryExp.bitwise_not, ce);
 				ret.decorate(cur_type, ce.isConst, ce.hasInitialized, false);
 				if (ret.isConst)
 				{
@@ -1328,12 +1342,11 @@ public class ASTBuilder
 		}
 		else if (x.type == UnaryExpr.not)
 		{
-			CastExpr cer = (CastExpr) x.elem;
-			CastExp ce = parseCastExpr(cer, y);
+			Exp ce = parseExpr(x.expr, y);
 			Type cur_type = ce.type;
 			if (cur_type instanceof Pointer || Type.numeric(cur_type))
 			{
-				ret = new UnaryExp(UnaryExpr.not, ce, null);
+				ret = new UnaryExp(UnaryExp.logical_negation, ce);
 				ret.decorate(Int.getInstance(), ce.isConst, ce.hasInitialized, false);
 				if (ret.isConst)
 				{
@@ -1372,26 +1385,23 @@ public class ASTBuilder
 		}
 		else if (x.type == UnaryExpr.sizeof)
 		{
-			if (x.elem instanceof UnaryExpr)
-			{
-				UnaryExpr uer = (UnaryExpr) x.elem;
-				UnaryExp ue = parseUnaryExpr(uer, y);
+			if (x.expr != null && x.tpn != null)
+				panic("Internal Error.");
 
-				ret = new UnaryExp(UnaryExpr.sizeof, ue, null);
+			if (x.expr != null)
+			{
+				Exp ue = parseExpr(x.expr, y);
+				ret = new UnaryExp(UnaryExp.size_of, ue);
 				ret.decorate(Int.getInstance(), true, true, false);
 				ret.set_value(ue.type.width);
 			}
-			else if (x.elem instanceof TypeName)
+			else
 			{
-				TypeName tpn = (TypeName) x.elem;
-				Type t = parseTypeName(tpn, y);
-
-				ret = new UnaryExp(UnaryExpr.sizeof, null, t);
+				Type t = parseTypeName(x.tpn, y);
+				ret = new UnaryExp(t);
 				ret.decorate(Int.getInstance(), true, true, false);
 				ret.set_value(t.width);
 			}
-			else
-				panic("Internal Error.");
 		}
 		else
 			panic("Internal Error.");
@@ -1402,6 +1412,9 @@ public class ASTBuilder
 	private Type parseTypeName(TypeName x, Env y) throws Exception
 	{
 		Type ret = parseTypeSpecifier(x.type_specifier, y);
+		if (ret == null)
+			panic("Internal Error.");
+
 		for (int i = 0; i < x.star_cnt; i++)
 			ret = new Pointer(ret);
 
@@ -1421,7 +1434,7 @@ public class ASTBuilder
 			Postfix pfx = lit.next();
 			if (pfx.type == PostfixExpr.mparen)
 			{
-				CommaExp ce = parseExpression((Expression) pfx.content, y);
+				Exp ce = parseExpr((Expr) pfx.content, y);
 				if (ce.type instanceof Char || ce.type instanceof Int)
 				{
 					// a[-2] is acceptable, no need to check range
@@ -1442,24 +1455,50 @@ public class ASTBuilder
 			{
 				if (cur_type instanceof Function)
 				{
-					Expression arg = (Expression) pfx.content;
-					CommaExp ce = parseExpression(arg, y);
-
 					// function definition arguments type
 					LinkedList<Type> fdatp = Function.get_param_type((Function) cur_type);
+					Exp ce = null;
 
-					if (ce.exp.size() != fdatp.size() - 1)
-						panic("Function arguments quantity doesn't match.");
-
-					// Function Call parameters check
-					ListIterator<AssignExp> plit = ce.exp.listIterator();
-					ListIterator<Type> atlit = fdatp.listIterator();
-					while (plit.hasNext())
+					if (pfx.content == null)
 					{
-						Type cptp = plit.next().type;
-						Type catp = atlit.next();
-						if (!cptp.isConvertableTo(catp))
-							panic("Incompatible parameter type.");
+						// check quantity
+						if (fdatp.size() != 1)
+							panic("Function arguments quantity doesn't match.");
+					}
+					else
+					{
+						ce = parseExpr((Expr) pfx.content, y);
+						if (ce instanceof CommaExp)
+						{
+							CommaExp args = (CommaExp) ce;
+
+							// check quantity
+							if (args.exp.size() != fdatp.size() - 1)
+								panic("Function arguments quantity doesn't match.");
+
+							// Function Call parameters check
+							ListIterator<Exp> plit = args.exp.listIterator();
+							ListIterator<Type> atlit = fdatp.listIterator();
+							while (plit.hasNext())
+							{
+								Type cptp = plit.next().type;
+								Type catp = atlit.next();
+								if (!cptp.isConvertableTo(catp))
+									panic("Incompatible parameter type.");
+							}
+						}
+						else
+						{
+							// check quantity
+							if (fdatp.size() != 2)
+								panic("Function arguments quantity doesn't match.");
+
+							// check parameter type
+							Type cptp = ce.type;
+							Type catp = fdatp.getFirst();
+							if (!cptp.isConvertableTo(catp))
+								panic("Incompatible parameter type.");
+						}
 					}
 
 					cur_type = fdatp.getLast();
@@ -1485,11 +1524,6 @@ public class ASTBuilder
 					// Decorate the exp
 					ret.add_elem(PostfixElem.post_dot, null, member, cur_type);
 					ret.decorate(cur_type, false, pe.hasInitialized, true);
-					if (cur_type instanceof Array)
-					{
-						ret.isLvalue = false;
-						ret.isConst = true;
-					}
 				}
 				else
 					panic("Not a struct or union.");
@@ -1513,11 +1547,6 @@ public class ASTBuilder
 						// Decorate the exp
 						ret.add_elem(PostfixElem.post_arrow, null, member, cur_type);
 						ret.decorate(cur_type, false, pe.hasInitialized, true);
-						if (cur_type instanceof Array)
-						{
-							ret.isLvalue = false;
-							ret.isConst = true;
-						}
 					}
 					else
 						panic("Not a pointer to record.");
@@ -1529,7 +1558,7 @@ public class ASTBuilder
 			{
 				boolean operable = Type.numeric(cur_type) || cur_type instanceof Pointer;
 				if (!operable || !ret.isLvalue)
-					panic("Can not be incremented.");
+					panic("Can not be increased or decreased.");
 
 				int cat = pfx.type == PostfixExpr.inc ? PostfixElem.post_inc : PostfixElem.post_dec;
 				ret.add_elem(cat, null, null, cur_type);
@@ -1544,9 +1573,10 @@ public class ASTBuilder
 
 	private PrimaryExp parsePrimaryExpr(PrimaryExpr x, Env y) throws Exception
 	{
-		PrimaryExp ret = new PrimaryExp();
+		PrimaryExp ret = null;
 		if (x.type == PrimaryExpr.identifier)
 		{
+			ret = new PrimaryExp(PrimaryExp.pe_id);
 			String var_name = (String) x.elem;
 			Symbol var_sym = Symbol.getSymbol(var_name);
 			Entry entry = y.get_global(var_sym);
@@ -1558,8 +1588,7 @@ public class ASTBuilder
 			{
 				VarDec vd = (VarDec) entry.mirror;
 				ret.decorate(vd.type, vd.isConst, vd.isInitialized(), vd.isLval);
-				if (ret.isConst)
-					ret.set_value(vd.val);
+				ret.set_value(vd.val);
 			}
 			else if (entry.type == Entry.entry_func)
 			{
@@ -1574,21 +1603,26 @@ public class ASTBuilder
 		}
 		else if (x.type == PrimaryExpr.integer_constant)
 		{
+			ret = new PrimaryExp(PrimaryExp.pe_int);
 			ret.decorate(Int.getInstance(), true, true, false);
 			ret.set_value(x.elem);
 		}
 		else if (x.type == PrimaryExpr.character_constant)
 		{
+			ret = new PrimaryExp(PrimaryExp.pe_ch);
 			ret.decorate(Char.getInstance(), true, true, false);
 			ret.set_value(x.elem);
 		}
 		else if (x.type == PrimaryExpr.real_constant)
 		{
+			ret = new PrimaryExp(PrimaryExp.pe_fp);
 			ret.decorate(FP.getInstance(), true, true, false);
 			ret.set_value(x.elem);
 		}
 		else if (x.type == PrimaryExpr.string)
 		{
+			ret = new PrimaryExp(PrimaryExp.pe_str);
+
 			// As GCC doesn't consider "abcd"[2] as a constant,
 			// I set this expression's 'isCosnt' flag to false
 			ret.decorate(new Pointer(Char.getInstance()), false, true, false);
@@ -1596,13 +1630,13 @@ public class ASTBuilder
 		}
 		else if (x.type == PrimaryExpr.paren_expr)
 		{
-			CommaExp ce = parseExpression((Expression) x.elem, y);
+			Exp ce = parseExpr((Expr) x.elem, y);
+			ret = new PrimaryExp(ce);
 
 			// GCC doesn't consider (a, b, c) being assignable,
 			// so I set this expression's 'isLval' flag to false
 			ret.decorate(ce.type, ce.isConst, ce.hasInitialized, false);
 			ret.set_value(ce.value);
-			ret.set_expr(ce);
 		}
 		else
 			panic("Internal Error.");

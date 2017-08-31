@@ -4,15 +4,15 @@ import java.util.LinkedList;
 
 public class CommaExp extends Exp
 {
-	public LinkedList<AssignExp> exp;
+	public LinkedList<Exp> exp;
 
 	public CommaExp()
 	{
 		super();
-		exp = new LinkedList<AssignExp>();
+		exp = new LinkedList<Exp>();
 	}
 
-	public void add_exp(AssignExp x)
+	public void add_exp(Exp x)
 	{
 		exp.add(x);
 	}

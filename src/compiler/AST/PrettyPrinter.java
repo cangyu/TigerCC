@@ -1,7 +1,11 @@
 package compiler.AST;
 
 import java.util.*;
+
+import compiler.AST.PostfixExp.PostfixElem;
+import compiler.Lexer.Token;
 import compiler.Parser.*;
+import compiler.Typing.Type;
 
 public class PrettyPrinter implements ASTNodeVisitor
 {
@@ -9,174 +13,28 @@ public class PrettyPrinter implements ASTNodeVisitor
 	// or sizeof or ParameterList or any other inconvenient
 	// places, just convert it into one line
 
-	private static void str_init(String[] s, int num)
-	{
-		for (int i = 0; i < num; i++)
-			s[i] = "";
-	}
-
 	@Override
-	public void visit(Expression x) throws Exception
+	public void visit(Prog x) throws Exception
 	{
-		Expression y = x;
-		while (y != null)
+		int lc = 0;
+		ListIterator<Dec> dlit = x.general_decl.listIterator();
+		while (dlit.hasNext())
 		{
-			y.head.accept(this);
-			y = y.next;
+			Dec cd = dlit.next();
+			cd.accept(this);
+			lc += (cd.code_rep.length + 1);
 		}
 
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
+		x.code_rep = new String[lc];
+		str_init(x.code_rep, lc);
 
-		y = x;
-		x.code_rep[0] += y.head.code_rep[0];
-		y = y.next;
-
-		while (y != null)
+		int cl = 0;
+		dlit = x.general_decl.listIterator();
+		while (dlit.hasNext())
 		{
-			x.code_rep[0] += ", ";
-			x.code_rep[0] += y.head.code_rep[0];
-			y = y.next;
-		}
-	}
-
-	@Override
-	public void visit(AssignmentExpr x) throws Exception
-	{
-		x.left.accept(this);
-		x.right.accept(this);
-
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		x.code_rep[0] += x.left.code_rep[0];
-		x.code_rep[0] += (" " + x.getOperator() + " ");
-		x.code_rep[0] += x.right.code_rep[0];
-	}
-
-	@Override
-	public void visit(BinaryExp x) throws Exception
-	{
-		x.left.accept(this);
-		x.right.accept(this);
-
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		x.code_rep[0] += x.left.code_rep[0];
-		x.code_rep[0] += (" " + x.getOperator() + " ");
-		x.code_rep[0] += x.right.code_rep[0];
-	}
-
-	@Override
-	public void visit(CastExpr x) throws Exception
-	{
-		x.target_type.accept(this);
-		x.expr.accept(this);
-
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		x.code_rep[0] += "(";
-		x.code_rep[0] += x.target_type.code_rep[0];
-		x.code_rep[0] += ")";
-		x.code_rep[0] += x.expr.code_rep[0];
-	}
-
-	@Override
-	public void visit(UnaryExpr x) throws Exception
-	{
-		if (x.expr != null)
-			x.expr.accept(this);
-		if (x.type_name != null)
-			x.type_name.accept(this);
-
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		x.code_rep[0] += x.getOperator();
-		if (x.type_name != null)
-		{
-			x.code_rep[0] += "(";
-			x.code_rep[0] += x.type_name.code_rep[0];
-			x.code_rep[0] += ")";
-		}
-		else
-		{
-			if (x.op == UnaryExpr.Operator.SIZEOF)
-				x.code_rep[0] += " ";
-
-			x.code_rep[0] += x.expr.code_rep[0];
-		}
-	}
-
-	@Override
-	public void visit(PostfixExpr x) throws Exception
-	{
-		x.expr.accept(this);
-
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		x.code_rep[0] += x.expr.code_rep[0];
-
-		switch (x.op)
-		{
-		case INC:
-		case DEC:
-			x.code_rep[0] += x.getOperator();
-			break;
-		case DOT:
-		case PTR:
-			x.code_rep[0] += x.getOperator();
-			x.code_rep[0] += (String) x.param;
-			break;
-		case MPAREN:
-			Expression e = (Expression) x.param;
-			e.accept(this);
-			x.code_rep[0] += "[";
-			x.code_rep[0] += e.code_rep[0];
-			x.code_rep[0] += "]";
-			break;
-		case PAREN:
-			Arguments args = (Arguments) x.param;
-			args.accept(this);
-			x.code_rep[0] += "(";
-			x.code_rep[0] += args.code_rep[0];
-			x.code_rep[0] += ")";
-			break;
-		default:
-			break;
-		}
-	}
-
-	@Override
-	public void visit(PrimaryExpr x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		switch (x.elem_type)
-		{
-		case ID:
-		case STRING:
-			x.code_rep[0] += (String) x.elem;
-			break;
-		case CHAR:
-			x.code_rep[0] += (Character) x.elem;
-			break;
-		case INT:
-			x.code_rep[0] += ((Integer) x.elem).toString();
-			break;
-		case PAREN:
-			Expression e = (Expression) x.elem;
-			e.accept(this);
-			x.code_rep[0] += "(";
-			x.code_rep[0] += e.code_rep[0];
-			x.code_rep[0] += ")";
-			break;
-		default:
-			break;
+			for (String str : dlit.next().code_rep)
+				x.code_rep[cl++] += str;
+			cl++;
 		}
 	}
 
@@ -378,17 +236,6 @@ public class PrettyPrinter implements ASTNodeVisitor
 				x.code_rep[cl++] += ("\t" + str);
 			x.code_rep[cl++] += "}";
 		}
-	}
-
-	@Override
-	public void visit(StarList x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		x.code_rep[0] = "";
-		for (int i = 0; i < x.cnt; i++)
-			x.code_rep[0] += "*";
 	}
 
 	@Override
@@ -822,81 +669,217 @@ public class PrettyPrinter implements ASTNodeVisitor
 			x.code_rep[0] += (" " + x.star_list.code_rep[0]);
 	}
 
-	@Override
-	public void visit(TypeSpecifier x) throws Exception
+	private static void str_init(String[] s, int num)
 	{
-		switch (x.type_detail)
+		for (int i = 0; i < num; i++)
+			s[i] = "".intern();
+	}
+
+	@Override
+	public void visit(VarDec x) throws Exception
+	{
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(FuncDec x) throws Exception
+	{
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(Init x) throws Exception
+	{
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(ExprStmt x) throws Exception
+	{
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(CompStmt x) throws Exception
+	{
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(SelectStmt x) throws Exception
+	{
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void visit(IterStmt x) throws Exception
+	{
+		// TODO Auto-generated method stub
+
+	}
+
+	/* Exp */
+	@Override
+	public void visit(CommaExp x) throws Exception
+	{
+		ListIterator<Exp> lit = x.exp.listIterator();
+		while (lit.hasNext())
 		{
-		case VOID:
-			x.code_rep = new String[1];
-			str_init(x.code_rep, 1);
-			x.code_rep[0] = "void";
-			return;
-		case INT:
-			x.code_rep = new String[1];
-			str_init(x.code_rep, 1);
-			x.code_rep[0] = "int";
-			return;
-		case CHAR:
-			x.code_rep = new String[1];
-			str_init(x.code_rep, 1);
-			x.code_rep[0] = "char";
-			return;
-		default:
-			break;
+			Exp te = lit.next();
+			te.accept(this);
 		}
 
-		if (x.comp == null)
+		x.code_rep = new String[1];
+		str_init(x.code_rep, 1);
+
+		int cnt = 0;
+		lit = x.exp.listIterator();
+		while (lit.hasNext())
 		{
-			x.code_rep = new String[1];
-			str_init(x.code_rep, 1);
-			x.code_rep[0] += (x.type_detail == compiler.Parser.Type.STRUCT ? "struct" : "union");
-			x.code_rep[0] += (" " + x.tag);
-		}
-		else
-		{
-			int lc = 3;
-			x.comp.accept(this);
-			lc += x.comp.code_rep.length;
-			x.code_rep = new String[lc];
-			str_init(x.code_rep, lc);
+			if (cnt != 0)
+				x.code_rep[0] += ", ".intern();
 
-			x.code_rep[0] = (x.type_detail == compiler.Parser.Type.STRUCT ? "struct" : "union");
-			if (x.tag != null)
-				x.code_rep[0] += (" " + x.tag);
-
-			x.code_rep[1] = "{";
-			x.code_rep[lc - 1] = "}";
-
-			int cl = 2;
-			for (String str : x.comp.code_rep)
-				x.code_rep[cl++] += ("\t" + str);
+			Exp te = lit.next();
+			x.code_rep[0] += te.code_rep[0];
 		}
 	}
 
 	@Override
-	public void visit(Prog x) throws Exception
+	public void visit(AssignExp x) throws Exception
 	{
-		Program y = x;
-		int lc = 0;
-		while (y != null)
+		x.left.accept(this);
+		x.right.accept(this);
+
+		x.code_rep = new String[1];
+		x.code_rep[0] = x.left.code_rep[0] + " " + x.get_op() + " " + x.right.code_rep[0];
+	}
+
+	@Override
+	public void visit(BinaryExp x) throws Exception
+	{
+		x.left.accept(this);
+		x.right.accept(this);
+
+		x.code_rep = new String[1];
+		x.code_rep[0] += x.left.code_rep[0] + " " + x.get_op() + " " + x.right.code_rep[0];
+	}
+
+	@Override
+	public void visit(CastExp x) throws Exception
+	{
+		x.exp.accept(this);
+
+		x.code_rep = new String[1];
+		str_init(x.code_rep, 1);
+
+		int tcn = x.tp_seq.size();
+		ListIterator<Type> lit = x.tp_seq.listIterator(tcn);
+		while (lit.hasPrevious())
 		{
-			y.head.accept(this);
-			lc += (y.head.code_rep.length + 1);
-			y = y.next;
+			Type ctp = lit.previous();
+			x.code_rep[0] += "(" + ctp.toString() + ")";
 		}
 
-		x.code_rep = new String[lc];
-		str_init(x.code_rep, lc);
+		x.code_rep[0] += x.exp.code_rep[0];
+	}
 
-		int cl = 0;
-		y = x;
-		while (y != null)
+	@Override
+	public void visit(UnaryExp x) throws Exception
+	{
+		if (x.exp != null)
+			x.exp.accept(this);
+
+		x.code_rep = new String[1];
+		x.code_rep[0] = x.get_op();
+
+		if (x.stp != null)
+			x.code_rep[0] += "(" + x.stp.toString() + ")";
+		else
 		{
-			for (String str : y.head.code_rep)
-				x.code_rep[cl++] += str;
-			cl++;
-			y = y.next;
+			if (x.category == UnaryExp.size_of)
+				x.code_rep[0] += " ";
+
+			x.code_rep[0] += x.exp.code_rep[0];
+		}
+	}
+
+	@Override
+	public void visit(PostfixExp x) throws Exception
+	{
+		x.pe.accept(this);
+
+		x.code_rep = new String[1];
+		x.code_rep[0] = x.pe.code_rep[0];
+
+		ListIterator<PostfixElem> lit = x.elem.listIterator();
+		while (lit.hasNext())
+		{
+			PostfixElem pfx = lit.next();
+			switch (pfx.category)
+			{
+			case PostfixExp.PostfixElem.post_idx:
+				Exp e = (Exp) pfx.exp;
+				e.accept(this);
+				x.code_rep[0] += "[" + e.code_rep[0] + "]";
+				break;
+			case PostfixExp.PostfixElem.post_call:
+				Exp args = (Exp) pfx.exp;
+				args.accept(this);
+				x.code_rep[0] += "(" + args.code_rep[0] + ")";
+				break;
+			case PostfixExp.PostfixElem.post_arrow:
+				x.code_rep[0] += Token.raw_rep(Token.PTR) + pfx.id;
+				break;
+			case PostfixExp.PostfixElem.post_dot:
+				x.code_rep[0] += Token.raw_rep(Token.DOT) + pfx.id;
+				break;
+			case PostfixExp.PostfixElem.post_inc:
+				x.code_rep[0] += Token.raw_rep(Token.INC);
+				break;
+			case PostfixExp.PostfixElem.post_dec:
+				x.code_rep[0] += Token.raw_rep(Token.DEC);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	@Override
+	public void visit(PrimaryExp x) throws Exception
+	{
+		x.code_rep = new String[1];
+
+		switch (x.category)
+		{
+		case PrimaryExp.pe_id:
+			x.code_rep[0] = ((Dec) x.value).name;
+			break;
+		case PrimaryExp.pe_str:
+			x.code_rep[0] = (String) x.value;
+			break;
+		case PrimaryExp.pe_ch:
+			x.code_rep[0] = ((Character) x.value).toString();
+			break;
+		case PrimaryExp.pe_int:
+			x.code_rep[0] = ((Integer) x.value).toString();
+			break;
+		case PrimaryExp.pe_fp:
+			x.code_rep[0] = ((Float) x.value).toString();
+			break;
+		case PrimaryExp.pe_paren:
+			Exp e = (Exp) x.value;
+			e.accept(this);
+			x.code_rep[0] = "(" + e.code_rep[0] + ")";
+			break;
+		default:
+			break;
 		}
 	}
 }

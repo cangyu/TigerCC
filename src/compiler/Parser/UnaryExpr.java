@@ -4,6 +4,24 @@ import compiler.Lexer.Token;
 
 public class UnaryExpr extends Expr
 {
+	public int type;
+	public Expr expr;
+	public TypeName tpn;
+
+	public UnaryExpr(int t, Expr c)
+	{
+		type = t;
+		expr = c;
+		tpn = null;
+	}
+
+	public UnaryExpr(TypeName t)
+	{
+		type = sizeof;
+		expr = null;
+		tpn = t;
+	}
+
 	public static final int inc = 1;
 	public static final int dec = 2;
 	public static final int address = 3;
@@ -31,14 +49,5 @@ public class UnaryExpr extends Expr
 		default:
 			return false;
 		}
-	}
-
-	public int type;
-	public Object elem;
-
-	public UnaryExpr(int t, Object c)
-	{
-		type = t;
-		elem = c;
 	}
 }

@@ -8,10 +8,10 @@ import compiler.Typing.Void;
 public class Init extends ASTNode
 {
 	public boolean listed;
-	public AssignExp exp;
+	public Exp exp;
 	public LinkedList<Init> init_list;
 
-	public Init(AssignExp e)
+	public Init(Exp e)
 	{
 		listed = false;
 		exp = e;
@@ -36,10 +36,11 @@ public class Init extends ASTNode
 				return false;
 
 			ListIterator<Init> lit = init_list.listIterator();
+			Type aet = ((Array) var_type).elem_type;
 			while (lit.hasNext())
 			{
 				Init ci = lit.next();
-				if (!ci.check_init(((Array) var_type).elem_type))
+				if (!ci.check_init(aet))
 					return false;
 			}
 			return true;
