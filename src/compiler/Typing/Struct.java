@@ -1,5 +1,7 @@
 package compiler.Typing;
 
+import compiler.Lexer.Token;
+
 public final class Struct extends Record
 {
 	public Struct()
@@ -25,10 +27,12 @@ public final class Struct extends Record
 		return equals(rhs);
 	}
 
-    
 	@Override
-    public String toString()
-    {
-	    return String.format("struct %s ", tag);
-    }
+	public String toString()
+	{
+		String ret = Token.raw_rep(Token.STRUCT) + " ";
+		if (tag != null)
+			ret += tag + " ";
+		return ret;
+	}
 }

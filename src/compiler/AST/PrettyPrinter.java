@@ -1,11 +1,9 @@
 package compiler.AST;
 
 import java.util.*;
-
 import compiler.AST.PostfixExp.PostfixElem;
 import compiler.Lexer.Token;
-import compiler.Parser.*;
-import compiler.Typing.Type;
+import compiler.Typing.*;
 
 public class PrettyPrinter implements ASTNodeVisitor
 {
@@ -15,6 +13,42 @@ public class PrettyPrinter implements ASTNodeVisitor
 
 	private static final String tab = "\t".intern();
 
+	private static void str_init(String[] s, int num)
+	{
+		for (int i = 0; i < num; i++)
+			s[i] = "".intern();
+	}
+
+	private static String c_form(Type t, String id)
+	{
+		String ret = "";
+		Type ct = t;
+
+		// possible array dimensions
+		while (ct instanceof Array)
+		{
+			Array ca = (Array) ct;
+			ret += String.format("[%d]", ca.elem_num);
+			ct = ca.elem_type;
+		}
+
+		// possible ptrs
+		String ptr = "";
+		while (ct instanceof Pointer)
+		{
+			Pointer cpt = (Pointer) ct;
+			ptr += "*".intern();
+			ct = cpt.elem_type;
+		}
+
+		// basic type
+		// Here we simplify the record representation
+		ret = ct.toString() + ptr + " " + id + ret;
+
+		return ret;
+	}
+
+	/* Prog */
 	@Override
 	public void visit(Prog x) throws Exception
 	{
@@ -34,438 +68,83 @@ public class PrettyPrinter implements ASTNodeVisitor
 		dlit = x.general_decl.listIterator();
 		while (dlit.hasNext())
 		{
-			for (String str : dlit.next().code_rep)
-				x.code_rep[cl++] += str;
-			cl++;
+			Dec cd = dlit.next();
+			for (String str : cd.code_rep)
+				x.code_rep[cl] = str;
+			cl += 2; // leave a blank line for eligance
 		}
 	}
 
 	@Override
 	public void visit(VarDec x) throws Exception
 	{
-		// TODO Auto-generated method stub
-
+		x.code_rep = new String[1];
+		x.code_rep[0] = c_form(x.type, x.name);
+		if (x.init != null)
+		{
+			x.init.accept(this);
+			x.code_rep[0] += " = " + x.init.code_rep[0];
+		}
 	}
 
 	@Override
 	public void visit(FuncDec x) throws Exception
 	{
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void visit(StmtList x) throws Exception
-	{
-		int lc = 0;
-		StmtList y = x;
-		while (y != null)
+		// construct contents and count lines
+		int lc = 3;
+		ListIterator<VarDec> vlit = x.var.listIterator();
+		ListIterator<Stmt> slit = x.st.listIterator();
+		while (vlit.hasNext())
 		{
-			y.head.accept(this);
-			lc += y.head.code_rep.length;
-			y = y.next;
+			VarDec cvd = vlit.next();
+			cvd.accept(this);
+			lc += cvd.code_rep.length;
+		}
+		while (slit.hasNext())
+		{
+			Stmt cst = slit.next();
+			cst.accept(this);
+			lc += cst.code_rep.length;
 		}
 
+		// initialize format
 		x.code_rep = new String[lc];
 		str_init(x.code_rep, lc);
 
-		int cl = 0;
-		y = x;
-		while (y != null)
+		// add func-name and parameters
+		x.code_rep[0] = c_form(x.ret_type, x.name) + Token.raw_rep(Token.LPAREN);
+		ListIterator<FuncDec.Parameter> plit = x.param.listIterator();
+		int cnt = 0;
+		while (plit.hasNext())
 		{
-			for (String str : y.head.code_rep)
+			if (cnt++ != 0)
+				x.code_rep[0] += Token.raw_rep(Token.COMMA) + " ";
+
+			FuncDec.Parameter cpm = plit.next();
+			x.code_rep[0] += c_form(cpm.type, cpm.name);
+		}
+		x.code_rep[0] += Token.raw_rep(Token.RPAREN);
+		x.code_rep[1] = Token.raw_rep(Token.LBRACE);
+
+		// body
+		int cl = 2;
+		vlit = x.var.listIterator();
+		while (vlit.hasNext())
+		{
+			VarDec cvd = vlit.next();
+			for (String str : cvd.code_rep)
 				x.code_rep[cl++] += str;
-			y = y.next;
-		}
-	}
-
-	@Override
-	public void visit(Declaration x) throws Exception
-	{
-		x.ts.accept(this);
-		if (x.init_declarator_list != null)
-			x.init_declarator_list.accept(this);
-
-		int lc = x.ts.code_rep.length, cl = 0;
-
-		x.code_rep = new String[lc];
-		str_init(x.code_rep, lc);
-
-		for (String str : x.ts.code_rep)
-			x.code_rep[cl++] += str;
-
-		--cl;
-		if (x.init_declarator_list != null)
-			x.code_rep[cl] += (" " + x.init_declarator_list.code_rep[0]);
-		x.code_rep[cl] += ";";
-	}
-
-	@Override
-	public void visit(Declarator x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		x.plain_declarator.accept(this);
-		x.code_rep[0] += x.plain_declarator.code_rep[0];
-		Iterator<Exp> it = x.dimension.iterator();
-		while (it.hasNext())
-		{
-			Exp ce = it.next();
-			ce.accept(this);
-			x.code_rep[0] += "[";
-			x.code_rep[0] += ce.code_rep[0];
-			x.code_rep[0] += "]";
-		}
-	}
-
-	@Override
-	public void visit(DeclarationList x) throws Exception
-	{
-		int lc = 0;
-		DeclarationList y = x;
-		while (y != null)
-		{
-			y.head.accept(this);
-			lc += y.head.code_rep.length;
-			y = y.next;
 		}
 
-		x.code_rep = new String[lc];
-		str_init(x.code_rep, lc);
-
-		int cl = 0;
-		y = x;
-		while (y != null)
+		slit = x.st.listIterator();
+		while (slit.hasNext())
 		{
-			for (String str : y.head.code_rep)
+			Stmt cst = slit.next();
+			for (String str : cst.code_rep)
 				x.code_rep[cl++] += str;
-			y = y.next;
-		}
-	}
-
-	@Override
-	public void visit(DeclaratorList x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		DeclaratorList y = x;
-		while (y != null)
-		{
-			y.head.accept(this);
-			y = y.next;
 		}
 
-		y = x;
-		x.code_rep[0] += y.head.code_rep[0];
-		y = y.next;
-		while (y != null)
-		{
-			x.code_rep[0] += ", ";
-			x.code_rep[0] += y.head.code_rep[0];
-			y = y.next;
-		}
-	}
-
-	@Override
-	public void visit(InitDeclarator x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		x.declarator.accept(this);
-		x.code_rep[0] += x.declarator.code_rep[0];
-
-		if (x.initializer != null)
-		{
-			x.initializer.accept(this);
-			x.code_rep[0] += " = ";
-			x.code_rep[0] += x.initializer.code_rep[0];
-		}
-	}
-
-	@Override
-	public void visit(InitDeclarators x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		InitDeclarators y = x;
-		while (y != null)
-		{
-			y.head.accept(this);
-			y = y.next;
-		}
-
-		y = x;
-		x.code_rep[0] += y.head.code_rep[0];
-		y = y.next;
-
-		while (y != null)
-		{
-			x.code_rep[0] += ", ";
-			x.code_rep[0] += y.head.code_rep[0];
-			y = y.next;
-		}
-	}
-
-	@Override
-	public void visit(NonInitDeclaration x) throws Exception
-	{
-		x.type_specifier.accept(this);
-		x.declarator_list.accept(this);
-
-		int lc = x.type_specifier.code_rep.length;
-		x.code_rep = new String[lc];
-		str_init(x.code_rep, lc);
-
-		int cl = 0;
-		for (String str : x.type_specifier.code_rep)
-			x.code_rep[cl++] += str;
-
-		--cl;
-		x.code_rep[cl] += (" " + x.declarator_list.code_rep[0] + ";");
-	}
-
-	@Override
-	public void visit(NonInitDeclarationList x) throws Exception
-	{
-		int lc = 0;
-		NonInitDeclarationList y = x;
-		while (y != null)
-		{
-			y.head.accept(this);
-			lc += y.head.code_rep.length;
-			y = y.next;
-		}
-
-		x.code_rep = new String[lc];
-		str_init(x.code_rep, lc);
-		int cl = 0;
-		y = x;
-		while (y != null)
-		{
-			for (String str : y.head.code_rep)
-				x.code_rep[cl++] += str;
-
-			y = y.next;
-		}
-	}
-
-	@Override
-	public void visit(PlainDeclaration x) throws Exception
-	{
-		// put all in one line for simplicity
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		plain_visit(x.ts);
-		x.dlr.accept(this);
-
-		x.code_rep[0] += x.ts.code_rep[0];
-		x.code_rep[0] += " ";
-		x.code_rep[0] += x.dlr.code_rep[0];
-	}
-
-	private void plain_visit(TypeSpecifier x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		switch (x.type_detail)
-		{
-		case VOID:
-			x.code_rep = new String[1];
-			x.code_rep[0] = "void";
-			return;
-		case INT:
-			x.code_rep = new String[1];
-			x.code_rep[0] = "int";
-			return;
-		case CHAR:
-			x.code_rep = new String[1];
-			x.code_rep[0] = "char";
-			return;
-		default:
-			break;
-		}
-
-		if (x.comp == null)
-		{
-			x.code_rep[0] += (x.type_detail == compiler.Parser.Type.STRUCT ? "struct" : "union");
-			x.code_rep[0] += (" " + x.tag);
-		}
-		else
-		{
-			plain_visit(x.comp);
-
-			x.code_rep[0] = (x.type_detail == compiler.Parser.Type.STRUCT ? "struct" : "union");
-			if (x.tag != null)
-				x.code_rep[0] += (" " + x.tag);
-
-			x.code_rep[0] += "{ ";
-			x.code_rep[0] += x.comp.code_rep[0];
-			x.code_rep[0] += "}";
-		}
-	}
-
-	private void plain_visit(NonInitDeclarationList x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		NonInitDeclarationList y = x;
-		while (y != null)
-		{
-			plain_visit(y.head);
-			y = y.next;
-		}
-
-		y = x;
-		x.code_rep[0] += y.head.code_rep[0];
-		y = y.next;
-
-		if (y == null)
-			x.code_rep[0] += " ";
-
-		while (y != null)
-		{
-			x.code_rep[0] += " ";
-			x.code_rep[0] += y.head.code_rep[0];
-			y = y.next;
-		}
-	}
-
-	private void plain_visit(NonInitDeclaration x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		plain_visit(x.type_specifier);
-		x.declarator_list.accept(this);
-
-		x.code_rep[0] += x.type_specifier.code_rep[0];
-		x.code_rep[0] += " ";
-		x.code_rep[0] += x.declarator_list.code_rep[0];
-		x.code_rep[0] += ";";
-	}
-
-	@Override
-	public void visit(PlainDeclarator x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		x.star_list.accept(this);
-		x.code_rep[0] += x.star_list.code_rep[0];
-		x.code_rep[0] += x.name;
-	}
-
-	@Override
-	public void visit(FuncDef x) throws Exception
-	{
-		int lc = 0;
-
-		x.ts.accept(this);
-		lc += x.ts.code_rep.length;
-
-		x.pd.accept(this);
-
-		if (x.pm != null)
-			x.pm.accept(this);
-
-		x.cst.accept(this);
-		lc += x.cst.code_rep.length;
-
-		x.code_rep = new String[lc];
-		str_init(x.code_rep, lc);
-
-		int cl = 0;
-		for (String str : x.ts.code_rep)
-			x.code_rep[cl++] += str;
-
-		--cl;
-		x.code_rep[cl] += (" " + x.pd.code_rep[0]);
-		if (x.pm == null)
-			x.code_rep[cl++] += "()";
-		else
-		{
-			x.code_rep[cl] += "(";
-			x.code_rep[cl] += x.pm.code_rep[0];
-			x.code_rep[cl++] += ")";
-		}
-
-		for (String str : x.cst.code_rep)
-			x.code_rep[cl++] += str;
-	}
-
-	@Override
-	public void visit(Arguments x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		Arguments y = x;
-		while (y != null)
-		{
-			y.head.accept(this);
-			y = y.next;
-		}
-
-		y = x;
-		x.code_rep[0] += y.head.code_rep[0];
-		y = y.next;
-		while (y != null)
-		{
-			x.code_rep[0] += (", " + y.head.code_rep[0]);
-			y = y.next;
-		}
-	}
-
-	@Override
-	public void visit(ParameterList x) throws Exception
-	{
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		ParameterList y = x;
-		while (y != null)
-		{
-			y.head.accept(this);
-			y = y.next;
-		}
-
-		y = x;
-		x.code_rep[0] += y.head.code_rep[0];
-		y = y.next;
-		while (y != null)
-		{
-			x.code_rep[0] += (", " + y.head.code_rep[0]);
-			y = y.next;
-		}
-	}
-
-	@Override
-	public void visit(TypeName x) throws Exception
-	{
-		// put all in one line for simplicity
-		x.code_rep = new String[1];
-		str_init(x.code_rep, 1);
-
-		plain_visit(x.type_specifier);
-		x.star_list.accept(this);
-
-		x.code_rep[0] += x.type_specifier.code_rep[0];
-
-		if (x.star_list.cnt > 0)
-			x.code_rep[0] += (" " + x.star_list.code_rep[0]);
-	}
-
-	private static void str_init(String[] s, int num)
-	{
-		for (int i = 0; i < num; i++)
-			s[i] = "".intern();
+		x.code_rep[cl] = Token.raw_rep(Token.RBRACE);
 	}
 
 	/* Init */

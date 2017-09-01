@@ -734,7 +734,7 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (clit.hasNext())
 		{
-			ret.op = BinaryExp.OR;
+			ret.op = BinaryExp.logical_or;
 			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
@@ -785,7 +785,7 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (clit.hasNext())
 		{
-			ret.op = BinaryExp.AND;
+			ret.op = BinaryExp.logical_and;
 			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
@@ -835,7 +835,7 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (clit.hasNext())
 		{
-			ret.op = BinaryExp.BIT_OR;
+			ret.op = BinaryExp.bitwise_or;
 			ret.right = parseExpr(clit.next(), y);
 
 			// the operands of bitwise operators must have integral types
@@ -883,7 +883,7 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (clit.hasNext())
 		{
-			ret.op = BinaryExp.BIT_XOR;
+			ret.op = BinaryExp.bitwise_xor;
 			ret.right = parseExpr(clit.next(), y);
 
 			// the operands of bitwise operators must have integral types
@@ -931,7 +931,7 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (clit.hasNext())
 		{
-			ret.op = BinaryExp.BIT_AND;
+			ret.op = BinaryExp.bitwise_and;
 			ret.right = parseExpr(clit.next(), y);
 
 			// the operands of bitwise operators must have integral types
@@ -1598,8 +1598,8 @@ public class ASTBuilder
 			if (entry.type == Entry.entry_var)
 			{
 				VarDec vd = (VarDec) entry.mirror;
-				ret.decorate(vd.type, vd.isConst, vd.isInitialized(), vd.isLval);
-				ret.set_value(vd.val);
+				ret.decorate(vd.type, false, vd.isInitialized(), true);
+				ret.set_value(vd);
 			}
 			else if (entry.type == Entry.entry_func)
 			{

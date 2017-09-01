@@ -8,11 +8,6 @@ public class VarDec extends Dec
 	public Init init;
 	public boolean hasAssigned; // for marking later assignment
 
-	// if the variable is an array
-	public boolean isConst;
-	public boolean isLval;
-	public Object val;
-
 	public VarDec(Type t, String vn, Init it, int off)
 	{
 		super(off, vn);

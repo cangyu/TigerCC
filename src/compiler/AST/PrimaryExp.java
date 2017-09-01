@@ -2,13 +2,6 @@ package compiler.AST;
 
 public class PrimaryExp extends Exp
 {
-	public static final int pe_id = 0;
-	public static final int pe_int = 1;
-	public static final int pe_ch = 2;
-	public static final int pe_fp = 3;
-	public static final int pe_str = 4;
-	public static final int pe_paren = 5;
-
 	public int category;
 	public Exp ce;
 
@@ -33,4 +26,11 @@ public class PrimaryExp extends Exp
 	{
 		v.visit(this);
 	}
+
+	public static final int pe_id = 0;
+	public static final int pe_int = 1;
+	public static final int pe_ch = 2;
+	public static final int pe_fp = 3;
+	public static final int pe_str = 4;
+	public static final int pe_paren = 5;
 }
