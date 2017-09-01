@@ -2,9 +2,6 @@ package compiler.AST;
 
 public class IterStmt extends Stmt
 {
-	public static final int iter_while = 0;
-	public static final int iter_for = 1;
-
 	public int category;
 	public Exp init, judge, next;
 	public Stmt stmt;
@@ -32,4 +29,7 @@ public class IterStmt extends Stmt
 	{
 		v.visit(this);
 	}
+
+	public static final int iter_while = 0;
+	public static final int iter_for = 1;
 }

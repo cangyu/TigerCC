@@ -9,9 +9,15 @@ public class JumpStatement extends Statement
 	public int type;
 	public Expr expr;
 
-	public JumpStatement(int jt, Expr e)
+	public JumpStatement(int jt)
 	{
 		type = jt;
+		expr = null;
+	}
+
+	public JumpStatement(Expr e)
+	{
+		type = RET;
 		expr = e;
 	}
 }

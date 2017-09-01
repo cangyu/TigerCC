@@ -15,11 +15,13 @@ public class Initializer
 	{
 		type = assign;
 		ae = x;
+		comp = null;
 	}
 
 	public Initializer()
 	{
 		type = list;
+		ae = null;
 		comp = new LinkedList<Initializer>();
 	}
 

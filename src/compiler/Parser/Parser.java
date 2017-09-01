@@ -815,7 +815,7 @@ public class Parser
 			advance();
 		else
 		{
-			panic("Unable to match \'if\' keyword.");
+			panic("Unable to match the \'if\' keyword.");
 			return null;
 		}
 
@@ -959,7 +959,7 @@ public class Parser
 				if (judge == null)
 				{
 					look = start_pos.pop();
-					panic("Unable to match the 2nd expression when parsing \'for\' iteration-statemen");
+					panic("Unable to match the 2nd expression when parsing \'for\' iteration-statement.");
 					return null;
 				}
 				else
@@ -980,7 +980,7 @@ public class Parser
 				if (next == null)
 				{
 					look = start_pos.pop();
-					panic("Unable to match the 3rd expression when parsing \'for\' iteration-statemen");
+					panic("Unable to match the 3rd expression when parsing \'for\' iteration-statement.");
 					return null;
 				}
 				else
@@ -1021,18 +1021,18 @@ public class Parser
 		if (match(Token.CONTINUE))
 		{
 			advance();
-			ret = new JumpStatement(JumpStatement.CTNU, null);
+			ret = new JumpStatement(JumpStatement.CTNU);
 		}
 		else if (match(Token.BREAK))
 		{
 			advance();
-			ret = new JumpStatement(JumpStatement.BRK, null);
+			ret = new JumpStatement(JumpStatement.BRK);
 		}
 		else if (match(Token.RETURN))
 		{
 			advance();
 			if (match(Token.SEMI))
-				ret = new JumpStatement(JumpStatement.RET, null); // check SEMI later
+				ret = new JumpStatement(JumpStatement.RET); // check SEMI later
 			else
 			{
 				Expr x = expression();
@@ -1045,7 +1045,7 @@ public class Parser
 				else
 				{
 					start_pos.pop();
-					ret = new JumpStatement(JumpStatement.RET, x);
+					ret = new JumpStatement(x);
 				}
 			}
 		}

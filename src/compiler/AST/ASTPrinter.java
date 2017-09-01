@@ -119,222 +119,6 @@ public class ASTPrinter implements ASTNodeVisitor
 		}
 	}
 
-	/* Stmt */
-	public void visit(ExpressionStatement es) throws Exception
-	{
-		if (es.e != null)
-		{
-			es.e.accept(this);
-			es.ast_rep = es.e.ast_rep;
-		}
-	}
-
-	public void visit(CompoundStatement cs) throws Exception
-	{
-		// construct components and count lines
-		int lc = 1;
-		if (cs.declaration_list != null)
-		{
-			cs.declaration_list.accept(this);
-			lc += cs.declaration_list.ast_rep.length;
-		}
-
-		if (cs.stmt_list != null)
-		{
-			cs.stmt_list.accept(this);
-			lc += cs.stmt_list.ast_rep.length;
-		}
-
-		// initialize format
-		cs.ast_rep = new String[lc];
-		cs.ast_rep[0] = leading + "CompoundStmt";
-		for (int i = 1; i < lc; i++)
-			cs.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-
-		if (cs.declaration_list != null)
-			for (String str : cs.declaration_list.ast_rep)
-				cs.ast_rep[cl++] += str;
-
-		if (cs.stmt_list != null)
-			for (String str : cs.stmt_list.ast_rep)
-				cs.ast_rep[cl++] += str;
-	}
-
-	public void visit(SelectionStatement ss) throws Exception
-	{
-		// construct sub-nodes and count lines
-		int lc = 1;
-
-		ss.cond.accept(this);
-		lc += ss.cond.ast_rep.length;
-
-		ss.if_clause.accept(this);
-		lc += ss.if_clause.ast_rep.length;
-
-		if (ss.else_clause != null)
-		{
-			ss.else_clause.accept(this);
-			lc += ss.else_clause.ast_rep.length;
-		}
-
-		// initialize format
-		ss.ast_rep = new String[lc];
-		ss.ast_rep[0] = leading + "SelectionStmt";
-		for (int i = 1; i < lc; i++)
-			ss.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-
-		for (String str : ss.cond.ast_rep)
-			ss.ast_rep[cl++] += str;
-
-		for (String str : ss.if_clause.ast_rep)
-			ss.ast_rep[cl++] += str;
-
-		if (ss.else_clause != null)
-			for (String str : ss.else_clause.ast_rep)
-				ss.ast_rep[cl++] += str;
-	}
-
-	public void visit(JumpStmt js) throws Exception
-	{
-		// construct sub-nodes and count lines
-		int lc = 1;
-		if (js.expr != null)
-		{
-			js.expr.accept(this);
-			lc += js.expr.ast_rep.length;
-		}
-
-		js.ast_rep = new String[lc];
-
-		// initialize format
-		js.ast_rep[0] = leading + "JumpStmt: ";
-		for (int i = 1; i < lc; i++)
-			js.ast_rep[i] = separator;
-
-		// add components
-		switch (js.type)
-		{
-		case CONTINUE:
-			js.ast_rep[0] += "CONTINUE";
-			break;
-		case BREAK:
-			js.ast_rep[0] += "BREAK";
-			break;
-		case RETURN:
-			js.ast_rep[0] += "RETURN";
-			break;
-		default:
-			break;
-		}
-
-		if (js.expr != null)
-		{
-			int cl = 1;
-			for (String str : js.expr.ast_rep)
-				js.ast_rep[cl++] += str;
-		}
-	}
-
-	public void visit(IterationStatement is) throws Exception
-	{
-		// construct sub-nodes and count lines
-		int lc = 2;
-
-		if (is.init != null)
-		{
-			is.init.accept(this);
-			lc += is.init.ast_rep.length;
-		}
-
-		if (is.judge != null)
-		{
-			is.judge.accept(this);
-			lc += is.judge.ast_rep.length;
-		}
-
-		if (is.next != null)
-		{
-			is.next.accept(this);
-			lc += is.next.ast_rep.length;
-		}
-
-		is.stmt.accept(this);
-		lc += is.stmt.ast_rep.length;
-
-		// initialize format
-		is.ast_rep = new String[lc];
-		is.ast_rep[0] = leading + "IterationStmt";
-		for (int i = 1; i < lc; i++)
-			is.ast_rep[i] = separator;
-
-		// add contents
-		is.ast_rep[1] += leading + "Type: ";
-		switch (is.iteration_type)
-		{
-		case FOR:
-			is.ast_rep[1] += "FOR_";
-			break;
-		case WHILE:
-			is.ast_rep[1] += "WHILE";
-			break;
-		default:
-			break;
-		}
-
-		int cl = 2;
-		if (is.iteration_type == IterationStmt.IterationStatement.WHILE)
-		{
-			for (String str : is.judge.ast_rep)
-				is.ast_rep[cl++] += str;
-
-			for (String str : is.stmt.ast_rep)
-				is.ast_rep[cl++] += str;
-		}
-		else
-		{
-			if (is.init != null)
-			{
-				is.ast_rep[1] += 'O';
-
-				for (String str : is.init.ast_rep)
-					is.ast_rep[cl++] += str;
-			}
-			else
-				is.ast_rep[1] += 'X';
-
-			if (is.judge != null)
-			{
-				is.ast_rep[1] += 'O';
-
-				for (String str : is.judge.ast_rep)
-					is.ast_rep[cl++] += str;
-			}
-			else
-				is.ast_rep[1] += 'X';
-
-			if (is.next != null)
-			{
-				is.ast_rep[1] += 'O';
-
-				for (String str : is.next.ast_rep)
-					is.ast_rep[cl++] += str;
-			}
-			else
-				is.ast_rep[1] += 'X';
-
-			for (String str : is.stmt.ast_rep)
-				is.ast_rep[cl++] += str;
-		}
-	}
-
-	/* Decl */
-
 	public void visit(Declarator vd) throws Exception
 	{
 		// construct components and count lines
@@ -521,77 +305,6 @@ public class ASTPrinter implements ASTNodeVisitor
 		}
 	}
 
-	public void visit(Initializer ini) throws Exception
-	{
-		// construct components and count lines
-		int lc = 1;
-
-		if (ini.expr != null)
-		{
-			ini.expr.accept(this);
-			lc += ini.expr.ast_rep.length;
-		}
-
-		if (ini.initializer_list != null)
-		{
-			ini.initializer_list.accept(this);
-			lc += ini.initializer_list.ast_rep.length;
-		}
-
-		// initialize format
-		ini.ast_rep = new String[lc];
-		ini.ast_rep[0] = leading + "Initializer";
-		for (int i = 1; i < lc; i++)
-			ini.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-		if (ini.expr != null)
-			for (String str : ini.expr.ast_rep)
-				ini.ast_rep[cl++] += str;
-
-		if (ini.initializer_list != null)
-			for (String str : ini.initializer_list.ast_rep)
-				ini.ast_rep[cl++] += str;
-	}
-
-	public void visit(InitializerList x) throws Exception
-	{
-		// construct components
-		InitializerList y = x;
-		while (y != null)
-		{
-			y.head.accept(this);
-			y = y.next;
-		}
-
-		// count lines
-		int lc = 1;
-		y = x;
-		while (y != null)
-		{
-			lc += y.head.ast_rep.length;
-			y = y.next;
-		}
-
-		// initialize format
-		x.ast_rep = new String[lc];
-		x.ast_rep[0] = leading + "InitializerList";
-		for (int i = 1; i < lc; i++)
-			x.ast_rep[i] = separator;
-
-		// add contents
-		int cl = 1;
-		y = x;
-		while (y != null)
-		{
-			for (String str : y.head.ast_rep)
-				x.ast_rep[cl++] += str;
-
-			y = y.next;
-		}
-	}
-
 	public void visit(NonInitDeclaration x) throws Exception
 	{
 		// construct components and count lines
@@ -704,34 +417,289 @@ public class ASTPrinter implements ASTNodeVisitor
 		x.ast_rep[cl++] += leading + "Identifier: " + x.name;
 	}
 
+	/* Init */
 	@Override
 	public void visit(Init x) throws Exception
 	{
+		if (x.listed)
+		{
+			// count lines and construct components
+			int lc = 1;
+			ListIterator<Init> lit = x.init_list.listIterator();
+			while (lit.hasNext())
+			{
+				Init ci = lit.next();
+				ci.accept(this);
+				lc += ci.ast_rep.length;
+			}
 
+			// initialize format
+			x.ast_rep = new String[lc];
+			x.ast_rep[0] = leading + "InitializerList";
+			for (int i = 1; i < lc; i++)
+				x.ast_rep[i] = separator;
+
+			// add contents
+			int cl = 1;
+			lit = x.init_list.listIterator();
+			while (lit.hasNext())
+			{
+				Init ci = lit.next();
+				for (String str : ci.ast_rep)
+					x.ast_rep[cl++] += str;
+			}
+		}
+		else
+		{
+			// construct components and count lines
+			int lc = 1;
+			x.exp.accept(this);
+			lc += x.exp.ast_rep.length;
+
+			// initialize format
+			x.ast_rep = new String[lc];
+			x.ast_rep[0] = leading + "Initializer";
+			for (int i = 1; i < lc; i++)
+				x.ast_rep[i] = separator;
+
+			// add contents
+			int cl = 1;
+			for (String str : x.exp.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
 	}
 
+	/* Stmt */
 	@Override
 	public void visit(ExprStmt x) throws Exception
 	{
+		// construct contents and count lines
+		int lc = 1;
+		if (x.exp != null)
+		{
+			x.exp.accept(this);
+			lc += x.exp.ast_rep.length;
+		}
 
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "ExpressionStmt";
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		if (x.exp != null)
+		{
+			int cl = 1;
+			for (String str : x.exp.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
+		else
+			x.ast_rep[0] += ": empty";
 	}
 
 	@Override
 	public void visit(CompStmt x) throws Exception
 	{
+		// construct components and count lines
+		int lc = 1;
+		ListIterator<VarDec> vlit = x.var.listIterator();
+		while (vlit.hasNext())
+		{
+			VarDec cvd = vlit.next();
+			cvd.accept(this);
+			lc += cvd.ast_rep.length;
+		}
 
+		ListIterator<Stmt> slit = x.st.listIterator();
+		while (slit.hasNext())
+		{
+			Stmt cst = slit.next();
+			cst.accept(this);
+			lc += cst.ast_rep.length;
+		}
+
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "CompoundStmt";
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		// add contents
+		int cl = 1;
+
+		vlit = x.var.listIterator();
+		while (vlit.hasNext())
+		{
+			VarDec cvd = vlit.next();
+			for (String str : cvd.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
+
+		slit = x.st.listIterator();
+		while (slit.hasNext())
+		{
+			Stmt cst = slit.next();
+			for (String str : cst.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
 	}
 
 	@Override
 	public void visit(SelectStmt x) throws Exception
 	{
+		// construct sub-nodes and count lines
+		int lc = 1;
 
+		x.condition.accept(this);
+		lc += x.condition.ast_rep.length;
+
+		x.if_branch.accept(this);
+		lc += x.if_branch.ast_rep.length;
+
+		if (x.else_branch != null)
+		{
+			x.else_branch.accept(this);
+			lc += x.else_branch.ast_rep.length;
+		}
+
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading + "SelectionStmt";
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		// add contents
+		int cl = 1;
+
+		for (String str : x.condition.ast_rep)
+			x.ast_rep[cl++] += str;
+
+		for (String str : x.if_branch.ast_rep)
+			x.ast_rep[cl++] += str;
+
+		if (x.else_branch != null)
+			for (String str : x.else_branch.ast_rep)
+				x.ast_rep[cl++] += str;
 	}
 
 	@Override
 	public void visit(IterStmt x) throws Exception
 	{
+		// construct sub-nodes and count lines
+		int lc = 1;
 
+		if (x.init != null)
+		{
+			x.init.accept(this);
+			lc += x.init.ast_rep.length;
+		}
+
+		if (x.judge != null)
+		{
+			x.judge.accept(this);
+			lc += x.judge.ast_rep.length;
+		}
+
+		if (x.next != null)
+		{
+			x.next.accept(this);
+			lc += x.next.ast_rep.length;
+		}
+
+		x.stmt.accept(this);
+		lc += x.stmt.ast_rep.length;
+
+		// initialize format
+		x.ast_rep = new String[lc];
+		x.ast_rep[0] = leading;
+		for (int i = 1; i < lc; i++)
+			x.ast_rep[i] = separator;
+
+		// add contents
+		switch (x.category)
+		{
+		case IterStmt.iter_for:
+			x.ast_rep[0] += "FOR_";
+			x.ast_rep[0] += x.init != null ? 'O' : 'X';
+			x.ast_rep[0] += x.judge != null ? 'O' : 'X';
+			x.ast_rep[0] += x.next != null ? 'O' : 'X';
+			break;
+		case IterStmt.iter_while:
+			x.ast_rep[0] += "WHILE";
+			break;
+		default:
+			break;
+		}
+
+		int cl = 1;
+		if (x.category == IterStmt.iter_while)
+		{
+			for (String str : x.judge.ast_rep)
+				x.ast_rep[cl++] += str;
+
+			for (String str : x.stmt.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
+		else if (x.category == IterStmt.iter_for)
+		{
+			if (x.init != null)
+				for (String str : x.init.ast_rep)
+					x.ast_rep[cl++] += str;
+
+			if (x.judge != null)
+				for (String str : x.judge.ast_rep)
+					x.ast_rep[cl++] += str;
+
+			if (x.next != null)
+				for (String str : x.next.ast_rep)
+					x.ast_rep[cl++] += str;
+
+			for (String str : x.stmt.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
+		else
+			return;
+	}
+
+	@Override
+	public void visit(JumpStmt js) throws Exception
+	{
+		// construct sub-nodes and count lines
+		int lc = 1;
+		if (js.exp != null)
+		{
+			js.exp.accept(this);
+			lc += js.exp.ast_rep.length;
+		}
+
+		js.ast_rep = new String[lc];
+
+		// initialize format
+		js.ast_rep[0] = leading;
+		for (int i = 1; i < lc; i++)
+			js.ast_rep[i] = separator;
+
+		// add components
+		switch (js.category)
+		{
+		case JumpStmt.jp_ctn:
+			js.ast_rep[0] += "CONTINUE";
+			break;
+		case JumpStmt.jp_brk:
+			js.ast_rep[0] += "BREAK";
+			break;
+		case JumpStmt.jp_ret:
+			js.ast_rep[0] += "RETURN";
+			break;
+		default:
+			break;
+		}
+
+		if (js.exp != null)
+		{
+			int cl = 1;
+			for (String str : js.exp.ast_rep)
+				js.ast_rep[cl++] += str;
+		}
 	}
 
 	/* Exp */

@@ -480,15 +480,12 @@ public class ASTBuilder
 
 	private ExprStmt parseExpressionStatement(ExpressionStatement x, Env y) throws Exception
 	{
-		ExprStmt ret = null;
-		if (x.elem == null)
-			ret = new ExprStmt(null);
-		else
-		{
-			Exp e = parseExpr(x.elem, y);
-			ret = new ExprStmt(e);
-		}
-		return ret;
+		Exp e = null;
+
+		if (x.elem != null)
+			e = parseExpr(x.elem, y);
+
+		return new ExprStmt(e);
 	}
 
 	private CompStmt parseCompoundStmt(CompoundStatement x, Env y) throws Exception
@@ -501,17 +498,31 @@ public class ASTBuilder
 			Type def_type = parseTypeSpecifier(decl.ts, y);
 			for (InitDeclarator idr : decl.elem)
 			{
+				// Symbol
 				String var_name = idr.declarator.plain_declarator.name;
 				Symbol var_sym = Symbol.getSymbol(var_name);
+
+				// Check duplication
 				if (ret.scope.get_local(var_sym) != null)
 					panic("Variable " + var_name + " has been declared in this scope.");
 
+				// Get type of current declarator
 				Type var_type = resolve_type(def_type, idr.declarator, y);
+
+				// Deal with initializer
 				boolean hasInit = idr.initializer != null;
 				Init var_it = hasInit ? parseInitializer(idr.initializer, y) : null;
+
+				// Check if the initialization is proper
+				if (hasInit && !var_it.check_init(var_type))
+					panic("Invalid initialization.");
+
+				// AST
 				VarDec var_dec = new VarDec(var_type, var_name, var_it, offset);
 				offset += var_type.width;
 				ret.add_var(var_dec);
+
+				// Environment
 				Entry var_entry = new Entry(Entry.entry_var, var_dec);
 				ret.scope.put(var_sym, var_entry);
 			}

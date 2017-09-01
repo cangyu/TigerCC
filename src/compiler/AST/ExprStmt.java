@@ -2,11 +2,11 @@ package compiler.AST;
 
 public class ExprStmt extends Stmt
 {
-	public Exp expr;
+	public Exp exp;
 
 	public ExprStmt(Exp ce)
 	{
-		expr = ce;
+		exp = ce;
 	}
 
 	@Override

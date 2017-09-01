@@ -15,11 +15,13 @@ public class Init extends ASTNode
 	{
 		listed = false;
 		exp = e;
+		init_list = null;
 	}
 
 	public Init()
 	{
 		listed = true;
+		exp = null;
 		init_list = new LinkedList<Init>();
 	}
 
