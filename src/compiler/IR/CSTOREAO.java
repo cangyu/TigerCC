@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class CSTOREAO extends NormalOp
+public class CSTOREAO extends Normal
 {
 	public CSTOREAO(Reg r1, Reg r2, Reg r3)
 	{

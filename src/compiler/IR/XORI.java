@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class XORI extends NormalOp
+public class XORI extends Normal
 {
 	public XORI(Reg r1, Immediate c2, Reg r3)
 	{

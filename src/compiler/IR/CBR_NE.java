@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class CBR_NE extends ControlFlowOp
+public class CBR_NE extends ControlFlow
 {
 	public CBR_NE(Immediate cc1, Label l2, Label l3)
 	{

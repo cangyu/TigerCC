@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class I2C extends NormalOp
+public class I2C extends Normal
 {
 	public I2C(Reg r1, Reg r2)
 	{

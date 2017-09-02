@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class MULTI extends NormalOp
+public class MULTI extends Normal
 {
 	public MULTI(Reg r1, Immediate c2, Reg r3)
 	{

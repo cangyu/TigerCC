@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class CSTORE extends NormalOp
+public class CSTORE extends Normal
 {
 	public CSTORE(Reg r1, Reg r2)
 	{

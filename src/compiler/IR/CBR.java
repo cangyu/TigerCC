@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class CBR extends ControlFlowOp
+public class CBR extends ControlFlow
 {
 	public CBR(Reg r1, Label l2, Label l3)
 	{

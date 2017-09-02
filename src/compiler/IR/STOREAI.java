@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class STOREAI extends NormalOp
+public class STOREAI extends Normal
 {
 	public STOREAI(Reg r1, Reg r2, Immediate c3)
 	{

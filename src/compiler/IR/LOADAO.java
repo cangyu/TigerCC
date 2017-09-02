@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class LOADAO extends NormalOp
+public class LOADAO extends Normal
 {
 	public LOADAO(Reg r1, Reg r2, Reg r3)
 	{

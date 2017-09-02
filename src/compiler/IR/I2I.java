@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class I2I extends NormalOp
+public class I2I extends Normal
 {
 	public I2I(Reg r1, Reg r2)
 	{

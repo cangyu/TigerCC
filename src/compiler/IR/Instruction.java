@@ -26,4 +26,12 @@ public class Instruction
 		for (Operation op : ops)
 			oper_list.add(op);
 	}
+	
+	public Instruction(Operation... ops)
+	{
+		label = null;
+		oper_list = new LinkedList<Operation>();
+		for (Operation op : ops)
+			oper_list.add(op);
+	}
 }

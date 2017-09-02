@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class RSHIFTI extends NormalOp
+public class RSHIFTI extends Normal
 {
 	public RSHIFTI(Reg r1, Immediate c2, Reg r3)
 	{

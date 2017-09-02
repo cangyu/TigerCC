@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class PHI extends NormalOp
+public class PHI extends Normal
 {
 	public PHI(Reg rm, Reg...regs)
 	{

@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class NOP extends NormalOp
+public class NOP extends Normal
 {
 	private NOP()
 	{

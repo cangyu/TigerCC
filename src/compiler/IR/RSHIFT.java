@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class RSHIFT extends NormalOp
+public class RSHIFT extends Normal
 {
 	public RSHIFT(Reg r1, Reg r2, Reg r3)
 	{

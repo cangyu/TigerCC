@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class ORI extends NormalOp
+public class ORI extends Normal
 {
 	public ORI(Reg r1, Immediate c2, Reg r3)
 	{

@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class CBR_GT extends ControlFlowOp
+public class CBR_GT extends ControlFlow
 {
 	public CBR_GT(Immediate cc1, Label l2, Label l3)
 	{

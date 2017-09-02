@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class CMP_GE extends ControlFlowOp
+public class CMP_GE extends ControlFlow
 {
 	public CMP_GE(Reg r1, Reg r2, Reg r3)
 	{

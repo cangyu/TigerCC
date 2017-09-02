@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class JUMPI extends ControlFlowOp
+public class JUMPI extends ControlFlow
 {
 	public JUMPI(Label l1)
 	{

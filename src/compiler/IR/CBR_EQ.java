@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class CBR_EQ extends ControlFlowOp
+public class CBR_EQ extends ControlFlow
 {
 	public CBR_EQ(Immediate cc1, Label l2, Label l3)
 	{

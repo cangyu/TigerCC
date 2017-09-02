@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class OR extends NormalOp
+public class OR extends Normal
 {
 	public OR(Reg r1, Reg r2, Reg r3)
 	{

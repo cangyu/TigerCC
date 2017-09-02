@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class RDIVI extends NormalOp
+public class RDIVI extends Normal
 {
 	public RDIVI(Reg r1, Immediate c2, Reg r3)
 	{

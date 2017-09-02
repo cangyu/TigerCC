@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class ADD extends NormalOp
+public class ADD extends Normal
 {
 	public ADD(Reg r1, Reg r2, Reg r3)
 	{

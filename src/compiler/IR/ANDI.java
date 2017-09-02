@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class ANDI extends NormalOp
+public class ANDI extends Normal
 {
 	public ANDI(Reg r1, Immediate c2, Reg r3)
 	{

@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class SUB extends NormalOp
+public class SUB extends Normal
 {
 	public SUB(Reg r1, Reg r2, Reg r3)
 	{

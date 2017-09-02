@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class LOADI extends NormalOp
+public class LOADI extends Normal
 {
 	public LOADI(Immediate c1, Reg r2)
 	{

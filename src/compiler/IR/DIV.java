@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class DIV extends NormalOp
+public class DIV extends Normal
 {
 	public DIV(Reg r1, Reg r2, Reg r3)
 	{

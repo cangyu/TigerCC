@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class JUMP extends ControlFlowOp
+public class JUMP extends ControlFlow
 {
 	public JUMP(Reg r1)
 	{

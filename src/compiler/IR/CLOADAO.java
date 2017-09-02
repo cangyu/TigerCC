@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class CLOADAO extends NormalOp
+public class CLOADAO extends Normal
 {
 	public CLOADAO(Reg r1, Reg r2, Reg r3)
 	{

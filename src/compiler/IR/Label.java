@@ -2,7 +2,6 @@ package compiler.IR;
 
 public class Label extends Operand
 {
-	public static int cnt = 0;
 	public String name;
 
 	public Label(String x)
@@ -13,7 +12,8 @@ public class Label extends Operand
 
 	public Label()
 	{
-		name = "l".intern() + cnt;
-		++cnt;
+		name = "l".intern() + cnt++;
 	}
+
+	private static int cnt = 0;
 }

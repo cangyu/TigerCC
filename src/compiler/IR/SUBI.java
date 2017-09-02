@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class SUBI extends NormalOp
+public class SUBI extends Normal
 {
 	public SUBI(Reg r1, Immediate c2, Reg r3)
 	{

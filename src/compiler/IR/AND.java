@@ -1,6 +1,6 @@
 package compiler.IR;
 
-public class AND extends NormalOp
+public class AND extends Normal
 {
 	public AND(Reg r1, Reg r2, Reg r3)
 	{
