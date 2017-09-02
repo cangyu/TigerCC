@@ -11,6 +11,20 @@ public class PrettyPrinter implements ASTNodeVisitor
 	// or sizeof or ParameterList or any other inconvenient
 	// places, just convert it into one line
 
+	private Prog entrance;
+
+	public PrettyPrinter(Prog x)
+	{
+		entrance = x;
+	}
+
+	public void print() throws Exception
+	{
+		visit(entrance);
+		for (String str : entrance.code_rep)
+			System.out.println(str);
+	}
+
 	private static final String tab = "\t".intern();
 
 	private static void str_init(String[] s, int num)

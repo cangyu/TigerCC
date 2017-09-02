@@ -17,6 +17,7 @@ public class Main
 
 	private static void compile(InputStream ips) throws Exception
 	{
+		// Syntactic
 		Lexer lex = new Lexer(ips);
 		Parser psr = new Parser(lex);
 		Program cst = psr.parse();
@@ -25,8 +26,13 @@ public class Main
 		else
 			System.out.println("WTF?");
 
+		// Semantic
 		ASTBuilder ast_bdr = new ASTBuilder();
 		Prog ast = ast_bdr.build(cst);
 		System.out.println(ast != null ? "OK!" : "WTF?");
+		ASTPrinter ap = new ASTPrinter(ast);
+		ap.print();
+		PrettyPrinter pp = new PrettyPrinter(ast);
+		pp.print();
 	}
 }

@@ -26,6 +26,6 @@ public class Pointer extends Type
     @Override
     public String toString()
     {
-        return String.format("ptr to %s ", elem_type.toString());
+        return String.format("ptr to %s", elem_type.toString());
     }
 }

@@ -11,6 +11,20 @@ public class ASTPrinter implements ASTNodeVisitor
 	private static final String leading = "--".intern();
 	private static final String separator = "    |".intern();
 
+	private Prog entrance;
+
+	public ASTPrinter(Prog x)
+	{
+		entrance = x;
+	}
+
+	public void print() throws Exception
+	{
+		visit(entrance);
+		for (String str : entrance.ast_rep)
+			System.out.println(str);
+	}
+
 	/* prog */
 	public void visit(Prog x) throws Exception
 	{
@@ -46,13 +60,14 @@ public class ASTPrinter implements ASTNodeVisitor
 	/* Dec */
 	public void visit(VarDec x) throws Exception
 	{
-		// construct components
+		// construct components and count lines
+		int lc = 1;
 		boolean hasInit = x.init != null;
 		if (hasInit)
+		{
 			x.init.accept(this);
-
-		// count lines
-		int lc = hasInit ? 2 : 1;
+			lc += x.init.ast_rep.length;
+		}
 
 		// initialize format
 		x.ast_rep = new String[lc];
@@ -63,7 +78,11 @@ public class ASTPrinter implements ASTNodeVisitor
 		// add contents
 		int cl = 1;
 		if (hasInit)
-			x.ast_rep[cl++] += "InitVal: ".intern() + x.init.ast_rep[0];
+		{
+			Init it = x.init;
+			for (String str : it.ast_rep)
+				x.ast_rep[cl++] += str;
+		}
 	}
 
 	public void visit(FuncDec x) throws Exception
@@ -72,10 +91,15 @@ public class ASTPrinter implements ASTNodeVisitor
 		int lc = 1;
 		ListIterator<VarDec> vlit = x.var.listIterator();
 		ListIterator<Stmt> slit = x.st.listIterator();
+		int cnt = 0;
 		while (vlit.hasNext())
 		{
 			VarDec cvd = vlit.next();
 			cvd.accept(this);
+
+			if (cnt++ < x.param.size())
+				continue;
+
 			lc += cvd.ast_rep.length;
 		}
 		while (slit.hasNext())
@@ -93,9 +117,16 @@ public class ASTPrinter implements ASTNodeVisitor
 		else
 		{
 			ListIterator<Parameter> plit = x.param.listIterator();
-			x.ast_rep[0] += plit.next().type.toString();
+			cnt = 0;
 			while (plit.hasNext())
-				x.ast_rep[0] += ", ".intern() + plit.next().type.toString();
+			{
+				Parameter cp = plit.next();
+				String csf = cp.name + " -> ".intern() + cp.type.toString();
+				if (cnt++ != 0)
+					x.ast_rep[0] += ", ".intern();
+
+				x.ast_rep[0] += csf;
+			}
 		}
 
 		x.ast_rep[0] += ") -> ".intern() + x.ret_type.toString();
@@ -107,9 +138,13 @@ public class ASTPrinter implements ASTNodeVisitor
 		int cl = 1;
 		vlit = x.var.listIterator();
 		slit = x.st.listIterator();
+		cnt = 0;
 		while (vlit.hasNext())
 		{
 			VarDec cvd = vlit.next();
+			if (cnt++ < x.param.size())
+				continue;
+
 			for (String str : cvd.ast_rep)
 				x.ast_rep[cl++] += str;
 		}

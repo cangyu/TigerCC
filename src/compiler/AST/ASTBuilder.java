@@ -3,6 +3,7 @@ package compiler.AST;
 import java.util.*;
 import compiler.AST.FuncDec.Parameter;
 import compiler.AST.PostfixExp.PostfixElem;
+import compiler.Lexer.Token;
 import compiler.Parser.*;
 import compiler.Parser.PostfixExpr.Postfix;
 import compiler.Scoping.*;
@@ -43,7 +44,7 @@ public class ASTBuilder
 				parseFuncDef(x, venv, ast);
 			}
 			else
-				panic("Internal Error.");
+				internal_error();
 		}
 
 		// check if there exists incomplete types
@@ -55,7 +56,7 @@ public class ASTBuilder
 
 			// defensive check
 			if (ct == null || !(ct instanceof Record))
-				panic("Internal Error.");
+				internal_error();
 
 			if (!check_complete(ct))
 				panic("Incomplete type detected.");
@@ -82,7 +83,7 @@ public class ASTBuilder
 				}
 			}
 			else
-				panic("Internal Error.");
+				internal_error();
 		}
 		else
 		{
@@ -164,6 +165,18 @@ public class ASTBuilder
 				panic("Variable \'" + param_name + "\' has been declared.");
 		}
 
+		// Environment
+		// In case of self-recursion
+		Function func_type = new Function(Void.getInstance(), ret_type);
+		ListIterator<Parameter> lit = func_dec.param.listIterator(func_dec.param.size());
+		while (lit.hasPrevious())
+		{
+			Type ct = lit.previous().type;
+			func_type = new Function(ct, func_type);
+		}
+		Entry func_entry = new Entry(func_dec, func_type);
+		y.put(func_sym, func_entry);
+
 		// function body
 		CompoundStatement tcst = x.cst;
 		for (Declaration decl : tcst.decls)
@@ -210,17 +223,6 @@ public class ASTBuilder
 
 		// AST hierarchy
 		z.add_dec(func_dec);
-
-		// Environment
-		Function func_type = new Function(Void.getInstance(), ret_type);
-		ListIterator<Parameter> lit = func_dec.param.listIterator(func_dec.param.size());
-		while (lit.hasPrevious())
-		{
-			Type ct = lit.previous().type;
-			func_type = new Function(ct, func_type);
-		}
-		Entry func_entry = new Entry(func_dec, func_type);
-		y.put(func_sym, func_entry);
 	}
 
 	private Type parseTypeSpecifier(TypeSpecifier t, Env y) throws Exception
@@ -240,7 +242,7 @@ public class ASTBuilder
 			{
 				// defensive check
 				if (tag == null)
-					panic("Internal Error.");
+					internal_error();
 
 				// get symbol from tag-environment
 				Symbol ss = Symbol.getSymbol(tag);
@@ -313,7 +315,7 @@ public class ASTBuilder
 			{
 				// defensive check
 				if (tag == null)
-					panic("Internal Error.");
+					internal_error();
 
 				// get symbol from tag-environment
 				Symbol ss = Symbol.getSymbol(tag);
@@ -382,7 +384,7 @@ public class ASTBuilder
 		}
 		else
 		{
-			panic("Internal Error.");
+			internal_error();
 			return null;
 		}
 	}
@@ -445,7 +447,7 @@ public class ASTBuilder
 			return ret;
 		}
 		else
-			panic("Internal Error.");
+			internal_error();
 
 		return ret;
 	}
@@ -474,7 +476,7 @@ public class ASTBuilder
 		else if (st instanceof JumpStatement)
 			ret = parseJumpStatement((JumpStatement) st, y);
 		else
-			panic("Internal Error.");
+			internal_error();
 		return ret;
 	}
 
@@ -567,7 +569,7 @@ public class ASTBuilder
 			ret = new IterStmt(ce1, ce2, ce3, st);
 		}
 		else
-			panic("Internal Error.");
+			internal_error();
 
 		return ret;
 	}
@@ -600,7 +602,7 @@ public class ASTBuilder
 			}
 		}
 		else
-			panic("Internal Error.");
+			internal_error();
 
 		return ret;
 	}
@@ -641,7 +643,7 @@ public class ASTBuilder
 		else if (x instanceof PrimaryExpr)
 			ret = parsePrimaryExpr((PrimaryExpr) x, y);
 		else
-			panic("Internal Error.");
+			internal_error();
 
 		return ret;
 	}
@@ -675,7 +677,7 @@ public class ASTBuilder
 
 		// defensive check
 		if (x.rexpr == null)
-			panic("Internal Error.");
+			internal_error();
 
 		// build right expression first
 		ret.right = parseExpr(x.rexpr, y);
@@ -687,7 +689,7 @@ public class ASTBuilder
 
 		// defensive check
 		if (x.op_list.size() != x.lexpr_list.size())
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Integer> alit = x.op_list.listIterator(x.op_list.size());
 		ListIterator<Expr> ulit = x.lexpr_list.listIterator(x.lexpr_list.size());
@@ -695,7 +697,46 @@ public class ASTBuilder
 		// build left side iteratively
 		while (alit.hasPrevious())
 		{
-			ret.assign_type = alit.previous().intValue();
+			switch (alit.previous().intValue())
+			{
+			case AssignmentExpr.ASSIGN:
+				ret.assign_type = AssignExp.plain;
+				break;
+			case AssignmentExpr.MUL_ASSIGN:
+				ret.assign_type = AssignExp.multi;
+				break;
+			case AssignmentExpr.DIV_ASSIGN:
+				ret.assign_type = AssignExp.divide;
+				break;
+			case AssignmentExpr.MOD_ASSIGN:
+				ret.assign_type = AssignExp.module;
+				break;
+			case AssignmentExpr.ADD_ASSIGN:
+				ret.assign_type = AssignExp.add;
+				break;
+			case AssignmentExpr.SUB_ASSIGN:
+				ret.assign_type = AssignExp.sub;
+				break;
+			case AssignmentExpr.SHL_ASSIGN:
+				ret.assign_type = AssignExp.left_shift;
+				break;
+			case AssignmentExpr.SHR_ASSIGN:
+				ret.assign_type = AssignExp.right_shift;
+				break;
+			case AssignmentExpr.AND_ASSIGN:
+				ret.assign_type = AssignExp.bit_and;
+				break;
+			case AssignmentExpr.XOR_ASSIGN:
+				ret.assign_type = AssignExp.bit_xor;
+				break;
+			case AssignmentExpr.OR_ASSIGN:
+				ret.assign_type = AssignExp.bit_or;
+				break;
+			default:
+				ret.assign_type = -1;
+				internal_error();
+				break;
+			}
 			ret.left = parseExpr(ulit.previous(), y);
 
 			if (alit.hasPrevious())
@@ -718,7 +759,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.isEmpty())
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 
@@ -769,7 +810,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.isEmpty())
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 
@@ -819,7 +860,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.isEmpty())
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 
@@ -867,7 +908,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.isEmpty())
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 
@@ -915,7 +956,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.isEmpty())
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 
@@ -963,7 +1004,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.size() != x.op_list.size() + 1)
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
@@ -978,7 +1019,19 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (plit.hasNext())
 		{
-			ret.op = plit.next().intValue();
+			switch (plit.next().intValue())
+			{
+			case Token.EQ:
+				ret.op = BinaryExp.equal;
+				break;
+			case Token.NE:
+				ret.op = BinaryExp.not_equal;
+				break;
+			default:
+				ret.op = -1;
+				internal_error();
+				break;
+			}
 			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
@@ -1010,7 +1063,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.size() != x.op_list.size() + 1)
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
@@ -1027,7 +1080,25 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (plit.hasNext())
 		{
-			ret.op = plit.next().intValue();
+			switch (plit.next().intValue())
+			{
+			case Token.LT:
+				ret.op = BinaryExp.less_than;
+				break;
+			case Token.LE:
+				ret.op = BinaryExp.less_equal;
+				break;
+			case Token.GT:
+				ret.op = BinaryExp.greater_than;
+				break;
+			case Token.GE:
+				ret.op = BinaryExp.greater_equal;
+				break;
+			default:
+				ret.op = -1;
+				internal_error();
+				break;
+			}
 			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
@@ -1060,7 +1131,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.size() != x.op_list.size() + 1)
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
@@ -1077,7 +1148,19 @@ public class ASTBuilder
 		// leaf or node cluster
 		while (plit.hasNext())
 		{
-			ret.op = plit.next().intValue();
+			switch (plit.next().intValue())
+			{
+			case Token.SHL:
+				ret.op = BinaryExp.shift_left;
+				break;
+			case Token.SHR:
+				ret.op = BinaryExp.shift_right;
+				break;
+			default:
+				ret.op = -1;
+				internal_error();
+				break;
+			}
 			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
@@ -1108,7 +1191,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.size() != x.op_list.size() + 1)
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
@@ -1126,7 +1209,19 @@ public class ASTBuilder
 		while (plit.hasNext())
 		{
 			// build ast
-			ret.op = plit.next().intValue();
+			switch (plit.next().intValue())
+			{
+			case Token.PLUS:
+				ret.op = BinaryExp.addition;
+				break;
+			case Token.MINUS:
+				ret.op = BinaryExp.substraction;
+				break;
+			default:
+				ret.op = -1;
+				internal_error();
+				break;
+			}
 			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
@@ -1155,7 +1250,7 @@ public class ASTBuilder
 	{
 		// defensive check
 		if (x.expr_list.size() != x.op_list.size() + 1)
-			panic("Internal Error.");
+			internal_error();
 
 		ListIterator<Expr> clit = x.expr_list.listIterator();
 		ListIterator<Integer> plit = x.op_list.listIterator();
@@ -1173,7 +1268,22 @@ public class ASTBuilder
 		while (plit.hasNext())
 		{
 			// build AST Node
-			ret.op = plit.next().intValue();
+			switch (plit.next().intValue())
+			{
+			case Token.TIMES:
+				ret.op = BinaryExp.multiply;
+				break;
+			case Token.DIVIDE:
+				ret.op = BinaryExp.division;
+				break;
+			case Token.MODULE:
+				ret.op = BinaryExp.module;
+				break;
+			default:
+				ret.op = -1;
+				internal_error();
+				break;
+			}
 			ret.right = parseExpr(clit.next(), y);
 
 			// semantic check
@@ -1321,7 +1431,7 @@ public class ASTBuilder
 					ret.set_value(new Double(-cval));
 				}
 				else
-					panic("Internal Error.");
+					internal_error();
 			}
 		}
 		else if (x.type == UnaryExpr.bit_not)
@@ -1388,7 +1498,7 @@ public class ASTBuilder
 						ret.set_value(new Integer(cval));
 					}
 					else
-						panic("Internal Error.");
+						internal_error();
 				}
 			}
 			else
@@ -1397,7 +1507,7 @@ public class ASTBuilder
 		else if (x.type == UnaryExpr.sizeof)
 		{
 			if (x.expr != null && x.tpn != null)
-				panic("Internal Error.");
+				internal_error();
 
 			if (x.expr != null)
 			{
@@ -1415,7 +1525,7 @@ public class ASTBuilder
 			}
 		}
 		else
-			panic("Internal Error.");
+			internal_error();
 
 		return ret;
 	}
@@ -1424,7 +1534,7 @@ public class ASTBuilder
 	{
 		Type ret = parseTypeSpecifier(x.type_specifier, y);
 		if (ret == null)
-			panic("Internal Error.");
+			internal_error();
 
 		for (int i = 0; i < x.star_cnt; i++)
 			ret = new Pointer(ret);
@@ -1576,7 +1686,7 @@ public class ASTBuilder
 				ret.decorate(cur_type, false, pe.hasInitialized, false);
 			}
 			else
-				panic("Internal Error.");
+				internal_error();
 		}
 
 		return ret;
@@ -1610,7 +1720,7 @@ public class ASTBuilder
 			else if (entry.type == Entry.entry_type)
 				panic("Can not use a type as identifier!");
 			else
-				panic("Internal Error.");
+				internal_error();
 		}
 		else if (x.type == PrimaryExpr.integer_constant)
 		{
@@ -1650,7 +1760,7 @@ public class ASTBuilder
 			ret.set_value(ce.value);
 		}
 		else
-			panic("Internal Error.");
+			internal_error();
 
 		return ret;
 	}
@@ -1687,5 +1797,10 @@ public class ASTBuilder
 	private void panic(String msg) throws Exception
 	{
 		throw new Exception(msg);
+	}
+
+	private void internal_error() throws Exception
+	{
+		panic("Internal Error.".intern());
 	}
 }
