@@ -4,6 +4,6 @@ public class PHI extends Normal
 {
 	public PHI(Reg rm, Reg...regs)
 	{
-		super(Opcode.phi, new OperandList(regs), new OperandList(rm));
+		super(Operation.phi, new OperandList(regs), new OperandList(rm));
 	}
 }

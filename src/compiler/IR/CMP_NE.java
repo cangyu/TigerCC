@@ -4,6 +4,6 @@ public class CMP_NE extends ControlFlow
 {
 	public CMP_NE(Reg r1, Reg r2, Reg r3)
 	{
-		super(Opcode.cmp_NE, new OperandList(r1, r2), new OperandList(r3));
+		super(Operation.cmp_NE, new OperandList(r1, r2), new OperandList(r3));
 	}
 }

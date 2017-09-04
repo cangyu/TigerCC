@@ -9,5 +9,10 @@ public class Reg extends Operand
 		index = ++cnt;
 	}
 
+	public Reg(int off)
+	{
+		index = off / 4;
+	}
+
 	private static int cnt = 0;
 }

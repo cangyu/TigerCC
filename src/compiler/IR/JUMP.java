@@ -4,6 +4,6 @@ public class JUMP extends ControlFlow
 {
 	public JUMP(Reg r1)
 	{
-		super(Opcode.jump, null, new OperandList(r1));
+		super(Operation.jump, null, new OperandList(r1));
 	}
 }

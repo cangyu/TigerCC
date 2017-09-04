@@ -2,25 +2,26 @@ package compiler.IR;
 
 import java.util.*;
 import compiler.AST.*;
+import compiler.Typing.*;
 
 public class IRBuilder
 {
 	private Prog entrance;
-	private ILOCProg tac_ir;
-	private Stack<Label> breakLabels, continueLabels;
+	private ILOCProg tac;
+	private Stack<Label> brk_lbl, ctn_lbl;
 
 	public IRBuilder(Prog x)
 	{
 		entrance = x;
-		tac_ir = new ILOCProg();
-		breakLabels = new Stack<Label>();
-		continueLabels = new Stack<Label>();
+		tac = new ILOCProg();
+		brk_lbl = new Stack<Label>();
+		ctn_lbl = new Stack<Label>();
 	}
 
 	public ILOCProg translate() throws Exception
 	{
 		transProg(entrance);
-		return tac_ir;
+		return tac;
 	}
 
 	private void transProg(Prog x) throws Exception
@@ -36,17 +37,40 @@ public class IRBuilder
 		}
 	}
 
+	private Reg get_access(Dec x)
+	{
+		return new Reg(x.offset);
+	}
+
 	/* Dec */
 	private void transVarDec(VarDec x) throws Exception
 	{
-		return;
+		Init ci = x.init;
+		if (ci != null)
+		{
+			Reg dst = get_access(x);
+			if (ci.listed)
+			{
+
+			}
+			else
+			{
+				Reg init_val = transExp(ci.exp);
+				if (ci.exp.type instanceof Int)
+					tac.add_oper(new MOVE(init_val, dst));
+				else if (ci.exp.type instanceof Char)
+				{
+
+				}
+			}
+		}
 	}
 
 	private void transFuncDec(FuncDec x) throws Exception
 	{
 		// leading label
 		Label lf = new Label(x.name);
-		tac_ir.add_instruction(new Instruction(lf, NOP.getInstance()));
+		tac.add_label(lf);
 
 		// parameters and local variables
 		ListIterator<VarDec> vlit = x.var.listIterator();
@@ -97,7 +121,7 @@ public class IRBuilder
 	{
 		Reg lhs = transExp(x.left);
 		Reg rhs = transExp(x.right);
-		tac_ir.add_instruction(new Instruction(new I2I(rhs, lhs)));
+		tac.add_oper(new MOVE(rhs, lhs));
 		return lhs;
 	}
 
@@ -105,80 +129,71 @@ public class IRBuilder
 	{
 		Reg lhs = transExp(x.left);
 		Reg rhs = transExp(x.right);
-		Reg ans = null;
-		
-		if (x.op == BinaryExp.addition)
-		{
-			
-		}
-		else if (x.op == BinaryExp.bitwise_and)
-		{
+		Reg ans = new Reg();
 
-		}
-		else if (x.op == BinaryExp.bitwise_or)
-		{
-
-		}
-		else if (x.op == BinaryExp.bitwise_xor)
-		{
-
-		}
+		if (x.op == BinaryExp.multiply)
+			tac.add_oper(new MULT(lhs, rhs, ans));
 		else if (x.op == BinaryExp.division)
+			tac.add_oper(new DIV(lhs, rhs, ans));
+		else if (x.op == BinaryExp.module)
 		{
-
+			Reg tmp = new Reg();
+			tac.add_oper(new DIV(lhs, rhs, ans));
+			tac.add_oper(new MULT(rhs, ans, tmp));
+			tac.add_oper(new SUB(lhs, tmp, ans));
 		}
+		else if (x.op == BinaryExp.addition)
+			tac.add_oper(new ADD(lhs, rhs, ans));
+		else if (x.op == BinaryExp.substraction)
+			tac.add_oper(new SUB(lhs, rhs, ans));
+		else if (x.op == BinaryExp.bitwise_and)
+			tac.add_oper(new AND(lhs, rhs, ans));
+		else if (x.op == BinaryExp.bitwise_or)
+			tac.add_oper(new OR(lhs, rhs, ans));
+		else if (x.op == BinaryExp.bitwise_xor)
+			tac.add_oper(new XOR(lhs, rhs, ans));
 		else if (x.op == BinaryExp.equal)
-		{
-
-		}
+			tac.add_oper(new CMP_EQ(lhs, rhs, ans));
 		else if (x.op == BinaryExp.greater_equal)
-		{
-
-		}
+			tac.add_oper(new CMP_GE(lhs, rhs, ans));
 		else if (x.op == BinaryExp.greater_than)
-		{
-
-		}
+			tac.add_oper(new CMP_GT(lhs, rhs, ans));
 		else if (x.op == BinaryExp.less_equal)
-		{
-
-		}
+			tac.add_oper(new CMP_LE(lhs, rhs, ans));
 		else if (x.op == BinaryExp.less_than)
-		{
-
-		}
+			tac.add_oper(new CMP_LT(lhs, rhs, ans));
+		else if (x.op == BinaryExp.not_equal)
+			tac.add_oper(new CMP_NE(lhs, rhs, ans));
 		else if (x.op == BinaryExp.logical_and)
 		{
-
+			Reg rz = new Reg();
+			Immediate iz = new Immediate(0);
+			Label end = new Label();
+			Label proceed_2nd = new Label();
+			tac.add_oper(new LOADI(iz, rz));
+			tac.add_oper(new CMP_NE(lhs, rz, ans));
+			tac.add_oper(new CBR(ans, proceed_2nd, end));
+			tac.add_label(proceed_2nd);
+			tac.add_oper(new CMP_NE(rhs, rz, ans));
+			tac.add_label(end);
 		}
 		else if (x.op == BinaryExp.logical_or)
 		{
-
-		}
-		else if (x.op == BinaryExp.module)
-		{
-
-		}
-		else if (x.op == BinaryExp.multiply)
-		{
-
-		}
-		else if (x.op == BinaryExp.not_equal)
-		{
-
+			Reg rz = new Reg();
+			Immediate iz = new Immediate(0);
+			Label end = new Label();
+			Label proceed_2nd = new Label();
+			tac.add_oper(new LOADI(iz, rz));
+			tac.add_oper(new CMP_NE(lhs, rz, ans));
+			tac.add_oper(new CBR(ans, end, proceed_2nd));
+			tac.add_label(proceed_2nd);
+			tac.add_oper(new CMP_NE(rhs, rz, ans));
+			tac.add_label(end);
 		}
 		else if (x.op == BinaryExp.shift_left)
-		{
-
-		}
+			tac.add_oper(new LSHIFT(lhs, rhs, ans));
 		else if (x.op == BinaryExp.shift_right)
-		{
-
-		}
-		else if (x.op == BinaryExp.substraction)
-		{
-
-		}
+			tac.add_oper(new RSHIFT(lhs, rhs, ans));
 		else
 			internal_error();
 
@@ -192,19 +207,17 @@ public class IRBuilder
 
 	private Reg transUnaryExp(UnaryExp x) throws Exception
 	{
-		if (x.exp != null)
-			x.exp.accept(this);
+		return null;
 	}
 
 	private Reg transPfxExp(PostfixExp x) throws Exception
 	{
-		x.pe.accept(this);
+		return null;
 	}
 
 	private Reg transPrimaryExp(PrimaryExp x) throws Exception
 	{
-		if (x.ce == null)
-			x.ce.accept(this);
+		return null;
 	}
 
 	/* Stmt */
@@ -249,10 +262,8 @@ public class IRBuilder
 		{
 			Label begin_while = new Label();
 			Label end_while = new Label();
-			tac_ir.add_instruction(new Instruction(begin_while));
+			tac.add_label(begin_while);
 			Reg cond = new Reg();
-			x.judge.accept(this);
-
 		}
 		else if (x.category == IterStmt.iter_for)
 		{
@@ -263,7 +274,7 @@ public class IRBuilder
 	}
 
 	/* Init */
-	private Operand transInit(Init x) throws Exception
+	private Reg transInit(Init x) throws Exception
 	{
 		return null;
 	}
