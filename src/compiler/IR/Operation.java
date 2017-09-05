@@ -3,7 +3,7 @@ package compiler.IR;
 public abstract class Operation
 {
 	public int op;
-	public Operand oprnd[];
+	public Operand[] oprnd;
 
 	public Operation(int x, Operand... oprs)
 	{
@@ -69,5 +69,4 @@ public abstract class Operation
 	public static final int cbr_NE = 52;
 	public static final int cbr_GT = 53;
 	public static final int cbr_GE = 54;
-	public static final int phi = 55;
 }
