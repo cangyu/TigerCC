@@ -4,7 +4,7 @@ public class NOP extends Normal
 {
 	private NOP()
 	{
-		super(Operation.nop, null, null);
+		super(Operation.nop);
 	}
 
 	private static NOP instance;

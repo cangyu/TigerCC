@@ -2,8 +2,8 @@ package compiler.IR;
 
 public class MOVE extends Operation
 {
-	public MOVE(Reg src, Reg dst)
+	public MOVE(Reg r1, Reg r2)
 	{
-		super(Operation.move, new OperandList(src), new OperandList(dst));
+		super(Operation.move, r1, r2);
 	}
 }

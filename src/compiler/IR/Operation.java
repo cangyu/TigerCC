@@ -1,23 +1,16 @@
 package compiler.IR;
 
-public class Operation
+public abstract class Operation
 {
 	public int op;
-	public OperandList src_list;
-	public OperandList dst_list;
+	public Operand oprnd[];
 
-	public Operation()
-	{
-		op = -1;
-		src_list = null;
-		dst_list = null;
-	}
-
-	public Operation(int x, OperandList y1, OperandList y2)
+	public Operation(int x, Operand... oprs)
 	{
 		op = x;
-		src_list = y1;
-		dst_list = y2;
+		oprnd = new Operand[oprs.length];
+		for (int i = 0; i < oprs.length; i++)
+			oprnd[i] = oprs[i];
 	}
 
 	public static final int nop = 0;

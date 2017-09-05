@@ -1,9 +1,9 @@
 package compiler.IR;
 
-public class Normal extends Operation
+public abstract class Normal extends Operation
 {
-	public Normal(int x, OperandList y1, OperandList y2)
+	public Normal(int x, Operand... y)
 	{
-		super(x, y1, y2);
+		super(x, y);
 	}
 }

@@ -3,6 +3,7 @@ package compiler.IR;
 import java.util.*;
 import compiler.AST.*;
 import compiler.AST.PostfixExp.PostfixElem;
+import compiler.Scoping.Symbol;
 import compiler.Typing.*;
 
 public class IRBuilder
@@ -11,6 +12,7 @@ public class IRBuilder
 	private ILOCProg tac;
 	private Stack<Label> begin_label, end_label;
 	private Label exit;
+	private Reg fp;
 
 	public IRBuilder(Prog x)
 	{
@@ -18,6 +20,7 @@ public class IRBuilder
 		tac = new ILOCProg();
 		begin_label = new Stack<Label>();
 		end_label = new Stack<Label>();
+		fp = new Reg();
 	}
 
 	public ILOCProg translate() throws Exception
@@ -31,7 +34,7 @@ public class IRBuilder
 			else
 				panic("Internal Error.");
 		}
-		
+
 		return tac;
 	}
 
@@ -47,20 +50,8 @@ public class IRBuilder
 		if (ci != null)
 		{
 			Reg dst = get_access(x);
-			if (ci.listed)
-			{
-
-			}
-			else
-			{
-				Reg init_val = transExp(ci.exp);
-				if (ci.exp.type instanceof Int)
-					tac.add_oper(new MOVE(init_val, dst));
-				else if (ci.exp.type instanceof Char)
-				{
-
-				}
-			}
+			Reg src = transInit(ci);
+			tac.add_oper(new MOVE(src, dst));
 		}
 	}
 
@@ -303,35 +294,98 @@ public class IRBuilder
 	private Reg transPfxExp(PostfixExp x) throws Exception
 	{
 		Reg ans = new Reg();
-
 		Reg base_val = transExp(x.pe);
 		ListIterator<PostfixElem> lit = x.elem.listIterator();
 		while (lit.hasNext())
 		{
 			PostfixElem pfx = lit.next();
-			if (pfx.category == PostfixElem.post_arrow)
+			if (pfx.category == PostfixElem.post_idx)
 			{
-
+				if (x.pe.type instanceof Pointer)
+				{
+					Reg dim = transExp(pfx.exp);
+					Pointer ptr = (Pointer) x.pe.type;
+					Immediate ul = new Immediate(ptr.elem_type.width);
+					Reg off = new Reg();
+					tac.add_oper(new MULTI(dim, ul, off));
+					Reg da = new Reg();
+					tac.add_oper(new ADD(base_val, off, da));
+					tac.add_oper(new LOAD(da, ans));
+				}
+				else if (x.pe.type instanceof Array)
+				{
+					Reg dim = transExp(pfx.exp);
+					Array ary = (Array) x.pe.type;
+					Immediate ul = new Immediate(ary.elem_type.width);
+					Reg off = new Reg();
+					tac.add_oper(new MULTI(dim, ul, off));
+					Reg da = new Reg();
+					tac.add_oper(new ADD(base_val, off, da));
+					tac.add_oper(new LOAD(da, ans));
+				}
+				else
+					internal_error();
 			}
 			else if (pfx.category == PostfixElem.post_call)
 			{
-
-			}
-			else if (pfx.category == PostfixElem.post_dec)
-			{
-
+				tac.add_oper(new JUMP(base_val));
 			}
 			else if (pfx.category == PostfixElem.post_dot)
 			{
-
+				if (x.pe.type instanceof Struct)
+				{
+					int off = 0;
+					Struct cst = (Struct) x.pe.type;
+					for (Symbol sym : cst.field.keySet())
+					{
+						if (sym.name.equals(pfx.id))
+							break;
+						off += cst.field.get(sym).width;
+					}
+					Immediate io = new Immediate(off);
+					tac.add_oper(new ADDI(base_val, io, ans));
+				}
+				else if (x.pe.type instanceof Union)
+				{
+					tac.add_oper(new MOVE(base_val, ans));
+				}
+				else
+					internal_error();
 			}
-			else if (pfx.category == PostfixElem.post_idx)
+			else if (pfx.category == PostfixElem.post_arrow)
 			{
-
+				Type ctp = ((Pointer) x.type).elem_type;
+				if (ctp instanceof Struct)
+				{
+					int off = 0;
+					Struct cst = (Struct) x.pe.type;
+					for (Symbol sym : cst.field.keySet())
+					{
+						if (sym.name.equals(pfx.id))
+							break;
+						off += cst.field.get(sym).width;
+					}
+					Immediate io = new Immediate(off);
+					tac.add_oper(new ADDI(base_val, io, ans));
+				}
+				else if (x.pe.type instanceof Union)
+				{
+					tac.add_oper(new MOVE(base_val, ans));
+				}
+				else
+					internal_error();
 			}
 			else if (pfx.category == PostfixElem.post_inc)
 			{
-
+				Immediate ione = new Immediate(1);
+				tac.add_oper(new MOVE(base_val, ans));
+				tac.add_oper(new ADDI(base_val, ione, base_val));
+			}
+			else if (pfx.category == PostfixElem.post_dec)
+			{
+				Immediate ione = new Immediate(1);
+				tac.add_oper(new MOVE(base_val, ans));
+				tac.add_oper(new SUBI(base_val, ione, base_val));
 			}
 			else
 				internal_error();
@@ -346,23 +400,38 @@ public class IRBuilder
 
 		if (x.category == PrimaryExp.pe_id)
 		{
-
+			String cid = (String) x.value;
+			Symbol csym = Symbol.getSymbol(cid);
+			int off = ((Dec) entrance.venv.get_global(csym).mirror).offset;
+			Immediate iof = new Immediate(off);
+			tac.add_oper(new LOADI(iof, ans));
 		}
 		else if (x.category == PrimaryExp.pe_ch)
 		{
-
+			Character cch = (Character) x.value;
+			int val = (int) cch.charValue();
+			Immediate ic = new Immediate(val);
+			tac.add_oper(new LOADI(ic, ans));
 		}
 		else if (x.category == PrimaryExp.pe_int)
 		{
-
+			Integer cint = (Integer) x.value;
+			int val = cint.intValue();
+			Immediate ic = new Immediate(val);
+			tac.add_oper(new LOADI(ic, ans));
 		}
 		else if (x.category == PrimaryExp.pe_fp)
 		{
-
+			Float cfp = (Float) x.value;
+			int val = (int) cfp.floatValue();
+			Immediate ic = new Immediate(val);
+			tac.add_oper(new LOADI(ic, ans));
 		}
 		else if (x.category == PrimaryExp.pe_str)
 		{
-
+			String cstr = (String) x.value;
+			Label lbl = new Label(cstr);
+			tac.add_label(lbl);
 		}
 		else if (x.category == PrimaryExp.pe_paren)
 		{
@@ -455,7 +524,7 @@ public class IRBuilder
 	}
 
 	private void transIterStmt(IterStmt x) throws Exception
-	{	
+	{
 		Label begin = new Label();
 		Label test = new Label();
 		Label end = new Label();
@@ -464,7 +533,7 @@ public class IRBuilder
 		{
 			begin_label.push(begin);
 			end_label.push(end);
-			
+
 			tac.add_label(begin);
 			Reg jge = transExp(x.judge);
 			tac.add_oper(new CBR(jge, test, end));
@@ -472,7 +541,7 @@ public class IRBuilder
 			transStmt(x.stmt);
 			tac.add_oper(new JUMPI(begin));
 			tac.add_label(end);
-			
+
 			begin_label.pop();
 			end_label.pop();
 		}
@@ -480,7 +549,7 @@ public class IRBuilder
 		{
 			begin_label.push(begin);
 			end_label.push(end);
-			
+
 			transExp(x.init);
 			tac.add_label(begin);
 			Reg jge = transExp(x.judge);
@@ -489,7 +558,7 @@ public class IRBuilder
 			transExp(x.next);
 			tac.add_oper(new JUMPI(begin));
 			tac.add_label(end);
-			
+
 			begin_label.pop();
 			end_label.pop();
 		}
@@ -500,7 +569,17 @@ public class IRBuilder
 	/* Init */
 	private Reg transInit(Init x) throws Exception
 	{
-		return null;
+
+		Reg ans = null;
+		if (x.listed)
+		{
+			for (Init it : x.init_list)
+				ans = transInit(it);
+		}
+		else
+			ans = transExp(x.exp);
+
+		return ans;
 	}
 
 	private void panic(String msg) throws Exception
