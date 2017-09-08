@@ -4,6 +4,7 @@ import java.io.*;
 import compiler.Lexer.*;
 import compiler.Parser.*;
 import compiler.AST.*;
+import compiler.IR.*;
 
 public class Main
 {
@@ -33,7 +34,12 @@ public class Main
 		System.out.println(ast_ok ? ok : wtf);
 		ASTPrinter ap = new ASTPrinter(ast);
 		ap.print();
-		PrettyPrinter pp = new PrettyPrinter(ast);
-		pp.print();
+		//PrettyPrinter pp = new PrettyPrinter(ast);
+		//pp.print();
+		
+		//IR
+		Translator ir_translator = new Translator(ast);
+		IRCode tac = ir_translator.translate();
+		System.out.print(tac.toString());
 	}
 }

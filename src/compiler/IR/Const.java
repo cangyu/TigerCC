@@ -18,4 +18,9 @@ public class Const extends Operand
 	{
 		val = new Float(x);
 	}
+
+	public String toString()
+	{
+		return "#".intern() + val.toString();
+	}
 }

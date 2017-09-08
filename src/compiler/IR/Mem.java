@@ -22,4 +22,12 @@ public class Mem extends Operand
 		base = t;
 		offset = o;
 	}
+
+	public String toString()
+	{
+		if (offset == 0)
+			return base.toString();
+		else
+			return base.toString() + "[" + offset + "]";
+	}
 }

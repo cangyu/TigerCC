@@ -9,20 +9,23 @@ import compiler.Typing.*;
 public class Translator
 {
 	private Prog entrance;
-	private IRProg tac;
+	private IRCode code;
 	private Stack<Label> begin_label, end_label;
 	private Label exit;
+
+	private final Const iz = new Const(0);
+	private final Const in = new Const(1);
+	private final Const iaf = new Const(0xFFFFFFFF);
 
 	public Translator(Prog x)
 	{
 		entrance = x;
-		tac = new IRProg();
+		code = new IRCode();
 		begin_label = new Stack<Label>();
 		end_label = new Stack<Label>();
-		fp = new Reg();
 	}
 
-	public IRProg translate() throws Exception
+	public IRCode translate() throws Exception
 	{
 		for (Dec dcl : entrance.general_decl)
 		{
@@ -34,12 +37,7 @@ public class Translator
 				panic("Internal Error.");
 		}
 
-		return tac;
-	}
-
-	private Reg get_access(Dec x)
-	{
-		return new Reg(x.offset);
+		return code;
 	}
 
 	/* Dec */
@@ -48,9 +46,8 @@ public class Translator
 		Init ci = x.init;
 		if (ci != null)
 		{
-			Reg dst = get_access(x);
-			Reg src = transInit(ci);
-			tac.add_oper(new MOVE(src, dst));
+			Temp ival = transInit(ci);
+			code.add_oper(new Move(ival, new Mem(x.offset)));
 		}
 	}
 
@@ -58,7 +55,7 @@ public class Translator
 	{
 		// leading label
 		Label lf = new Label(x.name);
-		tac.add_label(lf);
+		code.add_label(lf);
 
 		// parameters and local variables
 		ListIterator<VarDec> vlit = x.var.listIterator();
@@ -72,9 +69,9 @@ public class Translator
 	}
 
 	/* Exp */
-	private Reg transExp(Exp x) throws Exception
+	private Temp transExp(Exp x) throws Exception
 	{
-		Reg ret = null;
+		Temp ret = null;
 
 		if (x instanceof CommaExp)
 			ret = transCommaExp((CommaExp) x);
@@ -96,193 +93,224 @@ public class Translator
 		return ret;
 	}
 
-	private Reg transCommaExp(CommaExp x) throws Exception
+	private Temp transCommaExp(CommaExp x) throws Exception
 	{
 		ListIterator<Exp> alit = x.exp.listIterator();
-		Reg ret = null;
+		Temp ret = null;
 		while (alit.hasNext())
 			ret = transExp(alit.next());
 		return ret;
 	}
 
-	private Reg transAssignExp(AssignExp x) throws Exception
+	private Temp transAssignExp(AssignExp x) throws Exception
 	{
-		Reg lhs = transExp(x.left);
-		Reg rhs = transExp(x.right);
+		Temp lhs = transExp(x.left);
+		Temp rhs = transExp(x.right);
 
 		if (x.assign_type == AssignExp.plain)
-			tac.add_oper(new MOVE(rhs, lhs));
+			code.add_oper(new Move(rhs, lhs));
 		else if (x.assign_type == AssignExp.add)
-			tac.add_oper(new ADD(lhs, rhs, lhs));
+		{
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.add, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
+		}
 		else if (x.assign_type == AssignExp.sub)
-			tac.add_oper(new SUB(lhs, rhs, lhs));
+		{
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.sub, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
+		}
 		else if (x.assign_type == AssignExp.multi)
-			tac.add_oper(new MULT(lhs, rhs, lhs));
+		{
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.mult, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
+		}
 		else if (x.assign_type == AssignExp.divide)
-			tac.add_oper(new DIV(lhs, rhs, lhs));
+		{
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.div, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
+		}
 		else if (x.assign_type == AssignExp.module)
 		{
-			Reg tmp = new Reg();
-			tac.add_oper(new DIV(lhs, rhs, tmp));
-			tac.add_oper(new MULT(rhs, tmp, tmp));
-			tac.add_oper(new SUB(lhs, tmp, lhs));
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.mod, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
 		}
 		else if (x.assign_type == AssignExp.bit_and)
-			tac.add_oper(new AND(lhs, rhs, lhs));
+		{
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.and, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
+		}
 		else if (x.assign_type == AssignExp.bit_or)
-			tac.add_oper(new OR(lhs, rhs, lhs));
+		{
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.or, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
+		}
 		else if (x.assign_type == AssignExp.bit_xor)
-			tac.add_oper(new XOR(lhs, rhs, lhs));
+		{
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.xor, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
+		}
 		else if (x.assign_type == AssignExp.left_shift)
-			tac.add_oper(new LSHIFT(lhs, rhs, lhs));
+		{
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.lshift, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
+		}
 		else if (x.assign_type == AssignExp.right_shift)
-			tac.add_oper(new RSHIFT(lhs, rhs, lhs));
+		{
+			Temp ans = new Temp();
+			code.add_oper(new BinOp(Quad.rshift, lhs, rhs, ans));
+			code.add_oper(new Move(ans, lhs));
+		}
 		else
 			internal_error();
 
 		return lhs;
 	}
 
-	private Reg transBinaryExp(BinaryExp x) throws Exception
+	private Temp transBinaryExp(BinaryExp x) throws Exception
 	{
-		Reg lhs = transExp(x.left);
-		Reg rhs = transExp(x.right);
-		Reg ans = new Reg();
+		Temp lhs = transExp(x.left);
+		Temp rhs = transExp(x.right);
+		Temp ans = new Temp();
 
 		if (x.op == BinaryExp.multiply)
-			tac.add_oper(new MULT(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.mult, lhs, rhs, ans));
 		else if (x.op == BinaryExp.division)
-			tac.add_oper(new DIV(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.div, lhs, rhs, ans));
 		else if (x.op == BinaryExp.module)
-		{
-			Reg tmp = new Reg();
-			tac.add_oper(new DIV(lhs, rhs, ans));
-			tac.add_oper(new MULT(rhs, ans, tmp));
-			tac.add_oper(new SUB(lhs, tmp, ans));
-		}
+			code.add_oper(new BinOp(Quad.mod, lhs, rhs, ans));
 		else if (x.op == BinaryExp.addition)
-			tac.add_oper(new ADD(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.add, lhs, rhs, ans));
 		else if (x.op == BinaryExp.substraction)
-			tac.add_oper(new SUB(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.sub, lhs, rhs, ans));
 		else if (x.op == BinaryExp.bitwise_and)
-			tac.add_oper(new AND(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.and, lhs, rhs, ans));
 		else if (x.op == BinaryExp.bitwise_or)
-			tac.add_oper(new OR(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.or, lhs, rhs, ans));
 		else if (x.op == BinaryExp.bitwise_xor)
-			tac.add_oper(new XOR(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.xor, lhs, rhs, ans));
 		else if (x.op == BinaryExp.equal)
-			tac.add_oper(new CMP_EQ(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.cmp_EQ, lhs, rhs, ans));
 		else if (x.op == BinaryExp.not_equal)
-			tac.add_oper(new CMP_NE(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.cmp_NE, lhs, rhs, ans));
 		else if (x.op == BinaryExp.greater_equal)
-			tac.add_oper(new CMP_GE(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.cmp_GE, lhs, rhs, ans));
 		else if (x.op == BinaryExp.greater_than)
-			tac.add_oper(new CMP_GT(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.cmp_GT, lhs, rhs, ans));
 		else if (x.op == BinaryExp.less_equal)
-			tac.add_oper(new CMP_LE(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.cmp_LE, lhs, rhs, ans));
 		else if (x.op == BinaryExp.less_than)
-			tac.add_oper(new CMP_LT(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.cmp_LT, lhs, rhs, ans));
 		else if (x.op == BinaryExp.logical_and)
 		{
-			Reg rz = new Reg();
-			Const iz = new Const(0);
+			Label fail = new Label();
 			Label end = new Label();
-			Label proceed_2nd = new Label();
-			tac.add_oper(new LOADI(iz, rz));
-			tac.add_oper(new CMP_NE(lhs, rz, ans));
-			tac.add_oper(new CBR(ans, proceed_2nd, end));
-			tac.add_label(proceed_2nd);
-			tac.add_oper(new CMP_NE(rhs, rz, ans));
-			tac.add_label(end);
+
+			code.add_oper(new Branch(null, lhs, fail));
+			code.add_oper(new Branch(null, rhs, fail));
+			code.add_oper(new Move(in, ans));
+			code.add_oper(new Jump(end));
+			code.add_label(fail);
+			code.add_oper(new Move(iz, ans));
+			code.add_label(end);
 		}
 		else if (x.op == BinaryExp.logical_or)
 		{
-			Reg rz = new Reg();
-			Const iz = new Const(0);
+			Label ok = new Label();
 			Label end = new Label();
-			Label proceed_2nd = new Label();
-			tac.add_oper(new LOADI(iz, rz));
-			tac.add_oper(new CMP_NE(lhs, rz, ans));
-			tac.add_oper(new CBR(ans, end, proceed_2nd));
-			tac.add_label(proceed_2nd);
-			tac.add_oper(new CMP_NE(rhs, rz, ans));
-			tac.add_label(end);
+
+			code.add_oper(new Branch(lhs, null, ok));
+			code.add_oper(new Branch(rhs, null, ok));
+			code.add_oper(new Move(iz, ans));
+			code.add_oper(new Jump(end));
+			code.add_label(ok);
+			code.add_oper(new Move(in, ans));
+			code.add_label(end);
 		}
 		else if (x.op == BinaryExp.shift_left)
-			tac.add_oper(new LSHIFT(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.lshift, lhs, rhs, ans));
 		else if (x.op == BinaryExp.shift_right)
-			tac.add_oper(new RSHIFT(lhs, rhs, ans));
+			code.add_oper(new BinOp(Quad.rshift, lhs, rhs, ans));
 		else
 			internal_error();
 
 		return ans;
 	}
 
-	private Reg transCastExp(CastExp x) throws Exception
+	private Temp transCastExp(CastExp x) throws Exception
 	{
 		return null;
 	}
 
-	private Reg transUnaryExp(UnaryExp x) throws Exception
+	private Temp transUnaryExp(UnaryExp x) throws Exception
 	{
-		Reg ans = new Reg();
+		Temp ans = new Temp();
 		if (x.category == UnaryExp.address_of)
 		{
-			Reg tmp = transExp(x.exp);
+			Temp tmp = transExp(x.exp);
 			int off = tmp.index * 4;
 			Const iof = new Const(off);
-			tac.add_oper(new LOADI(iof, ans));
+			code.add_oper(new Move(iof, ans));
 		}
 		else if (x.category == UnaryExp.indirection)
 		{
-			Reg tmp = transExp(x.exp);
-			tac.add_oper(new LOAD(tmp, ans));
+			Temp tmp = transExp(x.exp);
+			code.add_oper(new Move(tmp, ans));
 		}
 		else if (x.category == UnaryExp.unary_plus)
 		{
-			Reg tmp = transExp(x.exp);
-			tac.add_oper(new MOVE(tmp, ans));
+			Temp tmp = transExp(x.exp);
+			code.add_oper(new Move(tmp, ans));
 		}
 		else if (x.category == UnaryExp.unary_minus)
 		{
-			Reg tmp = transExp(x.exp);
-			Const iz = new Const(0);
-			tac.add_oper(new RSUBI(tmp, iz, tmp));
-			tac.add_oper(new MOVE(tmp, ans));
+			Temp r1 = transExp(x.exp);
+			Temp r2 = new Temp();
+			code.add_oper(new BinOp(Quad.sub, iz, r1, r2));
+			code.add_oper(new Move(r2, ans));
 		}
 		else if (x.category == UnaryExp.bitwise_not)
 		{
-			Reg tmp = transExp(x.exp);
-			Const iaf = new Const(0xFFFFFFFF);
-			tac.add_oper(new XORI(tmp, iaf, ans));
+			Temp tmp = transExp(x.exp);
+			code.add_oper(new BinOp(Quad.xor, tmp, iaf, ans));
 		}
 		else if (x.category == UnaryExp.logical_negation)
 		{
-			Reg tmp = transExp(x.exp);
-			Const iz = new Const(0);
-			Reg rz = new Reg();
-			tac.add_oper(new LOADI(iz, rz));
-			tac.add_oper(new CMP_EQ(tmp, rz, ans));
+			Label ok = new Label();
+			Label end = new Label();
+			Temp tmp = transExp(x.exp);
+			code.add_oper(new Branch(tmp, null, ok));
+			code.add_oper(new Move(in, ans));
+			code.add_oper(new Jump(end));
+			code.add_label(ok);
+			code.add_oper(new Move(iz, ans));
+			code.add_label(end);
 		}
 		else if (x.category == UnaryExp.size_of)
 		{
 			int sz = x.exp != null ? x.exp.type.width : x.type.width;
 			Const isz = new Const(sz);
-			tac.add_oper(new LOADI(isz, ans));
+			code.add_oper(new Move(isz, ans));
 		}
 		else if (x.category == UnaryExp.inc)
 		{
-			Reg tmp = transExp(x.exp);
-			Const ione = new Const(1);
-			tac.add_oper(new ADDI(tmp, ione, tmp));
-			tac.add_oper(new MOVE(tmp, ans));
+			Temp tmp = transExp(x.exp);
+			code.add_oper(new BinOp(Quad.add, tmp, in, ans));
+			// write back?
 		}
 		else if (x.category == UnaryExp.dec)
 		{
-			Reg tmp = transExp(x.exp);
-			Const ione = new Const(1);
-			tac.add_oper(new SUBI(tmp, ione, tmp));
-			tac.add_oper(new MOVE(tmp, ans));
+			Temp tmp = transExp(x.exp);
+			code.add_oper(new BinOp(Quad.sub, tmp, in, ans));
+			// write back?
 		}
 		else
 			internal_error();
@@ -290,10 +318,10 @@ public class Translator
 		return ans;
 	}
 
-	private Reg transPfxExp(PostfixExp x) throws Exception
+	private Temp transPfxExp(PostfixExp x) throws Exception
 	{
-		Reg ans = new Reg();
-		Reg base_val = transExp(x.pe);
+		Temp ans = new Temp();
+		Temp base_val = transExp(x.pe);
 		ListIterator<PostfixElem> lit = x.elem.listIterator();
 		while (lit.hasNext())
 		{
@@ -302,32 +330,32 @@ public class Translator
 			{
 				if (x.pe.type instanceof Pointer)
 				{
-					Reg dim = transExp(pfx.exp);
+					Temp dim = transExp(pfx.exp);
 					Pointer ptr = (Pointer) x.pe.type;
 					Const ul = new Const(ptr.elem_type.width);
-					Reg off = new Reg();
-					tac.add_oper(new MULTI(dim, ul, off));
-					Reg da = new Reg();
-					tac.add_oper(new ADD(base_val, off, da));
-					tac.add_oper(new LOAD(da, ans));
+					Temp off = new Temp();
+					code.add_oper(new BinOp(Quad.mult, dim, ul, off));
+					Temp da = new Temp();
+					code.add_oper(new BinOp(Quad.add, base_val, off, da));
+					code.add_oper(new Move(da, ans));
 				}
 				else if (x.pe.type instanceof Array)
 				{
-					Reg dim = transExp(pfx.exp);
+					Temp dim = transExp(pfx.exp);
 					Array ary = (Array) x.pe.type;
 					Const ul = new Const(ary.elem_type.width);
-					Reg off = new Reg();
-					tac.add_oper(new MULTI(dim, ul, off));
-					Reg da = new Reg();
-					tac.add_oper(new ADD(base_val, off, da));
-					tac.add_oper(new LOAD(da, ans));
+					Temp off = new Temp();
+					code.add_oper(new BinOp(Quad.mult, dim, ul, off));
+					Temp da = new Temp();
+					code.add_oper(new BinOp(Quad.add, base_val, off, da));
+					code.add_oper(new Move(da, ans));
 				}
 				else
 					internal_error();
 			}
 			else if (pfx.category == PostfixElem.post_call)
 			{
-				tac.add_oper(new JUMP(base_val));
+				// tac.add_oper(new JUMP(base_val));
 			}
 			else if (pfx.category == PostfixElem.post_dot)
 			{
@@ -342,11 +370,11 @@ public class Translator
 						off += cst.field.get(sym).width;
 					}
 					Const io = new Const(off);
-					tac.add_oper(new ADDI(base_val, io, ans));
+					code.add_oper(new BinOp(Quad.add, base_val, io, ans));
 				}
 				else if (x.pe.type instanceof Union)
 				{
-					tac.add_oper(new MOVE(base_val, ans));
+					code.add_oper(new Move(base_val, ans));
 				}
 				else
 					internal_error();
@@ -365,11 +393,11 @@ public class Translator
 						off += cst.field.get(sym).width;
 					}
 					Const io = new Const(off);
-					tac.add_oper(new ADDI(base_val, io, ans));
+					code.add_oper(new BinOp(Quad.add, base_val, io, ans));
 				}
 				else if (x.pe.type instanceof Union)
 				{
-					tac.add_oper(new MOVE(base_val, ans));
+					code.add_oper(new Move(base_val, ans));
 				}
 				else
 					internal_error();
@@ -377,14 +405,14 @@ public class Translator
 			else if (pfx.category == PostfixElem.post_inc)
 			{
 				Const ione = new Const(1);
-				tac.add_oper(new MOVE(base_val, ans));
-				tac.add_oper(new ADDI(base_val, ione, base_val));
+				code.add_oper(new Move(base_val, ans));
+				code.add_oper(new BinOp(Quad.add, base_val, ione, base_val));
 			}
 			else if (pfx.category == PostfixElem.post_dec)
 			{
 				Const ione = new Const(1);
-				tac.add_oper(new MOVE(base_val, ans));
-				tac.add_oper(new SUBI(base_val, ione, base_val));
+				code.add_oper(new Move(base_val, ans));
+				code.add_oper(new BinOp(Quad.sub, base_val, ione, base_val));
 			}
 			else
 				internal_error();
@@ -393,9 +421,9 @@ public class Translator
 		return ans;
 	}
 
-	private Reg transPrimaryExp(PrimaryExp x) throws Exception
+	private Temp transPrimaryExp(PrimaryExp x) throws Exception
 	{
-		Reg ans = new Reg();
+		Temp ans = new Temp();
 
 		if (x.category == PrimaryExp.pe_id)
 		{
@@ -403,39 +431,39 @@ public class Translator
 			Symbol csym = Symbol.getSymbol(cid);
 			int off = ((Dec) entrance.venv.get_global(csym).mirror).offset;
 			Const iof = new Const(off);
-			tac.add_oper(new LOADI(iof, ans));
+			code.add_oper(new Move(iof, ans));
 		}
 		else if (x.category == PrimaryExp.pe_ch)
 		{
 			Character cch = (Character) x.value;
 			int val = (int) cch.charValue();
 			Const ic = new Const(val);
-			tac.add_oper(new LOADI(ic, ans));
+			code.add_oper(new Move(ic, ans));
 		}
 		else if (x.category == PrimaryExp.pe_int)
 		{
 			Integer cint = (Integer) x.value;
 			int val = cint.intValue();
 			Const ic = new Const(val);
-			tac.add_oper(new LOADI(ic, ans));
+			code.add_oper(new Move(ic, ans));
 		}
 		else if (x.category == PrimaryExp.pe_fp)
 		{
 			Float cfp = (Float) x.value;
 			int val = (int) cfp.floatValue();
 			Const ic = new Const(val);
-			tac.add_oper(new LOADI(ic, ans));
+			code.add_oper(new Move(ic, ans));
 		}
 		else if (x.category == PrimaryExp.pe_str)
 		{
 			String cstr = (String) x.value;
 			Label lbl = new Label(cstr);
-			tac.add_label(lbl);
+			code.add_label(lbl);
 		}
 		else if (x.category == PrimaryExp.pe_paren)
 		{
-			Reg tmp = transExp(x.ce);
-			tac.add_oper(new MOVE(tmp, ans));
+			Temp tmp = transExp(x.ce);
+			code.add_oper(new Move(tmp, ans));
 		}
 		else
 			internal_error();
@@ -485,39 +513,35 @@ public class Translator
 
 	private void transSelectStmt(SelectStmt x) throws Exception
 	{
-		Reg jge = transExp(x.condition);
+		Temp jge = transExp(x.condition);
 		if (x.else_branch != null)
 		{
-			Label begin_if = new Label();
 			Label begin_else = new Label();
 			Label end = new Label();
-			tac.add_oper(new CBR(jge, begin_if, begin_else));
-			tac.add_label(begin_if);
+			code.add_oper(new Branch(null, jge, begin_else));
 			transStmt(x.if_branch);
-			tac.add_oper(new JUMPI(end));
-			tac.add_label(begin_else);
+			code.add_oper(new Jump(end));
+			code.add_label(begin_else);
 			transStmt(x.else_branch);
-			tac.add_label(end);
+			code.add_label(end);
 		}
 		else
 		{
-			Label begin_if = new Label();
 			Label end = new Label();
-			tac.add_oper(new CBR(jge, begin_if, end));
-			tac.add_label(begin_if);
+			code.add_oper(new Branch(null, jge, end));
 			transStmt(x.if_branch);
-			tac.add_label(end);
+			code.add_label(end);
 		}
 	}
 
 	private void transJumpStmt(JumpStmt x) throws Exception
 	{
 		if (x.category == JumpStmt.jp_brk)
-			tac.add_oper(new JUMPI(end_label.peek()));
+			code.add_oper(new Jump(end_label.peek()));
 		else if (x.category == JumpStmt.jp_ctn)
-			tac.add_oper(new JUMPI(begin_label.peek()));
+			code.add_oper(new Jump(begin_label.peek()));
 		else if (x.category == JumpStmt.jp_ret)
-			tac.add_oper(new JUMPI(exit));
+			code.add_oper(new Jump(exit));
 		else
 			internal_error();
 	}
@@ -525,7 +549,6 @@ public class Translator
 	private void transIterStmt(IterStmt x) throws Exception
 	{
 		Label begin = new Label();
-		Label test = new Label();
 		Label end = new Label();
 
 		if (x.category == IterStmt.iter_while)
@@ -533,13 +556,12 @@ public class Translator
 			begin_label.push(begin);
 			end_label.push(end);
 
-			tac.add_label(begin);
-			Reg jge = transExp(x.judge);
-			tac.add_oper(new CBR(jge, test, end));
-			tac.add_label(test);
+			code.add_label(begin);
+			Temp jge = transExp(x.judge);
+			code.add_oper(new Branch(null, jge, end));
 			transStmt(x.stmt);
-			tac.add_oper(new JUMPI(begin));
-			tac.add_label(end);
+			code.add_oper(new Jump(begin));
+			code.add_label(end);
 
 			begin_label.pop();
 			end_label.pop();
@@ -550,13 +572,13 @@ public class Translator
 			end_label.push(end);
 
 			transExp(x.init);
-			tac.add_label(begin);
-			Reg jge = transExp(x.judge);
-			tac.add_oper(new CBR(jge, test, end));
+			code.add_label(begin);
+			Temp jge = transExp(x.judge);
+			code.add_oper(new Branch(null, jge, end));
 			transStmt(x.stmt);
 			transExp(x.next);
-			tac.add_oper(new JUMPI(begin));
-			tac.add_label(end);
+			code.add_oper(new Jump(begin));
+			code.add_label(end);
 
 			begin_label.pop();
 			end_label.pop();
@@ -566,9 +588,9 @@ public class Translator
 	}
 
 	/* Init */
-	private Reg transInit(Init x) throws Exception
+	private Temp transInit(Init x) throws Exception
 	{
-		Reg ans = null;
+		Temp ans = null;
 		if (x.listed)
 		{
 			for (Init it : x.init_list)

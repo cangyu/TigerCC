@@ -2,7 +2,16 @@ package compiler.IR;
 
 public class Branch extends Quad
 {
-	public Branch(int o, Label lbl, Operand l, Operand r)
+	// Here I defined 3 kinds of conditional branch:
+	// Branch(-1, x, null, L) -> if x goto L
+	// Branch(-1, null, x, L) -> if (not x) goto L
+	// Branch(op, x, y, L) -> if (x op y) goto L
+	public Branch(Operand l, Operand r, Label lbl)
+	{
+		super(-1, l, r, lbl);
+	}
+
+	public Branch(int o, Operand l, Operand r, Label lbl)
 	{
 		super(o, l, r, lbl);
 	}
@@ -10,6 +19,14 @@ public class Branch extends Quad
 	@Override
 	public String toString()
 	{
-		return arg1.toString() + Quad.get_op(op) + arg2.toString() + "? goto ".intern() + result.toString();
+		String ret = "".intern();
+		ret += arg1.toString();
+		ret += " ".intern();
+		ret += Quad.get_op(op);
+		ret += " ".intern();
+		ret += arg2.toString();
+		ret += " ? goto ".intern();
+		ret += result.toString();
+		return ret;
 	}
 }

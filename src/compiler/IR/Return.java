@@ -10,6 +10,6 @@ public class Return extends Quad
 	@Override
 	public String toString()
 	{
-		return "return " + result.toString();
+		return "return ".intern() + result.toString();
 	}
 }

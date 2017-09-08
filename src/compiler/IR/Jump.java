@@ -10,7 +10,7 @@ public class Jump extends Quad
 	@Override
 	public String toString()
 	{
-		return "j " + result.toString();
+		return "j ".intern() + result.toString();
 	}
 
 }

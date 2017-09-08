@@ -1,8 +1,8 @@
 package compiler.IR;
 
-import java.util.LinkedList;
+import java.util.*;
 
-public class IRProg
+public class IRCode
 {
 	public class Ins
 	{
@@ -26,11 +26,22 @@ public class IRProg
 			lbl = x;
 			oper = y;
 		}
+
+		public String toString()
+		{
+			String ret = "".intern();
+			if (lbl != null)
+				ret += lbl.toString();
+			if (oper != null)
+				ret += oper.toString();
+			ret += "\n".intern();
+			return ret;
+		}
 	}
 
 	public LinkedList<Ins> tac_list;
 
-	public IRProg()
+	public IRCode()
 	{
 		tac_list = new LinkedList<Ins>();
 	}
@@ -48,5 +59,14 @@ public class IRProg
 	public void add_lbl_oper(Label x, Quad y)
 	{
 		tac_list.add(new Ins(x, y));
+	}
+
+	public String toString()
+	{
+		String ret = "".intern();
+		ListIterator<Ins> lit = tac_list.listIterator();
+		while (lit.hasNext())
+			ret += lit.next().toString();
+		return ret;
 	}
 }
