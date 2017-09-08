@@ -23,6 +23,7 @@ public class Translator
 		code = new IRCode();
 		begin_label = new Stack<Label>();
 		end_label = new Stack<Label>();
+		exit = new Label();
 	}
 
 	public IRCode translate() throws Exception
@@ -60,12 +61,17 @@ public class Translator
 		// parameters and local variables
 		ListIterator<VarDec> vlit = x.var.listIterator();
 		while (vlit.hasNext())
-			transVarDec(vlit.next());
+			transLocalVar(vlit.next());
 
 		// statements
 		ListIterator<Stmt> slit = x.st.listIterator();
 		while (slit.hasNext())
 			transStmt(slit.next());
+	}
+
+	private void transLocalVar(VarDec x)
+	{
+		
 	}
 
 	/* Exp */
@@ -427,7 +433,7 @@ public class Translator
 
 		if (x.category == PrimaryExp.pe_id)
 		{
-			String cid = (String) x.value;
+			String cid = ((VarDec) x.value).name;
 			Symbol csym = Symbol.getSymbol(cid);
 			int off = ((Dec) entrance.venv.get_global(csym).mirror).offset;
 			Const iof = new Const(off);
@@ -436,7 +442,7 @@ public class Translator
 		else if (x.category == PrimaryExp.pe_ch)
 		{
 			Character cch = (Character) x.value;
-			int val = (int) cch.charValue();
+			char val = cch.charValue();
 			Const ic = new Const(val);
 			code.add_oper(new Move(ic, ans));
 		}
@@ -450,7 +456,7 @@ public class Translator
 		else if (x.category == PrimaryExp.pe_fp)
 		{
 			Float cfp = (Float) x.value;
-			int val = (int) cfp.floatValue();
+			float val = cfp.floatValue();
 			Const ic = new Const(val);
 			code.add_oper(new Move(ic, ans));
 		}

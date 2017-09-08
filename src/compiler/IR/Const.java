@@ -21,6 +21,11 @@ public class Const extends Operand
 
 	public String toString()
 	{
-		return "#".intern() + val.toString();
+		String ret = "#";
+		if (val instanceof Character)
+			ret += "\'" + val.toString() + "\'";
+		else
+			ret += val.toString();
+		return ret;
 	}
 }

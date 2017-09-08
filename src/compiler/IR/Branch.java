@@ -19,14 +19,14 @@ public class Branch extends Quad
 	@Override
 	public String toString()
 	{
-		String ret = "".intern();
-		ret += arg1.toString();
-		ret += " ".intern();
-		ret += Quad.get_op(op);
-		ret += " ".intern();
-		ret += arg2.toString();
-		ret += " ? goto ".intern();
-		ret += result.toString();
-		return ret;
+		if (op == -1)
+		{
+			if(arg1!=null)
+				return "if " + arg1.toString() + " ? goto " + result.toString();
+			else
+				return "if not " + arg2.toString() + " ? goto " + result.toString();
+		}
+		else
+			return "if " + arg1.toString() + " " +  Quad.get_op(op) + " " + arg2.toString() + " ? goto " + result.toString();
 	}
 }

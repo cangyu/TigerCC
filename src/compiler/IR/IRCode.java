@@ -29,12 +29,15 @@ public class IRCode
 
 		public String toString()
 		{
-			String ret = "".intern();
-			if (lbl != null)
-				ret += lbl.toString();
-			if (oper != null)
-				ret += oper.toString();
-			ret += "\n".intern();
+			String ret = "";
+			if (lbl != null && oper != null)
+				ret += lbl.toString() + ":\t" + oper.toString();
+			else if (lbl != null)
+				ret += lbl.toString() + ":";
+			else
+				ret += "\t" + oper.toString();
+
+			ret += "\n";
 			return ret;
 		}
 	}
