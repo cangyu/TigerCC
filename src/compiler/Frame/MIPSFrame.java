@@ -1,6 +1,5 @@
-package compiler.MIPS;
+package compiler.Frame;
 
-import compiler.Frame.*;
 import compiler.IR.*;
 
 public class MIPSFrame extends Frame

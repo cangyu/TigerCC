@@ -1,15 +1,13 @@
-package compiler.MIPS;
+package compiler.Frame;
 
-import compiler.Frame.Access;
-import compiler.IR.Mem;
-import compiler.IR.Operand;
+import compiler.IR.*;
 
 public class InFrame extends Access
 {
-	public MIPSFrame base;
+	public Frame base;
 	public int offset;
 
-	public InFrame(MIPSFrame x, int y)
+	public InFrame(Frame x, int y)
 	{
 		base = x;
 		offset = y;

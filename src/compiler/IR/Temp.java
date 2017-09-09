@@ -17,11 +17,6 @@ public class Temp extends Operand
 		name = x;
 	}
 
-	public void set_name(String x)
-	{
-		name = x;
-	}
-
 	public String toString()
 	{
 		if (name == null)

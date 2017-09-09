@@ -4,8 +4,9 @@ import java.io.*;
 import compiler.Lexer.*;
 import compiler.Parser.*;
 import compiler.AST.*;
+import compiler.Codegen.*;
+import compiler.Frame.MIPSFrame;
 import compiler.IR.*;
-import compiler.MIPS.*;
 
 public class Main
 {

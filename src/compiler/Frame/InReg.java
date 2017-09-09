@@ -1,6 +1,5 @@
-package compiler.MIPS;
+package compiler.Frame;
 
-import compiler.Frame.Access;
 import compiler.IR.Operand;
 import compiler.IR.Temp;
 
