@@ -13,6 +13,8 @@ public abstract class Quad
 		result = ans;
 	}
 
+	public abstract String toString();
+
 	public static final int nop = 0;
 	public static final int mult = 1;
 	public static final int div = 2;

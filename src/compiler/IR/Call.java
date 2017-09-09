@@ -9,4 +9,11 @@ public class Call extends Quad
 		super(-1, null, null, name);
 		param_num = n;
 	}
+
+	@Override
+	public String toString()
+	{
+		return null;
+	}
+
 }

@@ -3,6 +3,8 @@ package compiler.IR;
 import java.util.*;
 import compiler.AST.*;
 import compiler.AST.PostfixExp.PostfixElem;
+import compiler.Frame.Access;
+import compiler.Frame.Frame;
 import compiler.Scoping.Symbol;
 import compiler.Typing.*;
 
@@ -12,14 +14,16 @@ public class Translator
 	private IRCode code;
 	private Stack<Label> begin_label, end_label;
 	private Label exit;
+	private Frame global_frame;
 
-	private final Const iz = new Const(0);
-	private final Const in = new Const(1);
-	private final Const iaf = new Const(0xFFFFFFFF);
+	private static final Const iz = new Const(0);
+	private static final Const in = new Const(1);
+	private static final Const iaf = new Const(0xFFFFFFFF);
 
-	public Translator(Prog x)
+	public Translator(Prog x, Frame y)
 	{
 		entrance = x;
+		global_frame = y;
 		code = new IRCode();
 		begin_label = new Stack<Label>();
 		end_label = new Stack<Label>();
@@ -71,7 +75,7 @@ public class Translator
 
 	private void transLocalVar(VarDec x)
 	{
-		
+
 	}
 
 	/* Exp */
@@ -178,6 +182,8 @@ public class Translator
 		else
 			internal_error();
 
+		// write back in memory
+		code.add_oper(new Move(lhs, getAccess(x.left)));
 		return lhs;
 	}
 
@@ -219,7 +225,6 @@ public class Translator
 		{
 			Label fail = new Label();
 			Label end = new Label();
-
 			code.add_oper(new Branch(null, lhs, fail));
 			code.add_oper(new Branch(null, rhs, fail));
 			code.add_oper(new Move(in, ans));
@@ -232,7 +237,6 @@ public class Translator
 		{
 			Label ok = new Label();
 			Label end = new Label();
-
 			code.add_oper(new Branch(lhs, null, ok));
 			code.add_oper(new Branch(rhs, null, ok));
 			code.add_oper(new Move(iz, ans));
@@ -253,7 +257,7 @@ public class Translator
 
 	private Temp transCastExp(CastExp x) throws Exception
 	{
-		return null;
+		return transExp(x.exp);
 	}
 
 	private Temp transUnaryExp(UnaryExp x) throws Exception
@@ -261,10 +265,9 @@ public class Translator
 		Temp ans = new Temp();
 		if (x.category == UnaryExp.address_of)
 		{
-			Temp tmp = transExp(x.exp);
-			int off = tmp.index * 4;
-			Const iof = new Const(off);
-			code.add_oper(new Move(iof, ans));
+			transExp(x.exp);
+			Operand addr = getAddress(x.exp);
+			code.add_oper(new Move(addr, ans));
 		}
 		else if (x.category == UnaryExp.indirection)
 		{
@@ -310,13 +313,13 @@ public class Translator
 		{
 			Temp tmp = transExp(x.exp);
 			code.add_oper(new BinOp(Quad.add, tmp, in, ans));
-			// write back?
+			code.add_oper(new Move(ans, getAccess(x.exp)));
 		}
 		else if (x.category == UnaryExp.dec)
 		{
 			Temp tmp = transExp(x.exp);
 			code.add_oper(new BinOp(Quad.sub, tmp, in, ans));
-			// write back?
+			code.add_oper(new Move(ans, getAccess(x.exp)));
 		}
 		else
 			internal_error();
@@ -436,8 +439,7 @@ public class Translator
 			String cid = ((VarDec) x.value).name;
 			Symbol csym = Symbol.getSymbol(cid);
 			int off = ((Dec) entrance.venv.get_global(csym).mirror).offset;
-			Const iof = new Const(off);
-			code.add_oper(new Move(iof, ans));
+			code.add_oper(new Move(new Mem(off), ans));
 		}
 		else if (x.category == PrimaryExp.pe_ch)
 		{
@@ -547,7 +549,11 @@ public class Translator
 		else if (x.category == JumpStmt.jp_ctn)
 			code.add_oper(new Jump(begin_label.peek()));
 		else if (x.category == JumpStmt.jp_ret)
+		{
+			if (x.exp != null)
+				transExp(x.exp);
 			code.add_oper(new Jump(exit));
+		}
 		else
 			internal_error();
 	}
@@ -606,6 +612,60 @@ public class Translator
 			ans = transExp(x.exp);
 
 		return ans;
+	}
+
+	// Get the address or memory access of a variable
+	private Operand getAddress(Exp x)
+	{
+		Temp ret = new Temp();
+		// TODO
+		return ret;
+	}
+
+	private Mem getAccess(Exp x) throws Exception
+	{
+		Mem ret = null;
+		if (!x.isLvalue)
+			internal_error();
+
+		if (x instanceof PrimaryExp)
+			ret = new Mem(((VarDec) x.value).offset);
+		else if (x instanceof PostfixExp)
+		{
+			ListIterator<PostfixElem> lit = ((PostfixExp) x).elem.listIterator();
+			while (lit.hasNext())
+			{
+				PostfixElem cpfx = lit.next();
+				if (cpfx.category == PostfixElem.post_idx)
+				{
+
+				}
+				else if (cpfx.category == PostfixElem.post_dot)
+				{
+
+				}
+				else if (cpfx.category == PostfixElem.post_arrow)
+				{
+
+				}
+				else
+					internal_error();
+			}
+		}
+		else if (x instanceof UnaryExp)
+		{
+			UnaryExp ue = (UnaryExp) x;
+			if (ue.category == UnaryExp.indirection)
+			{
+				ret = getAccess(ue.exp);
+			}
+			else
+				internal_error();
+		}
+		else
+			internal_error();
+
+		return ret;
 	}
 
 	private void panic(String msg) throws Exception

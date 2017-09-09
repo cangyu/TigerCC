@@ -12,13 +12,14 @@ import compiler.Typing.Void;
 
 public class ASTBuilder
 {
-	private int offset;
+	private int global_offset, local_offset;
 	private int loop_cnt;
 	private Env tenv, venv;
 
 	public ASTBuilder()
 	{
-		offset = 0;
+		global_offset = 0;
+		local_offset = 0;
 		loop_cnt = 0;
 		tenv = null;
 		venv = null;
@@ -113,8 +114,8 @@ public class ASTBuilder
 					panic("Invalid initialization.");
 
 				// ASTNode
-				VarDec var_dec = new VarDec(var_type, var_name, initializer, offset);
-				offset += var_type.width;
+				VarDec var_dec = new VarDec(var_type, var_name, initializer, global_offset);
+				global_offset += var_type.width;
 				z.add_dec(var_dec);
 
 				// Environment
@@ -139,8 +140,9 @@ public class ASTBuilder
 		Type ret_type = resolve_plain_type(def_type, x.pd);
 
 		// ASTNode
-		FuncDec func_dec = new FuncDec(ret_type, func_name, offset);
+		FuncDec func_dec = new FuncDec(ret_type, func_name, global_offset);
 		func_dec.scope = new Env(y);
+		local_offset = 0;
 
 		// handle parameters
 		for (PlainDeclaration pdn : x.pm)
@@ -153,8 +155,8 @@ public class ASTBuilder
 				Type param_type = parsePlainDeclaration(pdn, func_dec.scope);
 				func_dec.add_param(param_name, param_type);
 
-				VarDec param_dec = new VarDec(param_type, param_name, null, offset);
-				offset += param_type.width;
+				VarDec param_dec = new VarDec(param_type, param_name, null, local_offset);
+				local_offset += param_type.width;
 				param_dec.hasAssigned = true;
 				func_dec.add_var(param_dec);
 
@@ -194,8 +196,8 @@ public class ASTBuilder
 				Type tvtp = resolve_type(tdtp, idr.declarator, func_dec.scope);
 				boolean hasInit = idr.initializer != null;
 				Init var_it = hasInit ? parseInitializer(idr.initializer, func_dec.scope) : null;
-				VarDec var_dec = new VarDec(tvtp, var_name, var_it, offset);
-				offset += tvtp.width;
+				VarDec var_dec = new VarDec(tvtp, var_name, var_it, local_offset);
+				local_offset += tvtp.width;
 				func_dec.add_var(var_dec);
 				Entry var_entry = new Entry(Entry.entry_var, var_dec);
 				func_dec.scope.put(var_sym, var_entry);
@@ -220,6 +222,9 @@ public class ASTBuilder
 
 			func_dec.add_stmt(s);
 		}
+
+		// Update global offset
+		global_offset += local_offset;
 
 		// AST hierarchy
 		z.add_dec(func_dec);
@@ -520,8 +525,8 @@ public class ASTBuilder
 					panic("Invalid initialization.");
 
 				// AST
-				VarDec var_dec = new VarDec(var_type, var_name, var_it, offset);
-				offset += var_type.width;
+				VarDec var_dec = new VarDec(var_type, var_name, var_it, local_offset);
+				local_offset += var_type.width;
 				ret.add_var(var_dec);
 
 				// Environment

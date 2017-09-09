@@ -5,6 +5,7 @@ import compiler.Lexer.*;
 import compiler.Parser.*;
 import compiler.AST.*;
 import compiler.IR.*;
+import compiler.MIPS.*;
 
 public class Main
 {
@@ -36,9 +37,10 @@ public class Main
 		ap.print();
 		PrettyPrinter pp = new PrettyPrinter(ast);
 		pp.print();
-		
-		//IR
-		Translator ir_translator = new Translator(ast);
+
+		// IR
+		MIPSFrame mips_frame = new MIPSFrame(new Label("prog"));
+		Translator ir_translator = new Translator(ast, mips_frame);
 		IRCode tac = ir_translator.translate();
 		System.out.print(tac.toString());
 	}

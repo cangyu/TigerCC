@@ -10,6 +10,6 @@ public class Move extends Quad
 	@Override
 	public String toString()
 	{
-		return "move " + arg1.toString() + " -> " + arg2.toString();
+		return arg1.toString() + " -> " + arg2.toString();
 	}
 }

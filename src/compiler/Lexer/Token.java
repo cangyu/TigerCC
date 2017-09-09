@@ -10,6 +10,7 @@ public class Token
 	public static final int CH = -250;
 	public static final int LINECOMMENT = -249;
 	public static final int BLKCOMMENT = -248;
+	public static final int MACRO = -247;
 	public static final int VOID = 0;
 	public static final int CHAR = 1;
 	public static final int INT = 2;

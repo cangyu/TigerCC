@@ -21,7 +21,7 @@ public class Parser
 		for (;;)
 		{
 			Token tmp = lex.next_token();
-			if (tmp.tag != Token.LINECOMMENT && tmp.tag != Token.BLKCOMMENT)
+			if (tmp.tag != Token.LINECOMMENT && tmp.tag != Token.BLKCOMMENT && tmp.tag != Token.MACRO)
 				token_buf.add(tmp);
 
 			if (tmp.tag == Token.EOF)

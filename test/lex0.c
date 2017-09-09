@@ -2,6 +2,8 @@
  * Basic lexical utility test.
  */
 
+#include<stdio.h>
+
 char v0 = 'b'; // char literal
 int v1 = 0x33; // hex integer
 int v2 = 077; // octal integer

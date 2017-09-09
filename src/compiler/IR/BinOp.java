@@ -9,13 +9,13 @@ public class BinOp extends Quad
 
 	public String toString()
 	{
-		String ret = "".intern();
+		String ret = "";
 		ret += arg1.toString();
-		ret += " ".intern();
+		ret += " ";
 		ret += Quad.get_op(op);
-		ret += " ".intern();
+		ret += " ";
 		ret += arg2.toString();
-		ret += " -> ".intern();
+		ret += " -> ";
 		ret += result.toString();
 		return ret;
 	}

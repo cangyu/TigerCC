@@ -2,7 +2,7 @@ package compiler.Lexer;
 
 import java.io.*;
 
-//TODO: 解析科学计数；越界处理；忽略#include
+//TODO: 解析科学计数；越界处理;
 public class Lexer
 {
 	private int line, column;
@@ -32,6 +32,8 @@ public class Lexer
 			ret = handle_char();
 		else if (peek == '\"')
 			ret = handle_str();
+		else if (peek == '#')
+			ret = handle_macro();
 		else
 			ret = handle_misc();
 
@@ -291,14 +293,22 @@ public class Lexer
 		return Token.from_string(b.toString(), line, column);
 	}
 
+	private Token handle_macro() throws IOException
+	{
+		Token ret = build_token(Token.MACRO);
+		int ln = line;
+		while (ln == line)
+			read_char();
+		
+		return ret;
+	}
+
 	private Token handle_misc() throws IOException
 	{
 		// operators, comments, annotations
 		Token ret = null;
 
-		switch (peek)
-		{
-		case '<':
+		if (peek == '<')
 		{
 			read_char();
 			if (peek == '=')
@@ -319,9 +329,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.LT);
 			}
-			break;
 		}
-		case '>':
+		else if (peek == '>')
 		{
 			read_char();
 			if (peek == '=')
@@ -342,9 +351,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.GT);
 			}
-			break;
 		}
-		case '-':
+		else if (peek == '-')
 		{
 			read_char();
 			if (peek == '=')
@@ -358,9 +366,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.MINUS);
 			}
-			break;
 		}
-		case '&':
+		else if (peek == '&')
 		{
 			read_char();
 			if (peek == '&')
@@ -372,9 +379,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.BIT_AND);
 			}
-			break;
 		}
-		case '+':
+		else if (peek == '+')
 		{
 			read_char();
 			if (peek == '=')
@@ -386,9 +392,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.PLUS);
 			}
-			break;
 		}
-		case '|':
+		else if (peek == '|')
 		{
 			read_char();
 			if (peek == '=')
@@ -400,9 +405,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.BIT_OR);
 			}
-			break;
 		}
-		case '=':
+		else if (peek == '=')
 		{
 			read_char();
 			if (peek == '=')
@@ -412,10 +416,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.ASSIGN);
 			}
-			break;
 		}
-
-		case '^':
+		else if (peek == '^')
 		{
 			read_char();
 			if (peek == '=')
@@ -425,10 +427,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.BIT_XOR);
 			}
-			break;
 		}
-
-		case '/':
+		else if (peek == '/')
 		{
 			read_char();
 			if (peek == '=')
@@ -471,9 +471,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.DIVIDE);
 			}
-			break;
 		}
-		case '!':
+		else if (peek == '!')
 		{
 			read_char();
 			if (peek == '=')
@@ -483,9 +482,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.NOT);
 			}
-			break;
 		}
-		case '*':
+		else if (peek == '*')
 		{
 			read_char();
 			if (peek == '=')
@@ -495,9 +493,8 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.TIMES);
 			}
-			break;
 		}
-		case '%':
+		else if (peek == '%')
 		{
 			read_char();
 			if (peek == '=')
@@ -507,41 +504,29 @@ public class Lexer
 				push_back(peek);
 				ret = build_token(Token.MODULE);
 			}
-			break;
 		}
-		case '~':
+		else if (peek == '~')
 			ret = build_token(Token.BIT_NOT);
-			break;
-		case ',':
+		else if (peek == ',')
 			ret = build_token(Token.COMMA);
-			break;
-		case ';':
+		else if (peek == ';')
 			ret = build_token(Token.SEMI);
-			break;
-		case '.':
+		else if (peek == '.')
 			ret = build_token(Token.DOT);
-			break;
-		case '{':
+		else if (peek == '{')
 			ret = build_token(Token.LBRACE);
-			break;
-		case '}':
+		else if (peek == '}')
 			ret = build_token(Token.RBRACE);
-			break;
-		case '[':
+		else if (peek == '[')
 			ret = build_token(Token.LMPAREN);
-			break;
-		case ']':
+		else if (peek == ']')
 			ret = build_token(Token.RMPAREN);
-			break;
-		case '(':
+		else if (peek == '(')
 			ret = build_token(Token.LPAREN);
-			break;
-		case ')':
+		else if (peek == ')')
 			ret = build_token(Token.RPAREN);
-			break;
-		default:
+		else
 			panic("Invalid operator symbol.");
-		}
 
 		return ret;
 	}

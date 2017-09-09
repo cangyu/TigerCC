@@ -2,15 +2,30 @@ package compiler.IR;
 
 public class Mem extends Operand
 {
+	public Operand base;
 	public int offset;
 
-	public Mem(int o)
+	public Mem(Operand x, int off)
 	{
-		offset = o;
+		base = x;
+		offset = off;
+	}
+
+	public Mem(Operand x)
+	{
+		this(x, 0);
+	}
+
+	public Mem(int off)
+	{
+		this(null, off);
 	}
 
 	public String toString()
 	{
-			return "$" + offset;
+		if (base != null)
+			return "Mem[" + base.toString() + ", " + offset + "]";
+		else
+			return "Mem[" + offset + "]";
 	}
 }
