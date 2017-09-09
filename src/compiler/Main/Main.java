@@ -34,8 +34,8 @@ public class Main
 		System.out.println(ast_ok ? ok : wtf);
 		ASTPrinter ap = new ASTPrinter(ast);
 		ap.print();
-		//PrettyPrinter pp = new PrettyPrinter(ast);
-		//pp.print();
+		PrettyPrinter pp = new PrettyPrinter(ast);
+		pp.print();
 		
 		//IR
 		Translator ir_translator = new Translator(ast);

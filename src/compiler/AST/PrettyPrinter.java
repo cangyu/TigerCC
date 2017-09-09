@@ -72,7 +72,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 		{
 			Dec cd = dlit.next();
 			cd.accept(this);
-			lc += (cd.code_rep.length + 1);
+			lc += cd.code_rep.length;
 		}
 
 		x.code_rep = new String[lc];
@@ -84,8 +84,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 		{
 			Dec cd = dlit.next();
 			for (String str : cd.code_rep)
-				x.code_rep[cl] = str;
-			cl += 2; // leave a blank line for eligance
+				x.code_rep[cl++] = str;
 		}
 	}
 
@@ -99,6 +98,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 			x.init.accept(this);
 			x.code_rep[0] += " = " + x.init.code_rep[0];
 		}
+		x.code_rep[0] += ";".intern();
 	}
 
 	@Override
@@ -106,14 +106,20 @@ public class PrettyPrinter implements ASTNodeVisitor
 	{
 		// construct contents and count lines
 		int lc = 3;
+
 		ListIterator<VarDec> vlit = x.var.listIterator();
-		ListIterator<Stmt> slit = x.st.listIterator();
+		int arg_num = x.param.size(), cnt = 0;
 		while (vlit.hasNext())
 		{
 			VarDec cvd = vlit.next();
+			if (cnt++ < arg_num)
+				continue;
+
 			cvd.accept(this);
 			lc += cvd.code_rep.length;
 		}
+
+		ListIterator<Stmt> slit = x.st.listIterator();
 		while (slit.hasNext())
 		{
 			Stmt cst = slit.next();
@@ -128,7 +134,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 		// add func-name and parameters
 		x.code_rep[0] = c_form(x.ret_type, x.name) + Token.raw_rep(Token.LPAREN);
 		ListIterator<FuncDec.Parameter> plit = x.param.listIterator();
-		int cnt = 0;
+		cnt = 0;
 		while (plit.hasNext())
 		{
 			if (cnt++ != 0)
@@ -138,16 +144,20 @@ public class PrettyPrinter implements ASTNodeVisitor
 			x.code_rep[0] += c_form(cpm.type, cpm.name);
 		}
 		x.code_rep[0] += Token.raw_rep(Token.RPAREN);
-		x.code_rep[1] = Token.raw_rep(Token.LBRACE);
+		x.code_rep[1] += Token.raw_rep(Token.LBRACE);
 
 		// body
 		int cl = 2;
 		vlit = x.var.listIterator();
+		cnt = 0;
 		while (vlit.hasNext())
 		{
 			VarDec cvd = vlit.next();
+			if (cnt++ < arg_num)
+				continue;
+
 			for (String str : cvd.code_rep)
-				x.code_rep[cl++] += str;
+				x.code_rep[cl++] += tab + str;
 		}
 
 		slit = x.st.listIterator();
@@ -155,10 +165,10 @@ public class PrettyPrinter implements ASTNodeVisitor
 		{
 			Stmt cst = slit.next();
 			for (String str : cst.code_rep)
-				x.code_rep[cl++] += str;
+				x.code_rep[cl++] += tab + str;
 		}
 
-		x.code_rep[cl] = Token.raw_rep(Token.RBRACE);
+		x.code_rep[cl] += Token.raw_rep(Token.RBRACE);
 	}
 
 	/* Init */
@@ -167,6 +177,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 	{
 		// put all in one line for simplicity
 		x.code_rep = new String[1];
+		str_init(x.code_rep, 1);
 
 		if (x.listed)
 		{
@@ -174,7 +185,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 			while (lit.hasNext())
 				lit.next().accept(this);
 
-			x.code_rep[0] = Token.raw_rep(Token.LBRACE);
+			x.code_rep[0] += Token.raw_rep(Token.LBRACE);
 
 			int cnt = 0;
 			lit = x.init_list.listIterator();
@@ -191,7 +202,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 		else
 		{
 			x.exp.accept(this);
-			x.code_rep[0] = x.exp.code_rep[0];
+			x.code_rep[0] += x.exp.code_rep[0];
 		}
 	}
 
@@ -200,13 +211,15 @@ public class PrettyPrinter implements ASTNodeVisitor
 	public void visit(ExprStmt x) throws Exception
 	{
 		x.code_rep = new String[1];
+		str_init(x.code_rep, 1);
+
 		if (x.exp != null)
 		{
 			x.exp.accept(this);
-			x.code_rep[0] = x.exp.code_rep[0] + Token.raw_rep(Token.SEMI);
+			x.code_rep[0] += x.exp.code_rep[0];
 		}
-		else
-			x.code_rep[0] = Token.raw_rep(Token.SEMI);
+
+		x.code_rep[0] += Token.raw_rep(Token.SEMI);
 	}
 
 	@Override
@@ -230,16 +243,16 @@ public class PrettyPrinter implements ASTNodeVisitor
 		}
 
 		x.code_rep = new String[lc];
+		str_init(x.code_rep, lc);
+		x.code_rep[0] += Token.raw_rep(Token.LBRACE);
 
-		int cl = 0;
-		x.code_rep[cl++] = Token.raw_rep(Token.LBRACE);
-
+		int cl = 1;
 		vlit = x.var.listIterator();
 		while (vlit.hasNext())
 		{
 			VarDec cvd = vlit.next();
 			for (String str : cvd.code_rep)
-				x.code_rep[cl++] = tab + str;
+				x.code_rep[cl++] += tab + str;
 		}
 
 		slit = x.st.listIterator();
@@ -247,16 +260,16 @@ public class PrettyPrinter implements ASTNodeVisitor
 		{
 			Stmt cst = slit.next();
 			for (String str : cst.code_rep)
-				x.code_rep[cl++] = tab + str;
+				x.code_rep[cl++] += tab + str;
 		}
 
-		x.code_rep[cl] = Token.raw_rep(Token.RBRACE);
+		x.code_rep[cl] += Token.raw_rep(Token.RBRACE);
 	}
 
 	@Override
 	public void visit(SelectStmt x) throws Exception
 	{
-		int lc = 1;
+		int lc = 0;
 		x.condition.accept(this);
 		lc += x.condition.code_rep.length;
 
@@ -271,17 +284,19 @@ public class PrettyPrinter implements ASTNodeVisitor
 		}
 
 		x.code_rep = new String[lc];
-		x.code_rep[0] = Token.raw_rep(Token.IF) + Token.raw_rep(Token.LPAREN) + x.condition.code_rep[0] + Token.raw_rep(Token.RPAREN);
+		str_init(x.code_rep, lc);
+
+		x.code_rep[0] += Token.raw_rep(Token.IF) + Token.raw_rep(Token.LPAREN) + x.condition.code_rep[0] + Token.raw_rep(Token.RPAREN);
 
 		int cl = 1;
 		for (String str : x.if_branch.code_rep)
-			x.code_rep[cl++] = str;
+			x.code_rep[cl++] += x.if_branch instanceof CompStmt ? "" : tab + str;
 
 		if (x.else_branch != null)
 		{
 			x.code_rep[cl++] = Token.raw_rep(Token.ELSE);
 			for (String str : x.else_branch.code_rep)
-				x.code_rep[cl++] = str;
+				x.code_rep[cl++] = x.if_branch instanceof CompStmt ? "" : tab + str;
 		}
 	}
 
@@ -304,7 +319,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 			x.code_rep = new String[lc];
 			str_init(x.code_rep, lc);
 
-			x.code_rep[0] = Token.raw_rep(Token.FOR) + Token.raw_rep(Token.LPAREN);
+			x.code_rep[0] += Token.raw_rep(Token.FOR) + Token.raw_rep(Token.LPAREN);
 
 			if (x.init != null)
 				x.code_rep[0] += x.init.code_rep[0];
@@ -320,22 +335,21 @@ public class PrettyPrinter implements ASTNodeVisitor
 
 			int cl = 1;
 			for (String str : x.stmt.code_rep)
-				x.code_rep[cl++] += str;
+				x.code_rep[cl++] += x.stmt instanceof CompStmt ? "" : tab + str;
 		}
-		else if (x.category == IterStmt.iter_while)
+		else
 		{
 			x.judge.accept(this);
 			x.stmt.accept(this);
 			lc = 1 + x.stmt.code_rep.length;
 			x.code_rep = new String[lc];
-			x.code_rep[0] = Token.raw_rep(Token.WHILE) + Token.raw_rep(Token.LPAREN) + x.judge.code_rep[0] + Token.raw_rep(Token.RPAREN);
+			str_init(x.code_rep, lc);
+			x.code_rep[0] += Token.raw_rep(Token.WHILE) + Token.raw_rep(Token.LPAREN) + x.judge.code_rep[0] + Token.raw_rep(Token.RPAREN);
 
 			int cl = 1;
 			for (String str : x.stmt.code_rep)
-				x.code_rep[cl++] += str;
+				x.code_rep[cl++] += x.stmt instanceof CompStmt ? "" : tab + str;
 		}
-		else
-			return;
 	}
 
 	@Override
@@ -382,7 +396,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 		lit = x.exp.listIterator();
 		while (lit.hasNext())
 		{
-			if (cnt != 0)
+			if (cnt++ != 0)
 				x.code_rep[0] += ", ".intern();
 
 			Exp te = lit.next();
@@ -407,7 +421,7 @@ public class PrettyPrinter implements ASTNodeVisitor
 		x.right.accept(this);
 
 		x.code_rep = new String[1];
-		x.code_rep[0] += x.left.code_rep[0] + " " + x.get_op() + " " + x.right.code_rep[0];
+		x.code_rep[0] = x.left.code_rep[0] + " " + x.get_op() + " " + x.right.code_rep[0];
 	}
 
 	@Override
