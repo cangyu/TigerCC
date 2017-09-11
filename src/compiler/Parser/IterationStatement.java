@@ -3,7 +3,7 @@ package compiler.Parser;
 public class IterationStatement extends Statement
 {
 	public static final int WHILE = 0;
-	public static final int FOR = 0;
+	public static final int FOR = 1;
 
 	public int type;
 	public Expr init, judge, next;

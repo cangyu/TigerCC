@@ -174,7 +174,7 @@ public class ASTPrinter implements ASTNodeVisitor
 
 			// initialize format
 			x.ast_rep = new String[lc];
-			x.ast_rep[0] = leading + "InitializerList";
+			x.ast_rep[0] = leading + "InitializerList: ";
 			for (int i = 1; i < lc; i++)
 				x.ast_rep[i] = separator;
 
@@ -193,7 +193,8 @@ public class ASTPrinter implements ASTNodeVisitor
 			// construct components and count lines
 			int lc = 1;
 			x.exp.accept(this);
-			lc += x.exp.ast_rep.length;
+			if (x.exp.ast_rep.length != 1)
+				lc += x.exp.ast_rep.length;
 
 			// initialize format
 			x.ast_rep = new String[lc];
@@ -202,9 +203,18 @@ public class ASTPrinter implements ASTNodeVisitor
 				x.ast_rep[i] = separator;
 
 			// add contents
-			int cl = 1;
-			for (String str : x.exp.ast_rep)
-				x.ast_rep[cl++] += str;
+			if (lc > 1)
+			{
+				int cl = 1;
+				for (String str : x.exp.ast_rep)
+					x.ast_rep[cl++] += str;
+			}
+			else
+			{
+				x.ast_rep[0] += ": ";
+				int tl = x.exp.ast_rep[0].length();
+				x.ast_rep[0] += x.exp.ast_rep[0].substring(2, tl);
+			}
 		}
 	}
 
@@ -627,7 +637,7 @@ public class ASTPrinter implements ASTNodeVisitor
 				if (pfx.exp != null)
 				{
 					pfx.exp.accept(this);
-					lc += pfx.exp.ast_rep.length;
+					lc += pfx.exp.ast_rep.length - 1;
 				}
 				break;
 			case PostfixExp.PostfixElem.post_arrow:
@@ -658,36 +668,42 @@ public class ASTPrinter implements ASTNodeVisitor
 		while (lit.hasNext())
 		{
 			PostfixElem pfx = lit.next();
-			switch (pfx.category)
+			if (pfx.category == PostfixExp.PostfixElem.post_idx)
 			{
-			case PostfixExp.PostfixElem.post_idx:
-				x.ast_rep[cl++] += "Index";
+				x.ast_rep[cl++] += "--Index:";
 				for (String str : pfx.exp.ast_rep)
 					x.ast_rep[cl++] += str;
-				break;
-			case PostfixExp.PostfixElem.post_call:
-				x.ast_rep[cl++] += pfx.exp == null ? "Call" : "Call with parameters";
-				if (pfx.exp != null)
-					for (String str : pfx.exp.ast_rep)
-						x.ast_rep[cl++] += str;
-				break;
-			case PostfixExp.PostfixElem.post_arrow:
-				x.ast_rep[cl++] += "Structure dereference";
-				x.ast_rep[cl++] += pfx.id;
-				break;
-			case PostfixExp.PostfixElem.post_dot:
-				x.ast_rep[cl++] += "Structure reference";
-				x.ast_rep[cl++] += pfx.id;
-				break;
-			case PostfixExp.PostfixElem.post_inc:
-				x.ast_rep[cl++] += "Post increment";
-				break;
-			case PostfixExp.PostfixElem.post_dec:
-				x.ast_rep[cl++] += "Post decrement";
-				break;
-			default:
-				break;
 			}
+			else if (pfx.category == PostfixExp.PostfixElem.post_call)
+			{
+				x.ast_rep[cl++] += pfx.exp == null ? "--Call" : "--Call with parameters:";
+				if (pfx.exp != null)
+				{
+					int cnt = 0;
+					for (String str : pfx.exp.ast_rep)
+					{
+						if (cnt++ == 0)
+							continue;
+						x.ast_rep[cl++] += str;
+					}
+				}
+			}
+			else if (pfx.category == PostfixExp.PostfixElem.post_arrow)
+			{
+				x.ast_rep[cl++] += "--Structure dereference:";
+				x.ast_rep[cl++] += pfx.id;
+			}
+			else if (pfx.category == PostfixExp.PostfixElem.post_dot)
+			{
+				x.ast_rep[cl++] += "--Structure reference:";
+				x.ast_rep[cl++] += pfx.id;
+			}
+			else if (pfx.category == PostfixExp.PostfixElem.post_inc)
+				x.ast_rep[cl++] += "--Post increment";
+			else if (pfx.category == PostfixExp.PostfixElem.post_dec)
+				x.ast_rep[cl++] += "--Post decrement";
+			else
+				continue;
 		}
 	}
 

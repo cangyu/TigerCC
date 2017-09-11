@@ -566,9 +566,9 @@ public class ASTBuilder
 		else if (x.type == IterationStatement.FOR)
 		{
 			++loop_cnt;
-			Exp ce1 = parseExpr(x.init, y);
-			Exp ce2 = parseExpr(x.judge, y);
-			Exp ce3 = parseExpr(x.next, y);
+			Exp ce1 = x.init == null? null : parseExpr(x.init, y);
+			Exp ce2 = x.judge == null? null : parseExpr(x.judge, y);
+			Exp ce3 = x.next == null ? null: parseExpr(x.next, y);
 			Stmt st = parseStatement(x.stmt, y);
 			--loop_cnt;
 			ret = new IterStmt(ce1, ce2, ce3, st);
@@ -1416,10 +1416,11 @@ public class ASTBuilder
 			if (!Type.numeric(cur_type))
 				panic("Not an numeric type.");
 
-			ret = new UnaryExp(UnaryExp.unary_minus, ce);
-			ret.decorate(cur_type, ce.isConst, ce.hasInitialized, false);
-			if (ret.isConst)
-			{
+			if (ce.isConst)
+			{	
+				ret = new UnaryExp(UnaryExp.unary_minus, ce);
+				ret.decorate(cur_type, true, ce.hasInitialized, false);
+				
 				if (cur_type instanceof Int)
 				{
 					int cval = ((Integer) ce.value).intValue();
@@ -1432,11 +1433,16 @@ public class ASTBuilder
 				}
 				else if (cur_type instanceof FP)
 				{
-					double cval = ((Double) ce.value).doubleValue();
+					float cval = ((Float) ce.value).floatValue();
 					ret.set_value(new Double(-cval));
 				}
 				else
 					internal_error();
+			}
+			else
+			{
+				ret = new UnaryExp(UnaryExp.unary_minus, ce);
+				ret.decorate(cur_type, false, ce.hasInitialized, false);
 			}
 		}
 		else if (x.type == UnaryExpr.bit_not)

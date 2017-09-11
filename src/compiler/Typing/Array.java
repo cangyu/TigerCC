@@ -23,12 +23,17 @@ public final class Array extends Type
 	@Override
 	public boolean isConvertableTo(Type rhs)
 	{
-		return false;
+		if (rhs instanceof Array)
+			return elem_type.isConvertableTo(((Array) rhs).elem_type);
+		else if (rhs instanceof Pointer)
+			return elem_type.isConvertableTo(((Pointer) rhs).elem_type);
+		else
+			return false;
 	}
 
-    @Override
-    public String toString()
-    {
-        return String.format("array of %d %s ", elem_num, elem_type.toString());
-    }
+	@Override
+	public String toString()
+	{
+		return String.format("array of %d %s ", elem_num, elem_type.toString());
+	}
 }

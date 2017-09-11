@@ -5,22 +5,24 @@ import compiler.AST.*;
 import compiler.AST.PostfixExp.PostfixElem;
 import compiler.Frame.Access;
 import compiler.Frame.Frame;
+import compiler.Scoping.Env;
 import compiler.Scoping.Symbol;
 import compiler.Typing.*;
 
-public class Translator
+public class IRTranslator
 {
 	private Prog entrance;
 	private IRCode code;
 	private Stack<Label> begin_label, end_label;
 	private Label exit;
 	private Frame global_frame;
+	private Stack<Env> env;
 
 	private static final Const iz = new Const(0);
 	private static final Const in = new Const(1);
 	private static final Const iaf = new Const(0xFFFFFFFF);
 
-	public Translator(Prog x, Frame y)
+	public IRTranslator(Prog x, Frame y)
 	{
 		entrance = x;
 		global_frame = y;
@@ -28,19 +30,33 @@ public class Translator
 		begin_label = new Stack<Label>();
 		end_label = new Stack<Label>();
 		exit = new Label();
+		env = new Stack<Env>();
 	}
 
 	public IRCode translate() throws Exception
 	{
+		env.push(entrance.venv);
 		for (Dec dcl : entrance.general_decl)
 		{
 			if (dcl instanceof VarDec)
-				transVarDec((VarDec) dcl);
+			{
+				VarDec vd = (VarDec) dcl;
+				transVarDec(vd);
+			}
 			else if (dcl instanceof FuncDec)
-				transFuncDec((FuncDec) dcl);
+			{
+				FuncDec fd = (FuncDec) dcl;
+				env.push(fd.scope);
+				transFuncDec(fd);
+				env.pop();
+			}
 			else
-				panic("Internal Error.");
+				internal_error();
 		}
+		env.pop();
+
+		if (!env.isEmpty())
+			internal_error();
 
 		return code;
 	}
@@ -436,9 +452,9 @@ public class Translator
 
 		if (x.category == PrimaryExp.pe_id)
 		{
-			String cid = ((VarDec) x.value).name;
+			String cid = ((Dec) x.value).name;
 			Symbol csym = Symbol.getSymbol(cid);
-			int off = ((Dec) entrance.venv.get_global(csym).mirror).offset;
+			int off = ((Dec) env.peek().get_global(csym).mirror).offset;
 			code.add_oper(new Move(new Mem(off), ans));
 		}
 		else if (x.category == PrimaryExp.pe_ch)
@@ -483,7 +499,12 @@ public class Translator
 	private void transStmt(Stmt x) throws Exception
 	{
 		if (x instanceof CompStmt)
-			transCompStmt((CompStmt) x);
+		{
+			CompStmt cs = (CompStmt) x;
+			env.push(cs.scope);
+			transCompStmt(cs);
+			env.pop();
+		}
 		else if (x instanceof ExprStmt)
 			transExprStmt((ExprStmt) x);
 		else if (x instanceof IterStmt)
@@ -582,14 +603,25 @@ public class Translator
 		{
 			begin_label.push(begin);
 			end_label.push(end);
-
-			transExp(x.init);
+			
+			if(x.init!=null)
+				transExp(x.init);
+			
 			code.add_label(begin);
-			Temp jge = transExp(x.judge);
-			code.add_oper(new Branch(null, jge, end));
+			
+			if(x.judge!=null)
+			{
+				Temp jge = transExp(x.judge);
+				code.add_oper(new Branch(null, jge, end));
+			}
+			
 			transStmt(x.stmt);
-			transExp(x.next);
+			
+			if(x.next!=null)
+				transExp(x.next);
+			
 			code.add_oper(new Jump(begin));
+			
 			code.add_label(end);
 
 			begin_label.pop();

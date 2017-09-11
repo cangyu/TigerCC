@@ -4,8 +4,7 @@ import java.io.*;
 import compiler.Lexer.*;
 import compiler.Parser.*;
 import compiler.AST.*;
-import compiler.Codegen.*;
-import compiler.Frame.MIPSFrame;
+import compiler.Frame.*;
 import compiler.IR.*;
 
 public class Main
@@ -40,8 +39,8 @@ public class Main
 		pp.print();
 
 		// IR
-		MIPSFrame mips_frame = new MIPSFrame(new Label("prog"));
-		Translator ir_translator = new Translator(ast, mips_frame);
+		Frame mips_frame = new MIPSFrame(new Label("prog"));
+		IRTranslator ir_translator = new IRTranslator(ast, mips_frame);
 		IRCode tac = ir_translator.translate();
 		System.out.print(tac.toString());
 	}
