@@ -44,9 +44,13 @@ void qsort(int *A, int p, int r)
 int main(int argc, char **argv)
 {
 	int i = 0;
-	int a[10] = { 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
+	int a[10] =
+	{ 9, 8, 7, 6, 5, 4, 3, 2, 1, 0 };
 
 	qsort(a, 0, 9);
+
+	for (; i < 10; i++)
+		printf("%d\n", a[i]);
 
 	return 0;
 }

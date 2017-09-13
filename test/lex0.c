@@ -16,5 +16,7 @@ int main(int argc, char **argv)
 	if (v4 >= v5)
 		v5 = v4;
 
+	printf("%d\n", v2);
+
 	return 0;
 }

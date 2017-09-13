@@ -528,10 +528,10 @@ public class PrettyPrinter implements ASTNodeVisitor
 			x.code_rep[0] = ((Dec) x.value).name;
 			break;
 		case PrimaryExp.pe_str:
-			x.code_rep[0] = (String) x.value;
+			x.code_rep[0] = '\"' + (String) x.value + '\"';
 			break;
 		case PrimaryExp.pe_ch:
-			x.code_rep[0] = ((Character) x.value).toString();
+			x.code_rep[0] = '\'' + ((Character) x.value).toString() + '\'';
 			break;
 		case PrimaryExp.pe_int:
 			x.code_rep[0] = ((Integer) x.value).toString();

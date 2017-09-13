@@ -47,6 +47,7 @@ public class IRTranslator
 				exit.push(new Label());
 				env.push(fd.scope);
 				transFuncDec(fd);
+				code.add_label(exit.peek());
 				env.pop();
 				exit.pop();
 			}

@@ -31,6 +31,19 @@ public class ASTBuilder
 		tenv = ast.tenv;
 		venv = ast.venv;
 
+		// add printf, malloc
+		String printf_name = "printf".intern();
+		Symbol printf_sym = Symbol.getSymbol(printf_name);
+		Function printf_type = new Function(new Pointer(Char.getInstance()), new Function(Void.getInstance(),Int.getInstance()));
+		FuncDec printf_ast = new FuncDec(Int.getInstance(), printf_name, 0);
+		venv.put(printf_sym, new Entry(printf_ast, printf_type));
+
+		String malloc_name = "malloc".intern();
+		Symbol malloc_sym = Symbol.getSymbol(malloc_name);
+		Function malloc_type = new Function(Int.getInstance(), new Function(Void.getInstance(), new Pointer(Void.getInstance())));
+		FuncDec malloc_ast = new FuncDec(new Pointer(Void.getInstance()), malloc_name, 0);
+		venv.put(malloc_sym, new Entry(malloc_ast, malloc_type));
+
 		// build the structure of AST
 		for (ProgComp pc : p.elem)
 		{
@@ -566,9 +579,9 @@ public class ASTBuilder
 		else if (x.type == IterationStatement.FOR)
 		{
 			++loop_cnt;
-			Exp ce1 = x.init == null? null : parseExpr(x.init, y);
-			Exp ce2 = x.judge == null? null : parseExpr(x.judge, y);
-			Exp ce3 = x.next == null ? null: parseExpr(x.next, y);
+			Exp ce1 = x.init == null ? null : parseExpr(x.init, y);
+			Exp ce2 = x.judge == null ? null : parseExpr(x.judge, y);
+			Exp ce3 = x.next == null ? null : parseExpr(x.next, y);
 			Stmt st = parseStatement(x.stmt, y);
 			--loop_cnt;
 			ret = new IterStmt(ce1, ce2, ce3, st);
@@ -1417,10 +1430,10 @@ public class ASTBuilder
 				panic("Not an numeric type.");
 
 			if (ce.isConst)
-			{	
+			{
 				ret = new UnaryExp(UnaryExp.unary_minus, ce);
 				ret.decorate(cur_type, true, ce.hasInitialized, false);
-				
+
 				if (cur_type instanceof Int)
 				{
 					int cval = ((Integer) ce.value).intValue();
@@ -1591,51 +1604,195 @@ public class ASTBuilder
 					LinkedList<Type> fdatp = Function.get_param_type((Function) cur_type);
 					Exp ce = null;
 
-					if (pfx.content == null)
+					// handl printf and malloc especially
+					String fnm = ((FuncDec) pe.value).name;
+					boolean is_std_func = fnm.equals("printf") || fnm.equals("malloc");
+					if (is_std_func)
 					{
-						// check quantity
-						if (fdatp.size() != 1)
-							panic("Function arguments quantity doesn't match.");
+						if (fnm.equals("printf"))
+						{
+							// check printf call
+							if (pfx.content == null)
+								panic("Invalid arguments quantity for printf.");
+
+							ce = parseExpr((Expr) pfx.content, y);
+
+							if (ce instanceof CommaExp)
+							{
+								// multi parameters
+								CommaExp arg = (CommaExp) ce;
+
+								// Check format string
+								Exp format = arg.exp.getFirst();
+								if (format instanceof PrimaryExp && ((PrimaryExp) format).category == PrimaryExp.pe_str)
+								{
+									// check each parameter
+									Iterator<Exp> param_lit = arg.exp.iterator();
+									param_lit.next();
+									String format_str = (String) ((PrimaryExp) format).value;
+
+									// search each parameter along the format string
+									int ptf_param_cnt = 0;
+									for (int i = 0; i < format_str.length();)
+									{
+										if (format_str.charAt(i) == '%')
+										{
+											if (i == format_str.length() - 1)
+												panic("Incomplete format string.");
+
+											char nxt = (char) format_str.charAt(i + 1);
+											Exp cptf_param = param_lit.next();
+											Type cptf_tp = cptf_param.type;
+											boolean cptf_ok = true;
+
+											// check different type of parameter
+											switch (nxt)
+											{
+											case 'c':
+												++ptf_param_cnt;
+												cptf_ok = cptf_tp instanceof Char;
+												if (!cptf_ok)
+													panic(String.format("Inconsistent type in %s parameter: Expect \'char\', get \'%s\'.", num2idx(ptf_param_cnt), cptf_tp.toString()));
+												break;
+											case 'd':
+												++ptf_param_cnt;
+												cptf_ok = cptf_tp instanceof Int;
+												if (!cptf_ok)
+													panic(String.format("Inconsistent type in %s parameter: Expect \'int\', get \'%s\'.", num2idx(ptf_param_cnt), cptf_tp.toString()));
+												break;
+											case 's':
+												++ptf_param_cnt;
+												cptf_ok = cptf_tp instanceof Pointer && ((Pointer) cptf_tp).elem_type instanceof Char;
+												if (!cptf_ok)
+													panic(String.format("Inconsistent type in %s parameter: Expect \'ptr -> char\', get \'%s\'.", num2idx(ptf_param_cnt), cptf_tp.toString()));
+												break;
+											case 'f':
+												++ptf_param_cnt;
+												cptf_ok = cptf_tp instanceof FP;
+												if (!cptf_ok)
+													panic(String.format("Inconsistent type in %s parameter: Expect \'float\', get \'%s\'.", num2idx(ptf_param_cnt), cptf_tp.toString()));
+												break;
+											default:
+												break;
+											}
+											i+=2;
+										}
+										else
+											++i;
+									}
+
+									if (param_lit.hasNext())
+										panic("Inconsistent variable quantity with given format string in printf call.");
+
+									// Decorate
+									cur_type = fdatp.getLast();
+									ret.add_elem(PostfixElem.post_call, ce, null, cur_type);
+									ret.decorate(cur_type, false, true, false);
+								}
+								else
+									panic("Invalid argument for printf.");
+							}
+							else if (ce instanceof PrimaryExp && ((PrimaryExp) ce).category == PrimaryExp.pe_str)
+							{
+								// only format string
+								String format = (String) ((PrimaryExp) ce).value;
+
+								// Check if exists escape character
+								for (int i = 0; i < format.length(); i++)
+								{
+									if (format.indexOf(i) == '%')
+									{
+										boolean ok = true;
+										if (i == format.length() - 1)
+											ok = false;
+										else
+										{
+											char nxt = (char) format.indexOf(i + 1);
+											if (nxt == 'c' || nxt == 'd' || nxt == 's' || nxt == 'f' || nxt == '.')
+												ok = false;
+										}
+										if (!ok)
+											panic("Incomplete format string.");
+									}
+								}
+
+								// Decorate
+								cur_type = fdatp.getLast();
+								ret.add_elem(PostfixElem.post_call, ce, null, cur_type);
+								ret.decorate(cur_type, false, true, false);
+							}
+							else
+								panic("Invalid argument for printf.");
+
+						}
+						else if (fnm.equals("malloc"))
+						{
+							// check malloc call
+
+							if (pfx.content == null)
+								panic("Invalid arguments quantity for malloc.");
+
+							ce = parseExpr((Expr) pfx.content, y);
+							if (ce.type instanceof Int)
+							{
+								cur_type = fdatp.getLast();
+								ret.add_elem(PostfixElem.post_call, ce, null, cur_type);
+								ret.decorate(cur_type, false, true, false);
+							}
+							else
+								panic("Invalid size for malloc.");
+						}
+						else
+							internal_error();
 					}
 					else
 					{
-						ce = parseExpr((Expr) pfx.content, y);
-						if (ce instanceof CommaExp)
+						if (pfx.content == null)
 						{
-							CommaExp args = (CommaExp) ce;
-
 							// check quantity
-							if (args.exp.size() != fdatp.size() - 1)
+							if (fdatp.size() != 1)
 								panic("Function arguments quantity doesn't match.");
-
-							// Function Call parameters check
-							ListIterator<Exp> plit = args.exp.listIterator();
-							ListIterator<Type> atlit = fdatp.listIterator();
-							while (plit.hasNext())
+						}
+						else
+						{
+							ce = parseExpr((Expr) pfx.content, y);
+							if (ce instanceof CommaExp)
 							{
-								Type cptp = plit.next().type;
-								Type catp = atlit.next();
+								CommaExp args = (CommaExp) ce;
+
+								// check quantity
+								if (args.exp.size() != fdatp.size() - 1)
+									panic("Function arguments quantity doesn't match.");
+
+								// Function Call parameters check
+								ListIterator<Exp> plit = args.exp.listIterator();
+								ListIterator<Type> atlit = fdatp.listIterator();
+								while (plit.hasNext())
+								{
+									Type cptp = plit.next().type;
+									Type catp = atlit.next();
+									if (!cptp.isConvertableTo(catp))
+										panic("Incompatible parameter type.");
+								}
+							}
+							else
+							{
+								// check quantity
+								if (fdatp.size() != 2)
+									panic("Function arguments quantity doesn't match.");
+
+								// check parameter type
+								Type cptp = ce.type;
+								Type catp = fdatp.getFirst();
 								if (!cptp.isConvertableTo(catp))
 									panic("Incompatible parameter type.");
 							}
 						}
-						else
-						{
-							// check quantity
-							if (fdatp.size() != 2)
-								panic("Function arguments quantity doesn't match.");
 
-							// check parameter type
-							Type cptp = ce.type;
-							Type catp = fdatp.getFirst();
-							if (!cptp.isConvertableTo(catp))
-								panic("Incompatible parameter type.");
-						}
+						cur_type = fdatp.getLast();
+						ret.add_elem(PostfixElem.post_call, ce, null, cur_type);
+						ret.decorate(cur_type, false, true, false);
 					}
-
-					cur_type = fdatp.getLast();
-					ret.add_elem(PostfixElem.post_call, ce, null, cur_type);
-					ret.decorate(cur_type, false, true, false);
 				}
 				else
 					panic("Only function can be called.");
@@ -1803,6 +1960,18 @@ public class ASTBuilder
 
 		tp.complete = true;
 		return true;
+	}
+
+	private String num2idx(int n)
+	{
+		if (n == 1)
+			return "1st".intern();
+		else if (n == 2)
+			return "2nd".intern();
+		else if (n == 3)
+			return "3rd".intern();
+		else
+			return n + "th".intern();
 	}
 
 	private void panic(String msg) throws Exception

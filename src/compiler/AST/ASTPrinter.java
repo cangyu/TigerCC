@@ -730,7 +730,7 @@ public class ASTPrinter implements ASTNodeVisitor
 			break;
 		case PrimaryExp.pe_fp:
 			x.ast_rep = new String[1];
-			x.ast_rep[0] = leading + "FP-Const: ".intern() + ((Float) x.value).toString() + '\'';
+			x.ast_rep[0] = leading + "FP-Const: ".intern() + ((Float) x.value).toString();
 			break;
 		case PrimaryExp.pe_paren:
 			Exp e = (Exp) x.value;
