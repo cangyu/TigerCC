@@ -7,6 +7,7 @@ import compiler.Frame.*;
 import compiler.Scoping.*;
 import compiler.Typing.*;
 
+//TODO: String, Record, Init
 public class IRTranslator
 {
 	private Prog entrance;
@@ -69,7 +70,7 @@ public class IRTranslator
 		if (ci != null)
 		{
 			Temp ival = transInit(ci);
-			code.add_oper(new Move(ival, new Mem(x.offset)));
+			code.add_oper(new Move(ival, new Mem(global_frame.FP(), x.offset)));
 		}
 	}
 
@@ -78,21 +79,24 @@ public class IRTranslator
 		// leading label
 		Label lf = new Label(x.name);
 		code.add_label(lf);
-
-		// parameters and local variables
+		
+		//local variables
 		ListIterator<VarDec> vlit = x.var.listIterator();
 		while (vlit.hasNext())
-			transLocalVar(vlit.next());
+		{
+			VarDec tvd = vlit.next();
+			Init cinit = tvd.init;
+			if(cinit!=null)
+			{
+				Temp ival = transInit(cinit);
+				code.add_oper(new Move(ival, new Mem(global_frame.FP(), tvd.offset)));
+			}
+		}
 
 		// statements
 		ListIterator<Stmt> slit = x.st.listIterator();
 		while (slit.hasNext())
 			transStmt(slit.next());
-	}
-
-	private void transLocalVar(VarDec x)
-	{
-
 	}
 
 	/* Exp */
