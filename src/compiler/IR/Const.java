@@ -18,6 +18,11 @@ public class Const extends Operand
 	{
 		val = new Float(x);
 	}
+	
+	public Const(Object x)
+	{
+		val = x;
+	}
 
 	public String toString()
 	{

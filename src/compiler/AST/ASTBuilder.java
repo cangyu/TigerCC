@@ -1376,7 +1376,7 @@ public class ASTBuilder
 		{
 			Exp ce = parseExpr(x.expr, y);
 			ret = new UnaryExp(UnaryExp.address_of, ce);
-			ret.decorate(new Pointer(ce.type), true, true, false);
+			ret.decorate(new Pointer(ce.type), false, true, false);
 		}
 		else if (x.type == UnaryExpr.dereference)
 		{

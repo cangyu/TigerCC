@@ -27,26 +27,30 @@ public abstract class Record extends Type
 		field.put(Symbol.getSymbol(name), tp);
 	}
 
+	public abstract void add_record(String n, Type t);
+
 	public Type get_member_type(String m)
 	{
 		Symbol csym = Symbol.getSymbol(m);
 		return field.get(csym);
 	}
-	
+
+	public abstract int get_member_offset(String m);
+
 	public String[] field_str()
 	{
-	    int lc = 2 + field.size();
-	    String [] ret = new String[lc];
-	    ret[0] = "{".intern();
-	    ret[lc-1] = "}".intern();
-	    
-	    int cl = 1;
-	    for(Symbol csym : field.keySet())
-	    {
-	        Type ct = field.get(csym);
-	        ret[cl++] = String.format("  %s -> %s ", csym.name, ct.toString());
-	    }
-	    
-	    return ret;
+		int lc = 2 + field.size();
+		String[] ret = new String[lc];
+		ret[0] = "{".intern();
+		ret[lc - 1] = "}".intern();
+
+		int cl = 1;
+		for (Symbol csym : field.keySet())
+		{
+			Type ct = field.get(csym);
+			ret[cl++] = String.format("  %s -> %s ", csym.name, ct.toString());
+		}
+
+		return ret;
 	}
 }

@@ -3,6 +3,7 @@ package compiler.Typing;
 import java.lang.Math;
 
 import compiler.Lexer.Token;
+import compiler.Scoping.Symbol;
 
 public final class Union extends Record
 {
@@ -36,5 +37,15 @@ public final class Union extends Record
 		if (tag != null)
 			ret += tag + " ";
 		return ret;
+	}
+
+	@Override
+	public int get_member_offset(String m)
+	{
+		Symbol csym = Symbol.getSymbol(m);
+		if (!field.containsKey(csym))
+			return -1;
+		else
+			return 0;
 	}
 }

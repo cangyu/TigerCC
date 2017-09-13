@@ -6,10 +6,18 @@ public class Return extends Quad
 	{
 		super(-1, null, null, v);
 	}
+	
+	public Return()
+	{
+		super(-1, null, null, null);
+	}
 
 	@Override
 	public String toString()
 	{
-		return "return ".intern() + result.toString();
+		if(result!=null)
+			return "return ".intern() + result.toString();
+		else
+			return "return".intern();
 	}
 }

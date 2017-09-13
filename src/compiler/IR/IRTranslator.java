@@ -3,10 +3,8 @@ package compiler.IR;
 import java.util.*;
 import compiler.AST.*;
 import compiler.AST.PostfixExp.PostfixElem;
-import compiler.Frame.Access;
-import compiler.Frame.Frame;
-import compiler.Scoping.Env;
-import compiler.Scoping.Symbol;
+import compiler.Frame.*;
+import compiler.Scoping.*;
 import compiler.Typing.*;
 
 public class IRTranslator
@@ -14,12 +12,12 @@ public class IRTranslator
 	private Prog entrance;
 	private IRCode code;
 	private Stack<Label> begin_label, end_label;
-	private Label exit;
+	private Stack<Label> exit;
 	private Frame global_frame;
 	private Stack<Env> env;
 
-	private static final Const iz = new Const(0);
-	private static final Const in = new Const(1);
+	private static final Const izero = new Const(0);
+	private static final Const ione = new Const(1);
 	private static final Const iaf = new Const(0xFFFFFFFF);
 
 	public IRTranslator(Prog x, Frame y)
@@ -29,7 +27,7 @@ public class IRTranslator
 		code = new IRCode();
 		begin_label = new Stack<Label>();
 		end_label = new Stack<Label>();
-		exit = new Label();
+		exit = new Stack<Label>();
 		env = new Stack<Env>();
 	}
 
@@ -46,9 +44,11 @@ public class IRTranslator
 			else if (dcl instanceof FuncDec)
 			{
 				FuncDec fd = (FuncDec) dcl;
+				exit.push(new Label());
 				env.push(fd.scope);
 				transFuncDec(fd);
 				env.pop();
+				exit.pop();
 			}
 			else
 				internal_error();
@@ -99,7 +99,16 @@ public class IRTranslator
 	{
 		Temp ret = null;
 
-		if (x instanceof CommaExp)
+		if (x.isConst && Type.arith(x.type))
+		{
+			if(x.value==null)
+				internal_error();
+			
+			Const cx = new Const(x.value);
+			ret = new Temp();
+			code.add_oper(new Move(cx, ret));
+		}
+		else if (x instanceof CommaExp)
 			ret = transCommaExp((CommaExp) x);
 		else if (x instanceof AssignExp)
 			ret = transAssignExp((AssignExp) x);
@@ -243,10 +252,10 @@ public class IRTranslator
 			Label end = new Label();
 			code.add_oper(new Branch(null, lhs, fail));
 			code.add_oper(new Branch(null, rhs, fail));
-			code.add_oper(new Move(in, ans));
+			code.add_oper(new Move(ione, ans));
 			code.add_oper(new Jump(end));
 			code.add_label(fail);
-			code.add_oper(new Move(iz, ans));
+			code.add_oper(new Move(izero, ans));
 			code.add_label(end);
 		}
 		else if (x.op == BinaryExp.logical_or)
@@ -255,10 +264,10 @@ public class IRTranslator
 			Label end = new Label();
 			code.add_oper(new Branch(lhs, null, ok));
 			code.add_oper(new Branch(rhs, null, ok));
-			code.add_oper(new Move(iz, ans));
+			code.add_oper(new Move(izero, ans));
 			code.add_oper(new Jump(end));
 			code.add_label(ok);
-			code.add_oper(new Move(in, ans));
+			code.add_oper(new Move(ione, ans));
 			code.add_label(end);
 		}
 		else if (x.op == BinaryExp.shift_left)
@@ -282,13 +291,13 @@ public class IRTranslator
 		if (x.category == UnaryExp.address_of)
 		{
 			transExp(x.exp);
-			Operand addr = getAddress(x.exp);
+			Operand addr = getAddr(x.exp);
 			code.add_oper(new Move(addr, ans));
 		}
 		else if (x.category == UnaryExp.indirection)
 		{
 			Temp tmp = transExp(x.exp);
-			code.add_oper(new Move(tmp, ans));
+			code.add_oper(new Move(new Mem(tmp), ans));
 		}
 		else if (x.category == UnaryExp.unary_plus)
 		{
@@ -299,7 +308,7 @@ public class IRTranslator
 		{
 			Temp r1 = transExp(x.exp);
 			Temp r2 = new Temp();
-			code.add_oper(new BinOp(Quad.sub, iz, r1, r2));
+			code.add_oper(new BinOp(Quad.sub, izero, r1, r2));
 			code.add_oper(new Move(r2, ans));
 		}
 		else if (x.category == UnaryExp.bitwise_not)
@@ -313,10 +322,10 @@ public class IRTranslator
 			Label end = new Label();
 			Temp tmp = transExp(x.exp);
 			code.add_oper(new Branch(tmp, null, ok));
-			code.add_oper(new Move(in, ans));
+			code.add_oper(new Move(ione, ans));
 			code.add_oper(new Jump(end));
 			code.add_label(ok);
-			code.add_oper(new Move(iz, ans));
+			code.add_oper(new Move(izero, ans));
 			code.add_label(end);
 		}
 		else if (x.category == UnaryExp.size_of)
@@ -328,13 +337,13 @@ public class IRTranslator
 		else if (x.category == UnaryExp.inc)
 		{
 			Temp tmp = transExp(x.exp);
-			code.add_oper(new BinOp(Quad.add, tmp, in, ans));
+			code.add_oper(new BinOp(Quad.add, tmp, ione, ans));
 			code.add_oper(new Move(ans, getAccess(x.exp)));
 		}
 		else if (x.category == UnaryExp.dec)
 		{
 			Temp tmp = transExp(x.exp);
-			code.add_oper(new BinOp(Quad.sub, tmp, in, ans));
+			code.add_oper(new BinOp(Quad.sub, tmp, ione, ans));
 			code.add_oper(new Move(ans, getAccess(x.exp)));
 		}
 		else
@@ -347,6 +356,7 @@ public class IRTranslator
 	{
 		Temp ans = new Temp();
 		Temp base_val = transExp(x.pe);
+
 		ListIterator<PostfixElem> lit = x.elem.listIterator();
 		while (lit.hasNext())
 		{
@@ -380,7 +390,11 @@ public class IRTranslator
 			}
 			else if (pfx.category == PostfixElem.post_call)
 			{
-				// tac.add_oper(new JUMP(base_val));
+				String fn = ((FuncDec) x.pe.value).name;
+				Call fc = new Call(new Label(fn));
+				handleParam(pfx.exp, fc);
+				code.add_oper(fc);
+				code.add_oper(new Move(global_frame.RA(), ans));
 			}
 			else if (pfx.category == PostfixElem.post_dot)
 			{
@@ -429,13 +443,11 @@ public class IRTranslator
 			}
 			else if (pfx.category == PostfixElem.post_inc)
 			{
-				Const ione = new Const(1);
 				code.add_oper(new Move(base_val, ans));
 				code.add_oper(new BinOp(Quad.add, base_val, ione, base_val));
 			}
 			else if (pfx.category == PostfixElem.post_dec)
 			{
-				Const ione = new Const(1);
 				code.add_oper(new Move(base_val, ans));
 				code.add_oper(new BinOp(Quad.sub, base_val, ione, base_val));
 			}
@@ -571,9 +583,11 @@ public class IRTranslator
 			code.add_oper(new Jump(begin_label.peek()));
 		else if (x.category == JumpStmt.jp_ret)
 		{
+			Temp ret = null;
 			if (x.exp != null)
-				transExp(x.exp);
-			code.add_oper(new Jump(exit));
+				ret = transExp(x.exp);
+			code.add_oper(new Return(ret));
+			code.add_oper(new Jump(exit.peek()));
 		}
 		else
 			internal_error();
@@ -603,25 +617,19 @@ public class IRTranslator
 		{
 			begin_label.push(begin);
 			end_label.push(end);
-			
-			if(x.init!=null)
+
+			if (x.init != null)
 				transExp(x.init);
-			
 			code.add_label(begin);
-			
-			if(x.judge!=null)
+			if (x.judge != null)
 			{
 				Temp jge = transExp(x.judge);
 				code.add_oper(new Branch(null, jge, end));
 			}
-			
 			transStmt(x.stmt);
-			
-			if(x.next!=null)
+			if (x.next != null)
 				transExp(x.next);
-			
 			code.add_oper(new Jump(begin));
-			
 			code.add_label(end);
 
 			begin_label.pop();
@@ -647,11 +655,100 @@ public class IRTranslator
 	}
 
 	// Get the address or memory access of a variable
-	private Operand getAddress(Exp x)
+	private Operand getAddr(Exp x) throws Exception
 	{
-		Temp ret = new Temp();
-		// TODO
-		return ret;
+		if (x instanceof PrimaryExp)
+		{
+			PrimaryExp pe = (PrimaryExp) x;
+			if (pe.category == PrimaryExp.pe_id)
+			{
+				String cid = ((Dec) x.value).name;
+				Symbol csym = Symbol.getSymbol(cid);
+				Dec cd = (Dec) env.peek().get_global(csym).mirror;
+				Const cof = new Const(cd.offset);
+				Temp ret = new Temp();
+				code.add_oper(new BinOp(Quad.add, global_frame.FP(), cof, ret));
+				return ret;
+			}
+			else if (pe.category == PrimaryExp.pe_paren)
+				return getAddr(pe.ce);
+			else if (pe.category == PrimaryExp.pe_str)
+			{
+				// "abcd"[2]
+				// TODO
+				return izero;
+			}
+			else
+				internal_error();
+		}
+		else if (x instanceof PostfixExp)
+		{
+			PostfixExp pfx_exp = (PostfixExp) x;
+			Exp base_exp = pfx_exp.pe;
+			Operand base_addr = getAddr(base_exp);
+			Type ct = base_exp.type;
+
+			ListIterator<PostfixElem> lit = ((PostfixExp) x).elem.listIterator();
+			while (lit.hasNext())
+			{
+				PostfixElem cpfx = lit.next();
+				if (cpfx.category == PostfixElem.post_idx)
+				{
+					if (ct instanceof Array || ct instanceof Pointer)
+					{
+						Type cur_elem_type = ct instanceof Array ? ((Array) ct).elem_type : ((Pointer) ct).elem_type;
+						Const cw = new Const(cur_elem_type.width);
+						Temp idx = transExp(cpfx.exp);
+						Temp clof = new Temp();
+						code.add_oper(new BinOp(Quad.mult, cw, idx, clof));
+						code.add_oper(new BinOp(Quad.add, base_addr, clof, base_addr));
+					}
+					else
+						internal_error();
+				}
+				else if (cpfx.category == PostfixElem.post_dot)
+				{
+					if (ct instanceof Record)
+					{
+						int off = ((Record) ct).get_member_offset(cpfx.id);
+						Const cof = new Const(off);
+						code.add_oper(new BinOp(Quad.add, base_addr, cof, base_addr));
+					}
+					else
+						internal_error();
+				}
+				else if (cpfx.category == PostfixElem.post_arrow)
+				{
+					if (ct instanceof Pointer && ((Pointer) ct).elem_type instanceof Record)
+					{
+						Record crd = (Record) ((Pointer) ct).elem_type;
+						int off = crd.get_member_offset(cpfx.id);
+						Const cof = new Const(off);
+						code.add_oper(new BinOp(Quad.add, base_addr, cof, base_addr));
+					}
+					else
+						internal_error();
+				}
+				else
+					internal_error();
+				ct = cpfx.cur_type;
+			}
+			return base_addr;
+		}
+		else if (x instanceof UnaryExp)
+		{
+			UnaryExp ue = (UnaryExp) x;
+			if (ue.category == UnaryExp.indirection)
+				return transExp(ue.exp);
+			else
+				internal_error();
+		}
+		else if (x instanceof CastExp)
+			return getAddr(((CastExp) x).exp);
+		else
+			internal_error();
+
+		return null;
 	}
 
 	private Mem getAccess(Exp x) throws Exception
@@ -661,36 +758,33 @@ public class IRTranslator
 			internal_error();
 
 		if (x instanceof PrimaryExp)
-			ret = new Mem(((VarDec) x.value).offset);
-		else if (x instanceof PostfixExp)
 		{
-			ListIterator<PostfixElem> lit = ((PostfixExp) x).elem.listIterator();
-			while (lit.hasNext())
+			PrimaryExp pe = (PrimaryExp) x;
+			if (pe.category == PrimaryExp.pe_id)
 			{
-				PostfixElem cpfx = lit.next();
-				if (cpfx.category == PostfixElem.post_idx)
-				{
-
-				}
-				else if (cpfx.category == PostfixElem.post_dot)
-				{
-
-				}
-				else if (cpfx.category == PostfixElem.post_arrow)
-				{
-
-				}
-				else
-					internal_error();
+				String cid = ((Dec) x.value).name;
+				Symbol csym = Symbol.getSymbol(cid);
+				Dec cvd = (Dec) env.peek().get_global(csym).mirror;
+				int off = cvd.offset;
+				ret = new Mem(global_frame.FP(), off);
 			}
+			else if (pe.category == PrimaryExp.pe_str)
+			{
+				// TODO
+				ret = new Mem(global_frame.FP(), 0);
+			}
+			else if (pe.category == PrimaryExp.pe_paren)
+				ret = getAccess(pe.ce);
+			else
+				internal_error();
 		}
+		else if (x instanceof PostfixExp)
+			ret = new Mem(getAddr(x));
 		else if (x instanceof UnaryExp)
 		{
 			UnaryExp ue = (UnaryExp) x;
 			if (ue.category == UnaryExp.indirection)
-			{
-				ret = getAccess(ue.exp);
-			}
+				ret = new Mem(getAddr(ue));
 			else
 				internal_error();
 		}
@@ -698,6 +792,21 @@ public class IRTranslator
 			internal_error();
 
 		return ret;
+	}
+
+	private void handleParam(Exp x, Call y) throws Exception
+	{
+		if (x instanceof CommaExp)
+		{
+			Iterator<Exp> lit = ((CommaExp) x).exp.iterator();
+			while (lit.hasNext())
+				handleParam(lit.next(), y);
+		}
+		else
+		{
+			Temp ans = transExp(x);
+			y.add_param(ans);
+		}
 	}
 
 	private void panic(String msg) throws Exception
